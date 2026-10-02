@@ -1,10 +1,11 @@
+@AbapCatalog.viewEnhancementCategory: [#NONE]
 @AccessControl.authorizationCheck: #NOT_REQUIRED
 @EndUserText.label: 'Maintenance Order'
 @Metadata.ignorePropagatedAnnotations: true
 define root view entity ZI_TS_MAINTENANCE_ORDER
   as select from zts_maint_order
-//  composition [0..*] of ZI_TS_Operation  as _Operations
-//  composition [0..*] of ZI_TS_MaintCosts as _Costs
+  composition [0..*] of ZI_TS_MAINTENANCE_OPERATION as _Operations
+  composition [0..*] of ZI_TS_MAINTENANCE_COSTS     as _Costs
 {
   key order_uuid            as OrderUuid,
       order_id              as OrderId,
@@ -31,7 +32,7 @@ define root view entity ZI_TS_MAINTENANCE_ORDER
       @Semantics.systemDateTime.localInstanceLastChangedAt: true
       local_last_changed_at as LocalLastChangedAt,
       @Semantics.systemDateTime.lastChangedAt: true
-      last_changed_at       as LastChangedAt
-//      _Operations,
-//      _Costs,
+      last_changed_at       as LastChangedAt,
+      _Operations,
+      _Costs
 }
