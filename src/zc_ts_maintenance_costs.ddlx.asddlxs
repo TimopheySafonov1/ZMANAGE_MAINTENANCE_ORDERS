@@ -1,0 +1,39 @@
+@Metadata.layer: #CUSTOMER
+@UI: {
+  headerInfo: {
+    typeName:       'Pozycja kosztowa',
+    typeNamePlural: 'Pozycje kosztowe',
+    title:          { type: #STANDARD, value: 'PlannedCosts' },
+    description:    { type: #STANDARD, value: 'ActualCosts' }
+  }
+}
+annotate entity ZC_TS_MAINTENANCE_COSTS with
+{
+  @UI.facet: [
+    { id: 'CostData', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'CostData', label: 'Koszty', position: 10 }
+  ]
+
+  @UI.hidden: true
+  CostItemUuid;
+
+  @UI.hidden: true
+  OrderUuid;
+
+  @UI.hidden: true
+  OperationUuid;
+
+  @EndUserText.label: 'Waluta'
+  @UI.hidden: true
+  Currency;
+
+  @EndUserText.label: 'Koszty planowane'
+  @UI: { lineItem:   [{ position: 10, importance: #HIGH }],
+         fieldGroup: [{ qualifier: 'CostData', position: 10 }] }
+  PlannedCosts;
+
+  @EndUserText.label: 'Koszty rzeczywiste'
+  @UI: { lineItem:   [{ position: 20, importance: #HIGH }],
+         fieldGroup: [{ qualifier: 'CostData', position: 20 }] }
+  ActualCosts;
+}

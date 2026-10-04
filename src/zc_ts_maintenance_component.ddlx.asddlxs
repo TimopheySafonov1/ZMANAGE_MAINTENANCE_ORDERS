@@ -1,0 +1,56 @@
+@Metadata.layer: #CUSTOMER
+@UI: {
+  headerInfo: {
+    typeName:       'Komponent',
+    typeNamePlural: 'Komponenty',
+    title:          { type: #STANDARD, value: 'ComponentId' },
+    description:    { type: #STANDARD, value: 'Description' }
+  },
+  presentationVariant: [{ sortOrder: [{ by: 'ComponentId', direction: #ASC }] }]
+}
+annotate entity ZC_TS_MAINTENANCE_COMPONENT with
+{
+  @UI.facet: [
+    { id: 'ComponentData', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'ComponentData', label: 'Dane komponentu', position: 10 }
+  ]
+
+  @UI.hidden: true
+  ComponentUuid;
+
+  @UI.hidden: true
+  OperationUuid;
+
+  @UI.hidden: true
+  OrderUuid;
+
+  @EndUserText.label: 'Numer komponentu'
+  @UI: { lineItem:       [{ position: 10, importance: #HIGH }],
+         identification: [{ position: 10 }],
+         fieldGroup:     [{ qualifier: 'ComponentData', position: 10 }] }
+  ComponentId;
+
+  @EndUserText.label: 'Opis'
+  @UI: { lineItem:   [{ position: 20, importance: #HIGH }],
+         fieldGroup: [{ qualifier: 'ComponentData', position: 20 }] }
+  Description;
+
+  @EndUserText.label: 'Typ pozycji'
+  @UI: { lineItem:   [{ position: 30, importance: #MEDIUM }],
+         fieldGroup: [{ qualifier: 'ComponentData', position: 30 }] }
+  ItemCategory;
+
+  @EndUserText.label: 'Ilość wymagana'
+  @UI: { lineItem:   [{ position: 40, importance: #HIGH }],
+         fieldGroup: [{ qualifier: 'ComponentData', position: 40 }] }
+  ReqQuantity;
+
+  @EndUserText.label: 'Jednostka miary'
+  @UI.hidden: true
+  Uom;
+
+  @EndUserText.label: 'Skład'
+  @UI: { lineItem:   [{ position: 50, importance: #MEDIUM }],
+         fieldGroup: [{ qualifier: 'ComponentData', position: 50 }] }
+  StorageLoc;
+}

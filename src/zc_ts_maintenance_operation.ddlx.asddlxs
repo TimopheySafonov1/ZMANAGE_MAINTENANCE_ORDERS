@@ -1,0 +1,102 @@
+@Metadata.layer: #CUSTOMER
+@UI: {
+  headerInfo: {
+    typeName:       'Operacja',
+    typeNamePlural: 'Operacje',
+    title:          { type: #STANDARD, value: 'OperationId' },
+    description:    { type: #STANDARD, value: 'Description' }
+  },
+  presentationVariant: [{ sortOrder: [{ by: 'OperationId', direction: #ASC }] }]
+}
+annotate entity ZC_TS_MAINTENANCE_OPERATION with
+{
+  @UI.facet: [
+    { id: 'GeneralInfo', purpose: #STANDARD, type: #COLLECTION,             label: 'Informacje ogólne', position: 10 },
+    { id: 'BasicData',   parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'BasicData', label: 'Dane podstawowe', position: 10 },
+    { id: 'Work',        parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'Work',      label: 'Praca',           position: 20 },
+    { id: 'Dates',       parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'Dates',     label: 'Terminy',         position: 30 },
+    { id: 'Components',  purpose: #STANDARD, type: #LINEITEM_REFERENCE,
+      targetElement: '_Components', label: 'Komponenty',      position: 20 },
+    { id: 'PRTs',        purpose: #STANDARD, type: #LINEITEM_REFERENCE,
+      targetElement: '_PRTs',       label: 'Pomoce produkcyjne', position: 30 }
+  ]
+
+  @UI.hidden: true
+  OperationUuid;
+
+  @UI.hidden: true
+  OrderUuid;
+
+  @EndUserText.label: 'Numer operacji'
+  @UI: { lineItem:       [{ position: 10, importance: #HIGH }],
+         identification: [{ position: 10 }],
+         fieldGroup:     [{ qualifier: 'BasicData', position: 10 }] }
+  OperationId;
+
+  @EndUserText.label: 'Opis'
+  @UI: { lineItem:   [{ position: 20, importance: #HIGH }],
+         fieldGroup: [{ qualifier: 'BasicData', position: 20 }] }
+  Description;
+
+  @EndUserText.label: 'Osoba odpowiedzialna'
+  @UI: { lineItem:   [{ position: 30, importance: #MEDIUM }],
+         fieldGroup: [{ qualifier: 'BasicData', position: 30 }] }
+  PersonResp;
+
+  @EndUserText.label: 'Praca planowana'
+  @UI: { lineItem:   [{ position: 40, importance: #MEDIUM }],
+         fieldGroup: [{ qualifier: 'Work', position: 10 }] }
+  PlannedWork;
+
+  @EndUserText.label: 'Jednostka pracy planowanej'
+  @UI.hidden: true
+  PlannedWorkUnit;
+
+  @EndUserText.label: 'Planowany czas trwania'
+  @UI: { lineItem:   [{ position: 50, importance: #LOW }],
+         fieldGroup: [{ qualifier: 'Work', position: 20 }] }
+  PlannedWorkDuration;
+
+  @EndUserText.label: 'Jednostka planowanego czasu trwania'
+  @UI.hidden: true
+  PlannedDurationUnit;
+
+  @EndUserText.label: 'Praca rzeczywista'
+  @UI: { lineItem:   [{ position: 60, importance: #MEDIUM }],
+         fieldGroup: [{ qualifier: 'Work', position: 30 }] }
+  ActualWork;
+
+  @EndUserText.label: 'Jednostka pracy rzeczywistej'
+  @UI.hidden: true
+  ActualWorkUnit;
+
+  @EndUserText.label: 'Rzeczywisty czas trwania'
+  @UI: { lineItem:   [{ position: 70, importance: #LOW }],
+         fieldGroup: [{ qualifier: 'Work', position: 40 }] }
+  ActualWorkDuration;
+
+  @EndUserText.label: 'Jednostka rzeczywistego czasu trwania'
+  @UI.hidden: true
+  ActualDurationUnit;
+
+  @EndUserText.label: 'Planowany początek'
+  @UI: { lineItem:   [{ position: 80, importance: #MEDIUM }],
+         fieldGroup: [{ qualifier: 'Dates', position: 10 }] }
+  PlannedStart;
+
+  @EndUserText.label: 'Planowany koniec'
+  @UI: { lineItem:   [{ position: 90, importance: #MEDIUM }],
+         fieldGroup: [{ qualifier: 'Dates', position: 20 }] }
+  PlannedFinish;
+
+  @EndUserText.label: 'Rzeczywisty początek'
+  @UI.fieldGroup: [{ qualifier: 'Dates', position: 30 }]
+  ActualStart;
+
+  @EndUserText.label: 'Rzeczywisty koniec'
+  @UI.fieldGroup: [{ qualifier: 'Dates', position: 40 }]
+  ActualFinish;
+}

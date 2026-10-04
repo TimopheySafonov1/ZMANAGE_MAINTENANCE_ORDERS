@@ -1,0 +1,51 @@
+@Metadata.layer: #CUSTOMER
+@UI: {
+  headerInfo: {
+    typeName:       'Pomoc produkcyjna',
+    typeNamePlural: 'Pomoce produkcyjne',
+    title:          { type: #STANDARD, value: 'PrtId' },
+    description:    { type: #STANDARD, value: 'Description' }
+  },
+  presentationVariant: [{ sortOrder: [{ by: 'PrtId', direction: #ASC }] }]
+}
+annotate entity ZC_TS_MAINTENANCE_PRT with
+{
+  @UI.facet: [
+    { id: 'PrtData', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'PrtData', label: 'Dane pomocy produkcyjnej', position: 10 }
+  ]
+
+  @UI.hidden: true
+  PrtUuid;
+
+  @UI.hidden: true
+  OperationUuid;
+
+  @UI.hidden: true
+  OrderUuid;
+
+  @EndUserText.label: 'Numer pomocy produkcyjnej'
+  @UI: { lineItem:       [{ position: 10, importance: #HIGH }],
+         identification: [{ position: 10 }],
+         fieldGroup:     [{ qualifier: 'PrtData', position: 10 }] }
+  PrtId;
+
+  @EndUserText.label: 'Opis'
+  @UI: { lineItem:   [{ position: 20, importance: #HIGH }],
+         fieldGroup: [{ qualifier: 'PrtData', position: 20 }] }
+  Description;
+
+  @EndUserText.label: 'Ilość wymagana'
+  @UI: { lineItem:   [{ position: 30, importance: #HIGH }],
+         fieldGroup: [{ qualifier: 'PrtData', position: 30 }] }
+  ReqQuantity;
+
+  @EndUserText.label: 'Jednostka miary'
+  @UI.hidden: true
+  Uom;
+
+  @EndUserText.label: 'Skład'
+  @UI: { lineItem:   [{ position: 40, importance: #MEDIUM }],
+         fieldGroup: [{ qualifier: 'PrtData', position: 40 }] }
+  StorageLoc;
+}
