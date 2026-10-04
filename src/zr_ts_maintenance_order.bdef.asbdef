@@ -1,0 +1,172 @@
+managed implementation in class zbp_r_ts_maintenance_order unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZR_TS_MAINTENANCE_ORDER alias MaintenanceOrder
+persistent table zts_maint_order
+draft table zts_d_maint_ord
+etag master LocalLastChangedAt
+lock master total etag LastChangedAt
+authorization master ( global )
+{
+  create;
+  update;
+  delete;
+
+  association _Operations { create; with draft; }
+  association _Costs { create; with draft; }
+
+  field ( numbering : managed, readonly ) OrderUuid;
+  field ( readonly ) MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime,
+                     LocalLastChangedAt, LastChangedAt;
+
+  draft action Activate optimized;
+  draft action Discard;
+  draft action Edit;
+  draft action Resume;
+  draft determine action Prepare;
+
+  mapping for zts_maint_order
+    {
+      OrderUuid          = order_uuid;
+      OrderId            = order_id;
+      OrderType          = order_type;
+      Description        = description;
+      LongText           = long_text;
+      TechObject         = tech_object;
+      TechObjType        = tech_obj_type;
+      PlanningPlant      = planning_plant;
+      WorkCenter         = work_center;
+      Priority           = priority;
+      FinalDueDate       = final_due_date;
+      MaintRevision      = maint_revision;
+      Currency           = currency;
+      TotalPlannedCosts  = total_planned_costs;
+      TotalActualCosts   = total_actual_costs;
+      Status             = status;
+      LocalLastChangedAt = local_last_changed_at;
+      LastChangedAt      = last_changed_at;
+    }
+}
+
+define behavior for ZR_TS_MAINTENANCE_OPERATION alias MaintenanceOperation
+persistent table zts_maint_operat
+draft table zts_d_maint_opr
+lock dependent by _MaintenanceOrder
+authorization dependent by _MaintenanceOrder
+{
+  update;
+  delete;
+
+  association _MaintenanceOrder { with draft; }
+  association _Components { create; with draft; }
+  association _PRTs { create; with draft; }
+
+  field ( numbering : managed, readonly ) OperationUuid;
+  field ( readonly ) OrderUuid;
+
+  mapping for zts_maint_operat
+    {
+      OperationUuid       = operation_uuid;
+      OrderUuid           = order_uuid;
+      OperationId         = operation_id;
+      Description         = description;
+      PersonResp          = person_resp;
+      PlannedWorkUnit     = planned_work_work_unit;
+      PlannedDurationUnit = planned_work_work_duration_uni;
+      ActualWorkUnit      = actual_work_unit;
+      ActualDurationUnit  = actual_work_duration_unit;
+      PlannedWork         = planned_work;
+      PlannedWorkDuration = planned_work_duration;
+      ActualWork          = actual_work;
+      ActualWorkDuration  = actual_work_duration;
+      PlannedStart        = planned_start;
+      PlannedFinish       = planned_finish;
+      ActualStart         = actual_start;
+      ActualFinish        = actual_finish;
+    }
+}
+
+define behavior for ZR_TS_MAINTENANCE_COSTS alias MaintenanceCosts
+persistent table zts_maint_costs
+draft table zts_d_maint_cst
+lock dependent by _MaintenanceOrder
+authorization dependent by _MaintenanceOrder
+{
+  update;
+  delete;
+
+  association _MaintenanceOrder { with draft; }
+
+  field ( numbering : managed, readonly ) CostItemUuid;
+  field ( readonly ) OrderUuid;
+
+  mapping for zts_maint_costs
+    {
+      CostItemUuid  = cost_item_uuid;
+      OrderUuid     = order_uuid;
+      OperationUuid = operation_uuid;
+      Currency      = currency;
+      PlannedCosts  = planned_costs;
+      ActualCosts   = actual_costs;
+    }
+}
+
+define behavior for ZR_TS_MAINTENANCE_COMPONENT alias MaintenanceComponent
+persistent table zts_maint_compon
+draft table zts_d_maint_cmp
+lock dependent by _MaintenanceOrder
+authorization dependent by _MaintenanceOrder
+{
+  update;
+  delete;
+
+  association _MaintenanceOperation { with draft; }
+  association _MaintenanceOrder { with draft; }
+
+  field ( numbering : managed, readonly ) ComponentUuid;
+  field ( readonly ) OperationUuid, OrderUuid;
+
+  determination setOrderUuid on modify { create; }
+
+  mapping for zts_maint_compon
+    {
+      ComponentUuid = component_uuid;
+      OperationUuid = operation_uuid;
+      ComponentId   = component_id;
+      Description   = description;
+      ItemCategory  = item_category;
+      Uom           = uom;
+      ReqQuantity   = req_quantity;
+      StorageLoc    = storage_loc;
+    }
+}
+
+define behavior for ZR_TS_MAINTENANCE_PRT alias MaintenancePrt
+persistent table zts_maint_prt
+draft table zts_d_maint_prt
+lock dependent by _MaintenanceOrder
+authorization dependent by _MaintenanceOrder
+{
+  update;
+  delete;
+
+  association _MaintenanceOperation { with draft; }
+  association _MaintenanceOrder { with draft; }
+
+  field ( numbering : managed, readonly ) PrtUuid;
+  field ( readonly ) OperationUuid, OrderUuid;
+
+  determination setOrderUuid on modify { create; }
+
+  mapping for zts_maint_prt
+    {
+      PrtUuid       = prt_uuid;
+      OperationUuid = operation_uuid;
+      PrtId         = prt_id;
+      Description   = description;
+      Uom           = uom;
+      ReqQuantity   = req_quantity;
+      StorageLoc    = storage_loc;
+    }
+}
