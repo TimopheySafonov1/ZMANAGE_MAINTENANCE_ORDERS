@@ -1,0 +1,8 @@
+@EndUserText.label: 'Maintenance Order - UI Service'
+define service ZUI_TS_MAINTENANCE_ORDER {
+  expose ZC_TS_MAINTENANCE_ORDER     as MaintenanceOrder;
+  expose ZC_TS_MAINTENANCE_OPERATION as MaintenanceOperation;
+  expose ZC_TS_MAINTENANCE_COSTS     as MaintenanceCosts;
+  expose ZC_TS_MAINTENANCE_COMPONENT as MaintenanceComponent;
+  expose ZC_TS_MAINTENANCE_PRT       as MaintenancePrt;
+}
