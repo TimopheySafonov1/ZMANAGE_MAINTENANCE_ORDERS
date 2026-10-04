@@ -18,10 +18,18 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       Priority,
       FinalDueDate,
       MaintRevision,
-      BasicStartDate,
-      BasicStartTime,
-      BasicFinishDate,
-      BasicFinishTime,
+      @EndUserText.label: 'Basic Start Date/Time'
+      dats_tims_to_tstmp( BasicStartDate,
+                          BasicStartTime,
+                          abap_system_timezone( $session.client, 'NULL' ),
+                          $session.client,
+                          'NULL' )  as MaintOrdBasicStartDateTime,
+      @EndUserText.label: 'Basic Finish Date/Time'
+      dats_tims_to_tstmp( BasicFinishDate,
+                          BasicFinishTime,
+                          abap_system_timezone( $session.client, 'NULL' ),
+                          $session.client,
+                          'NULL' )  as MaintOrdBasicFinishDateTime,
       Currency,
       @Semantics.amount.currencyCode: 'Currency'
       TotalPlannedCosts,
