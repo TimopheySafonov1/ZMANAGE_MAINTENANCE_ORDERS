@@ -40,6 +40,10 @@ authorization master ( global )
       Priority           = priority;
       FinalDueDate       = final_due_date;
       MaintRevision      = maint_revision;
+      BasicStartDate     = basic_start_date;
+      BasicStartTime     = basic_start_time;
+      BasicFinishDate    = basic_finish_date;
+      BasicFinishTime    = basic_finish_time;
       Currency           = currency;
       TotalPlannedCosts  = total_planned_costs;
       TotalActualCosts   = total_actual_costs;

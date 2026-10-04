@@ -32,7 +32,7 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
 
   @EndUserText.label: 'Opis'
   @UI: { lineItem:   [{ position: 20, importance: #HIGH }],
-         fieldGroup: [{ qualifier: 'PrtData', position: 20 }] }
+         fieldGroup: [{ qualifier: 'PrtData', position: 20 }] } 
   Description;
 
   @EndUserText.label: 'Ilość wymagana'

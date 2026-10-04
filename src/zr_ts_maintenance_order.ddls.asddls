@@ -18,6 +18,10 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       Priority,
       FinalDueDate,
       MaintRevision,
+      BasicStartDate,
+      BasicStartTime,
+      BasicFinishDate,
+      BasicFinishTime,
       @EndUserText.label: 'Basic Start Date/Time'
       dats_tims_to_tstmp( BasicStartDate,
                           BasicStartTime,
