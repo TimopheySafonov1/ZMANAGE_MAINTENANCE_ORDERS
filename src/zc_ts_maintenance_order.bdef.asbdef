@@ -1,0 +1,56 @@
+projection;
+strict ( 2 );
+use draft;
+
+define behavior for ZC_TS_MAINTENANCE_ORDER alias MaintenanceOrder
+use etag
+{
+  use create;
+  use update;
+  use delete;
+
+  use action Activate;
+  use action Discard;
+  use action Edit;
+  use action Resume;
+  use action Prepare;
+
+  use association _Operations { create; with draft; }
+  use association _Costs { create; with draft; }
+}
+
+define behavior for ZC_TS_MAINTENANCE_OPERATION alias MaintenanceOperation
+{
+  use update;
+  use delete;
+
+  use association _MaintenanceOrder { with draft; }
+  use association _Components { create; with draft; }
+  use association _PRTs { create; with draft; }
+}
+
+define behavior for ZC_TS_MAINTENANCE_COSTS alias MaintenanceCosts
+{
+  use update;
+  use delete;
+
+  use association _MaintenanceOrder { with draft; }
+}
+
+define behavior for ZC_TS_MAINTENANCE_COMPONENT alias MaintenanceComponent
+{
+  use update;
+  use delete;
+
+  use association _MaintenanceOperation { with draft; }
+  use association _MaintenanceOrder { with draft; }
+}
+
+define behavior for ZC_TS_MAINTENANCE_PRT alias MaintenancePrt
+{
+  use update;
+  use delete;
+
+  use association _MaintenanceOperation { with draft; }
+  use association _MaintenanceOrder { with draft; }
+}
