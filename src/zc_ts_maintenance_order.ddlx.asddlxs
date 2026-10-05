@@ -40,8 +40,6 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
 
   @EndUserText.label: 'Numer zlecenia'
   @UI: { lineItem:       [{ position: 10, importance: #HIGH }],
-         identification: [{ position: 10 }],
-         fieldGroup:     [{ qualifier: 'OrderInformation', position: 10 }],
          selectionField: [{ position: 10 }] }
   OrderId;
 

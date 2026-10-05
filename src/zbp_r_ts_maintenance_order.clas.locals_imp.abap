@@ -2,6 +2,9 @@ CLASS lhc_maintenanceorder DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
     METHODS get_global_authorizations FOR GLOBAL AUTHORIZATION
       IMPORTING REQUEST requested_authorizations FOR MaintenanceOrder RESULT result.
+
+    METHODS setorderid FOR DETERMINE ON SAVE
+      IMPORTING keys FOR MaintenanceOrder~setOrderId.
 ENDCLASS.
 
 CLASS lhc_maintenanceorder IMPLEMENTATION.
@@ -11,6 +14,30 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
                       %update      = if_abap_behv=>auth-allowed
                       %delete      = if_abap_behv=>auth-allowed
                       %action-Edit = if_abap_behv=>auth-allowed ).
+  ENDMETHOD.
+
+  METHOD setorderid.
+    " Order number is drawn only on save, so discarded drafts don't consume numbers
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        FIELDS ( OrderId ) WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+
+    DELETE orders WHERE OrderId IS NOT INITIAL.
+    IF orders IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT SINGLE FROM zts_maint_order
+      FIELDS MAX( order_id )
+      INTO @DATA(max_order_id).
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FIELDS ( OrderId )
+        WITH VALUE #( FOR order IN orders INDEX INTO idx
+                      ( %tky    = order-%tky
+                        OrderId = max_order_id + idx ) ).
   ENDMETHOD.
 ENDCLASS.
 
