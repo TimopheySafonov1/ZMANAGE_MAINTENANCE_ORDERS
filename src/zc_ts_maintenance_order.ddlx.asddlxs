@@ -11,17 +11,28 @@
 annotate entity ZC_TS_MAINTENANCE_ORDER with
 {
   @UI.facet: [
-    { id: 'GeneralInfo',  purpose: #STANDARD, type: #COLLECTION,            label: 'Informacje ogólne', position: 10 },
-    { id: 'BasicData',    parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
-      targetQualifier: 'BasicData',  label: 'Dane podstawowe', position: 10 },
-    { id: 'Scheduling',   parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
-      targetQualifier: 'Scheduling', label: 'Terminy',         position: 20 },
-    { id: 'Costs',        parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
-      targetQualifier: 'Costs',      label: 'Koszty',          position: 30 },
+    /* Szczegóły zlecenia */
+    { id: 'OrderDetails',     purpose: #STANDARD, type: #COLLECTION,
+      label: 'Szczegóły zlecenia', position: 10 },
+    { id: 'OrderInformation', parentId: 'OrderDetails', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'OrderInformation', label: 'Informacje o zleceniu', position: 10 },
+    { id: 'ReferenceObject',  parentId: 'OrderDetails', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'ReferenceObject',  label: 'Obiekt referencyjny',   position: 20 },
+    { id: 'Responsibilities', parentId: 'OrderDetails', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'Responsibilities', label: 'Odpowiedzialności',     position: 30 },
+
+    /* Terminy i koszty */
+    { id: 'DatesAndCosts', purpose: #STANDARD, type: #COLLECTION,
+      label: 'Terminy i koszty', position: 30 },
+    { id: 'Scheduling',    parentId: 'DatesAndCosts', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'Scheduling', label: 'Terminy', position: 10 },
+    { id: 'Costs',         parentId: 'DatesAndCosts', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'Costs',      label: 'Koszty',  position: 20 },
+
     { id: 'Operations',   purpose: #STANDARD, type: #LINEITEM_REFERENCE,
-      targetElement: '_Operations',  label: 'Operacje',        position: 20 },
+      targetElement: '_Operations',  label: 'Operacje',         position: 40 },
     { id: 'CostItems',    purpose: #STANDARD, type: #LINEITEM_REFERENCE,
-      targetElement: '_Costs',       label: 'Pozycje kosztowe', position: 30 }
+      targetElement: '_Costs',       label: 'Pozycje kosztowe', position: 50 }
   ]
 
   @UI.hidden: true
@@ -30,76 +41,76 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @EndUserText.label: 'Numer zlecenia'
   @UI: { lineItem:       [{ position: 10, importance: #HIGH }],
          identification: [{ position: 10 }],
-         fieldGroup:     [{ qualifier: 'BasicData', position: 10 }],
+         fieldGroup:     [{ qualifier: 'OrderInformation', position: 10 }],
          selectionField: [{ position: 10 }] }
   OrderId;
 
   @EndUserText.label: 'Rodzaj zlecenia'
   @UI: { lineItem:       [{ position: 20, importance: #MEDIUM }],
-         fieldGroup:     [{ qualifier: 'BasicData', position: 20 }],
+         fieldGroup:     [{ qualifier: 'OrderInformation', position: 30 }],
          selectionField: [{ position: 20 }] }
   OrderType;
 
-  @EndUserText.label: 'Opis'
+  @EndUserText.label: 'Opis zlecenia'
   @UI: { lineItem:   [{ position: 30, importance: #HIGH }],
-         fieldGroup: [{ qualifier: 'BasicData', position: 30 }] }
+         fieldGroup: [{ qualifier: 'OrderInformation', position: 20 }] }
   Description;
 
   @EndUserText.label: 'Tekst długi'
-  @UI.fieldGroup: [{ qualifier: 'BasicData', position: 40 }]
+  @UI.fieldGroup: [{ qualifier: 'OrderInformation', position: 60 }]
   @UI.multiLineText: true
   LongText;
 
   @EndUserText.label: 'Obiekt techniczny'
   @UI: { lineItem:       [{ position: 40, importance: #MEDIUM }],
-         fieldGroup:     [{ qualifier: 'BasicData', position: 50 }],
+         fieldGroup:     [{ qualifier: 'ReferenceObject', position: 10 }],
          selectionField: [{ position: 30 }] }
   TechObject;
 
   @EndUserText.label: 'Typ obiektu technicznego'
-  @UI.fieldGroup: [{ qualifier: 'BasicData', position: 60 }]
+  @UI.fieldGroup: [{ qualifier: 'ReferenceObject', position: 20 }]
   TechObjType;
 
   @EndUserText.label: 'Zakład planowania'
   @UI: { lineItem:       [{ position: 50, importance: #LOW }],
-         fieldGroup:     [{ qualifier: 'BasicData', position: 70 }],
+         fieldGroup:     [{ qualifier: 'Responsibilities', position: 20 }],
          selectionField: [{ position: 40 }] }
   PlanningPlant;
 
-  @EndUserText.label: 'Stanowisko robocze'
+  @EndUserText.label: 'Główne stanowisko robocze'
   @UI: { lineItem:   [{ position: 60, importance: #LOW }],
-         fieldGroup: [{ qualifier: 'BasicData', position: 80 }] }
+         fieldGroup: [{ qualifier: 'Responsibilities', position: 10 }] }
   WorkCenter;
 
   @EndUserText.label: 'Priorytet'
   @UI: { lineItem:       [{ position: 70, importance: #HIGH }],
-         fieldGroup:     [{ qualifier: 'BasicData', position: 90 }],
+         fieldGroup:     [{ qualifier: 'Scheduling', position: 10 }],
          selectionField: [{ position: 50 }] }
   Priority;
 
   @EndUserText.label: 'Status'
   @UI: { lineItem:       [{ position: 80, importance: #HIGH }],
-         fieldGroup:     [{ qualifier: 'BasicData', position: 100 }],
+         fieldGroup:     [{ qualifier: 'OrderInformation', position: 50 }],
          selectionField: [{ position: 60 }] }
   Status;
 
   @EndUserText.label: 'Rewizja'
-  @UI.fieldGroup: [{ qualifier: 'BasicData', position: 110 }]
+  @UI.fieldGroup: [{ qualifier: 'Scheduling', position: 20 }]
   MaintRevision;
 
   @EndUserText.label: 'Podstawowa data rozpoczęcia'
   @UI: { lineItem:   [{ position: 90, importance: #MEDIUM }],
-         fieldGroup: [{ qualifier: 'Scheduling', position: 10 }] }
+         fieldGroup: [{ qualifier: 'Scheduling', position: 30 }] }
   MaintOrdBasicStartDateTime;
 
   @EndUserText.label: 'Podstawowa data zakończenia'
   @UI: { lineItem:   [{ position: 100, importance: #MEDIUM }],
-         fieldGroup: [{ qualifier: 'Scheduling', position: 20 }] }
+         fieldGroup: [{ qualifier: 'Scheduling', position: 40 }] }
   MaintOrdBasicFinishDateTime;
 
   @EndUserText.label: 'Termin ostateczny'
   @UI: { lineItem:   [{ position: 110, importance: #LOW }],
-         fieldGroup: [{ qualifier: 'Scheduling', position: 30 }] }
+         fieldGroup: [{ qualifier: 'Scheduling', position: 50 }] }
   FinalDueDate;
 
   @EndUserText.label: 'Waluta'
