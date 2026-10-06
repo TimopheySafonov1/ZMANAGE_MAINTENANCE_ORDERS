@@ -18,6 +18,7 @@ define root view entity ZI_TS_MAINTENANCE_ORDER
       work_center           as WorkCenter,
       priority              as Priority,
       final_due_date        as FinalDueDate,
+      final_due_time        as FinalDueTime,
       maint_revision        as MaintRevision,
       basic_start_date      as BasicStartDate,
       basic_start_time      as BasicStartTime,

@@ -109,7 +109,7 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @EndUserText.label: 'Termin ostateczny'
   @UI: { lineItem:   [{ position: 110, importance: #LOW }],
          fieldGroup: [{ qualifier: 'Scheduling', position: 50 }] }
-  FinalDueDate;
+  MaintOrdFinalDueDateTime;
 
   @EndUserText.label: 'Waluta'
   @UI.hidden: true

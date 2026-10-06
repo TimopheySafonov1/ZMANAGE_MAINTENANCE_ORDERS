@@ -44,11 +44,11 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD setbasicdatestimes.
-    " Basic start/finish are edited as timestamps but stored as date + time
+    " Basic start/finish and final due date are edited as timestamps but stored as date + time
     " in the system time zone (the same zone the CDS view uses to build them)
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime ) WITH CORRESPONDING #( keys )
+        FIELDS ( MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime MaintOrdFinalDueDateTime ) WITH CORRESPONDING #( keys )
         RESULT DATA(orders).
 
     SELECT SINGLE FROM ttzcu
@@ -68,11 +68,17 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         CONVERT TIME STAMP order-MaintOrdBasicFinishDateTime TIME ZONE system_time_zone
           INTO DATE <update>-BasicFinishDate TIME <update>-BasicFinishTime.
       ENDIF.
+
+      IF order-MaintOrdFinalDueDateTime IS NOT INITIAL.
+        CONVERT TIME STAMP order-MaintOrdFinalDueDateTime TIME ZONE system_time_zone
+          INTO DATE <update>-FinalDueDate TIME <update>-FinalDueTime.
+      ENDIF.
     ENDLOOP.
 
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        UPDATE FIELDS ( BasicStartDate BasicStartTime BasicFinishDate BasicFinishTime ) WITH updates.
+        UPDATE FIELDS ( BasicStartDate BasicStartTime BasicFinishDate BasicFinishTime
+                         FinalDueDate FinalDueTime ) WITH updates.
   ENDMETHOD.
 ENDCLASS.
 

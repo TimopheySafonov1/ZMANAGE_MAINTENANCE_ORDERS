@@ -20,7 +20,7 @@ authorization master ( global )
   field ( readonly ) OrderId, LocalLastChangedAt, LastChangedAt;
 
   determination setOrderId on save { create; }
-  determination setBasicDatesTimes on modify { field MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime; }
+  determination setBasicDatesTimes on modify { field MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime, MaintOrdFinalDueDateTime; }
 
   draft action Activate optimized;
   draft action Discard;
@@ -41,6 +41,7 @@ authorization master ( global )
       WorkCenter         = work_center;
       Priority           = priority;
       FinalDueDate       = final_due_date;
+      FinalDueTime       = final_due_time;
       MaintRevision      = maint_revision;
       BasicStartDate     = basic_start_date;
       BasicStartTime     = basic_start_time;

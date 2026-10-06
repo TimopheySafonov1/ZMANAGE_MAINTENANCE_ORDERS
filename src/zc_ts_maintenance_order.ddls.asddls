@@ -17,6 +17,7 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       WorkCenter,
       Priority,
       FinalDueDate,
+      FinalDueTime,
       MaintRevision,
       BasicStartDate,
       BasicStartTime,
@@ -24,6 +25,7 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       BasicFinishTime,
       MaintOrdBasicStartDateTime,
       MaintOrdBasicFinishDateTime,
+      MaintOrdFinalDueDateTime,
       Currency,
       @Semantics.amount.currencyCode: 'Currency'
       TotalPlannedCosts,

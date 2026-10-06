@@ -17,6 +17,7 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       WorkCenter,
       Priority,
       FinalDueDate,
+      FinalDueTime,
       MaintRevision,
       BasicStartDate,
       BasicStartTime,
@@ -34,6 +35,12 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
                                 abap_system_timezone( $session.client, 'NULL' ),
                                 $session.client,
                                 'NULL' ) as tzntstmps )  as MaintOrdBasicFinishDateTime,
+      @EndUserText.label: 'Final Due Date/Time'
+      cast( dats_tims_to_tstmp( FinalDueDate,
+                                FinalDueTime,
+                                abap_system_timezone( $session.client, 'NULL' ),
+                                $session.client,
+                                'NULL' ) as tzntstmps )  as MaintOrdFinalDueDateTime,
       Currency,
       @Semantics.amount.currencyCode: 'Currency'
       TotalPlannedCosts,
