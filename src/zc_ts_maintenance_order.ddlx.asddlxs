@@ -3,8 +3,8 @@
   headerInfo: {
     typeName:       'Zlecenie konserwacji',
     typeNamePlural: 'Zlecenia konserwacji',
-    title:          { type: #STANDARD, value: 'OrderId' },
-    description:    { type: #STANDARD, value: 'Description' }
+    title:          { type: #STANDARD, value: 'Description' },
+    description:    { type: #STANDARD, value: 'OrderId' }
   },
   presentationVariant: [{ sortOrder: [{ by: 'OrderId', direction: #DESC }] }]
 }
