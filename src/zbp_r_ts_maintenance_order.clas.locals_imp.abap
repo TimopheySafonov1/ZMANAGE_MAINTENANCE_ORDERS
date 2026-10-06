@@ -45,32 +45,31 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
 
   METHOD setbasicdatestimes.
     " Basic start/finish and final due date are edited as timestamps but stored as date + time
-    " in the system time zone (the same zone the CDS view uses to build them)
+    " in UTC (the same zone ZR_TS_MAINTENANCE_ORDER uses to build them). A fixed zone instead of
+    " the system time zone keeps this ABAP Cloud compatible (TTZCU isn't released there).
+    CONSTANTS stored_time_zone TYPE c LENGTH 6 VALUE 'UTC'.
+
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         FIELDS ( MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime MaintOrdFinalDueDateTime ) WITH CORRESPONDING #( keys )
         RESULT DATA(orders).
-
-    SELECT SINGLE FROM ttzcu
-      FIELDS tzonesys
-      INTO @DATA(system_time_zone).
 
     DATA updates TYPE TABLE FOR UPDATE zr_ts_maintenance_order\\MaintenanceOrder.
     LOOP AT orders INTO DATA(order).
       APPEND VALUE #( %tky = order-%tky ) TO updates ASSIGNING FIELD-SYMBOL(<update>).
 
       IF order-MaintOrdBasicStartDateTime IS NOT INITIAL.
-        CONVERT TIME STAMP order-MaintOrdBasicStartDateTime TIME ZONE system_time_zone
+        CONVERT TIME STAMP order-MaintOrdBasicStartDateTime TIME ZONE stored_time_zone
           INTO DATE <update>-BasicStartDate TIME <update>-BasicStartTime.
       ENDIF.
 
       IF order-MaintOrdBasicFinishDateTime IS NOT INITIAL.
-        CONVERT TIME STAMP order-MaintOrdBasicFinishDateTime TIME ZONE system_time_zone
+        CONVERT TIME STAMP order-MaintOrdBasicFinishDateTime TIME ZONE stored_time_zone
           INTO DATE <update>-BasicFinishDate TIME <update>-BasicFinishTime.
       ENDIF.
 
       IF order-MaintOrdFinalDueDateTime IS NOT INITIAL.
-        CONVERT TIME STAMP order-MaintOrdFinalDueDateTime TIME ZONE system_time_zone
+        CONVERT TIME STAMP order-MaintOrdFinalDueDateTime TIME ZONE stored_time_zone
           INTO DATE <update>-FinalDueDate TIME <update>-FinalDueTime.
       ENDIF.
     ENDLOOP.

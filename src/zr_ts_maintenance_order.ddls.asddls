@@ -24,22 +24,23 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       BasicStartTime,
       BasicFinishDate,
       BasicFinishTime,
+      // Date + time fields are stored in UTC (same zone the behavior class converts to)
       @EndUserText.label: 'Basic Start Date/Time'
       cast( dats_tims_to_tstmp( BasicStartDate,
                                 BasicStartTime,
-                                abap_system_timezone( $session.client, 'NULL' ),
+                                'UTC',
                                 $session.client,
                                 'NULL' ) as tzntstmps )  as MaintOrdBasicStartDateTime,
       @EndUserText.label: 'Basic Finish Date/Time'
       cast( dats_tims_to_tstmp( BasicFinishDate,
                                 BasicFinishTime,
-                                abap_system_timezone( $session.client, 'NULL' ),
+                                'UTC',
                                 $session.client,
                                 'NULL' ) as tzntstmps )  as MaintOrdBasicFinishDateTime,
       @EndUserText.label: 'Final Due Date/Time'
       cast( dats_tims_to_tstmp( FinalDueDate,
                                 FinalDueTime,
-                                abap_system_timezone( $session.client, 'NULL' ),
+                                'UTC',
                                 $session.client,
                                 'NULL' ) as tzntstmps )  as MaintOrdFinalDueDateTime,
       Currency,
