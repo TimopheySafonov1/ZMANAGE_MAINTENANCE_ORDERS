@@ -44,10 +44,16 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   OrderId;
 
   @EndUserText.label: 'Rodzaj zlecenia'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_MAINT_ORDER_TYPE_VH', element: 'MaintenanceOrderType' },
+                                       useForValidation: true }]
+  @UI.textArrangement: #TEXT_FIRST
   @UI: { lineItem:       [{ position: 20, importance: #MEDIUM }],
          fieldGroup:     [{ qualifier: 'OrderInformation', position: 30 }],
          selectionField: [{ position: 20 }] }
   OrderType;
+
+  @UI.hidden: true
+  OrderTypeName;
 
   @EndUserText.label: 'Opis zlecenia'
   @UI: { lineItem:   [{ position: 30, importance: #HIGH }],

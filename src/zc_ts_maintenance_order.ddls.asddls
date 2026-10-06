@@ -8,7 +8,9 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
 {
   key OrderUuid,
       OrderId,
+      @ObjectModel.text.element: [ 'OrderTypeName' ]
       OrderType,
+      _OrderType.MaintenanceOrderTypeName as OrderTypeName,
       Description,
       LongText,
       TechObject,

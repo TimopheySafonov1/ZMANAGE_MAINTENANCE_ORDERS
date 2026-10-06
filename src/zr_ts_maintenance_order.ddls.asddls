@@ -5,6 +5,7 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
   as select from ZI_TS_MAINTENANCE_ORDER
   composition [0..*] of ZR_TS_MAINTENANCE_OPERATION as _Operations
   composition [0..*] of ZR_TS_MAINTENANCE_COSTS     as _Costs
+  association [0..1] to ZC_TS_MAINT_ORDER_TYPE_VH   as _OrderType on $projection.OrderType = _OrderType.MaintenanceOrderType
 {
   key OrderUuid,
       OrderId,
@@ -52,5 +53,6 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       @Semantics.systemDateTime.lastChangedAt: true
       LastChangedAt,
       _Operations,
-      _Costs
+      _Costs,
+      _OrderType
 }
