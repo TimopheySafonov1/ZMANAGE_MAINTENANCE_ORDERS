@@ -5,6 +5,9 @@ CLASS lhc_maintenanceorder DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS setorderid FOR DETERMINE ON SAVE
       IMPORTING keys FOR MaintenanceOrder~setOrderId.
+
+    METHODS setbasicdatestimes FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOrder~setBasicDatesTimes.
 ENDCLASS.
 
 CLASS lhc_maintenanceorder IMPLEMENTATION.
@@ -38,6 +41,38 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         WITH VALUE #( FOR order IN orders INDEX INTO idx
                       ( %tky    = order-%tky
                         OrderId = max_order_id + idx ) ).
+  ENDMETHOD.
+
+  METHOD setbasicdatestimes.
+    " Basic start/finish are edited as timestamps but stored as date + time
+    " in the system time zone (the same zone the CDS view uses to build them)
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        FIELDS ( MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime ) WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+
+    SELECT SINGLE FROM ttzcu
+      FIELDS tzonesys
+      INTO @DATA(system_time_zone).
+
+    DATA updates TYPE TABLE FOR UPDATE zr_ts_maintenance_order\\MaintenanceOrder.
+    LOOP AT orders INTO DATA(order).
+      APPEND VALUE #( %tky = order-%tky ) TO updates ASSIGNING FIELD-SYMBOL(<update>).
+
+      IF order-MaintOrdBasicStartDateTime IS NOT INITIAL.
+        CONVERT TIME STAMP order-MaintOrdBasicStartDateTime TIME ZONE system_time_zone
+          INTO DATE <update>-BasicStartDate TIME <update>-BasicStartTime.
+      ENDIF.
+
+      IF order-MaintOrdBasicFinishDateTime IS NOT INITIAL.
+        CONVERT TIME STAMP order-MaintOrdBasicFinishDateTime TIME ZONE system_time_zone
+          INTO DATE <update>-BasicFinishDate TIME <update>-BasicFinishTime.
+      ENDIF.
+    ENDLOOP.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FIELDS ( BasicStartDate BasicStartTime BasicFinishDate BasicFinishTime ) WITH updates.
   ENDMETHOD.
 ENDCLASS.
 

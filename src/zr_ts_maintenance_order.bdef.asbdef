@@ -17,10 +17,10 @@ authorization master ( global )
   association _Costs { create; with draft; }
 
   field ( numbering : managed, readonly ) OrderUuid;
-  field ( readonly ) OrderId, MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime,
-                     LocalLastChangedAt, LastChangedAt;
+  field ( readonly ) OrderId, LocalLastChangedAt, LastChangedAt;
 
   determination setOrderId on save { create; }
+  determination setBasicDatesTimes on modify { field MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime; }
 
   draft action Activate optimized;
   draft action Discard;
