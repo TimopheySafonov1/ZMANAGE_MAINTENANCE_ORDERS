@@ -17,32 +17,13 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       PlanningPlant,
       WorkCenter,
       Priority,
-      FinalDueDate,
-      FinalDueTime,
-      MaintRevision,
-      BasicStartDate,
-      BasicStartTime,
-      BasicFinishDate,
-      BasicFinishTime,
-      // Date + time fields are stored in UTC (same zone the behavior class converts to)
-      @EndUserText.label: 'Basic Start Date/Time'
-      cast( dats_tims_to_tstmp( BasicStartDate,
-                                BasicStartTime,
-                                'UTC',
-                                $session.client,
-                                'NULL' ) as tzntstmps )  as MaintOrdBasicStartDateTime,
-      @EndUserText.label: 'Basic Finish Date/Time'
-      cast( dats_tims_to_tstmp( BasicFinishDate,
-                                BasicFinishTime,
-                                'UTC',
-                                $session.client,
-                                'NULL' ) as tzntstmps )  as MaintOrdBasicFinishDateTime,
       @EndUserText.label: 'Final Due Date/Time'
-      cast( dats_tims_to_tstmp( FinalDueDate,
-                                FinalDueTime,
-                                'UTC',
-                                $session.client,
-                                'NULL' ) as tzntstmps )  as MaintOrdFinalDueDateTime,
+      MaintOrdFinalDueDateTime,
+      MaintRevision,
+      @EndUserText.label: 'Basic Start Date/Time'
+      MaintOrdBasicStartDateTime,
+      @EndUserText.label: 'Basic Finish Date/Time'
+      MaintOrdBasicFinishDateTime,
       Currency,
       @Semantics.amount.currencyCode: 'Currency'
       TotalPlannedCosts,

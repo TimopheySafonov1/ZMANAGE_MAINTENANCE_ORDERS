@@ -5,9 +5,6 @@ CLASS lhc_maintenanceorder DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS setorderid FOR DETERMINE ON SAVE
       IMPORTING keys FOR MaintenanceOrder~setOrderId.
-
-    METHODS setbasicdatestimes FOR DETERMINE ON MODIFY
-      IMPORTING keys FOR MaintenanceOrder~setBasicDatesTimes.
 ENDCLASS.
 
 CLASS lhc_maintenanceorder IMPLEMENTATION.
@@ -41,43 +38,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         WITH VALUE #( FOR order IN orders INDEX INTO idx
                       ( %tky    = order-%tky
                         OrderId = max_order_id + idx ) ).
-  ENDMETHOD.
-
-  METHOD setbasicdatestimes.
-    " Basic start/finish and final due date are edited as timestamps but stored as date + time
-    " in UTC (the same zone ZR_TS_MAINTENANCE_ORDER uses to build them). A fixed zone instead of
-    " the system time zone keeps this ABAP Cloud compatible (TTZCU isn't released there).
-    CONSTANTS stored_time_zone TYPE c LENGTH 6 VALUE 'UTC'.
-
-    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
-      ENTITY MaintenanceOrder
-        FIELDS ( MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime MaintOrdFinalDueDateTime ) WITH CORRESPONDING #( keys )
-        RESULT DATA(orders).
-
-    DATA updates TYPE TABLE FOR UPDATE zr_ts_maintenance_order\\MaintenanceOrder.
-    LOOP AT orders INTO DATA(order).
-      APPEND VALUE #( %tky = order-%tky ) TO updates ASSIGNING FIELD-SYMBOL(<update>).
-
-      IF order-MaintOrdBasicStartDateTime IS NOT INITIAL.
-        CONVERT TIME STAMP order-MaintOrdBasicStartDateTime TIME ZONE stored_time_zone
-          INTO DATE <update>-BasicStartDate TIME <update>-BasicStartTime.
-      ENDIF.
-
-      IF order-MaintOrdBasicFinishDateTime IS NOT INITIAL.
-        CONVERT TIME STAMP order-MaintOrdBasicFinishDateTime TIME ZONE stored_time_zone
-          INTO DATE <update>-BasicFinishDate TIME <update>-BasicFinishTime.
-      ENDIF.
-
-      IF order-MaintOrdFinalDueDateTime IS NOT INITIAL.
-        CONVERT TIME STAMP order-MaintOrdFinalDueDateTime TIME ZONE stored_time_zone
-          INTO DATE <update>-FinalDueDate TIME <update>-FinalDueTime.
-      ENDIF.
-    ENDLOOP.
-
-    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
-      ENTITY MaintenanceOrder
-        UPDATE FIELDS ( BasicStartDate BasicStartTime BasicFinishDate BasicFinishTime
-                         FinalDueDate FinalDueTime ) WITH updates.
   ENDMETHOD.
 ENDCLASS.
 
