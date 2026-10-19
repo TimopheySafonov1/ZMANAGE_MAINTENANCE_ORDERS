@@ -27,10 +27,11 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       TotalPlannedCosts,
       @Semantics.amount.currencyCode: 'Currency'
       TotalActualCosts,
-      Status,
       LocalLastChangedAt,
       LastChangedAt,
       /* Associations */
       _Operations : redirected to composition child ZC_TS_MAINTENANCE_OPERATION,
-      _Costs      : redirected to composition child ZC_TS_MAINTENANCE_COSTS
+      _Costs      : redirected to composition child ZC_TS_MAINTENANCE_COSTS,
+      // Status rows live in their own table and are read-only through the order
+      _Status
 }

@@ -26,7 +26,6 @@ define root view entity ZI_TS_MAINTENANCE_ORDER
       total_planned_costs   as TotalPlannedCosts,
       @Semantics.amount.currencyCode: 'Currency'
       total_actual_costs    as TotalActualCosts,
-      status                as Status,
       @Semantics.systemDateTime.localInstanceLastChangedAt: true
       local_last_changed_at as LocalLastChangedAt,
       @Semantics.systemDateTime.lastChangedAt: true

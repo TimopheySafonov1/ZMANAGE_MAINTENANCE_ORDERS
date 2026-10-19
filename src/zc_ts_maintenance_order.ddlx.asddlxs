@@ -32,7 +32,9 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
     { id: 'Operations',   purpose: #STANDARD, type: #LINEITEM_REFERENCE,
       targetElement: '_Operations',  label: 'Operacje',         position: 40 },
     { id: 'CostItems',    purpose: #STANDARD, type: #LINEITEM_REFERENCE,
-      targetElement: '_Costs',       label: 'Pozycje kosztowe', position: 50 }
+      targetElement: '_Costs',       label: 'Pozycje kosztowe', position: 50 },
+    { id: 'Status',       purpose: #STANDARD, type: #LINEITEM_REFERENCE,
+      targetElement: '_Status',      label: 'Status',           position: 60 }
   ]
 
   @UI.hidden: true
@@ -91,12 +93,6 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
          fieldGroup:     [{ qualifier: 'Scheduling', position: 10 }],
          selectionField: [{ position: 50 }] }
   Priority;
-
-  @EndUserText.label: 'Status'
-  @UI: { lineItem:       [{ position: 80, importance: #HIGH }],
-         fieldGroup:     [{ qualifier: 'OrderInformation', position: 50 }],
-         selectionField: [{ position: 60 }] }
-  Status;
 
   @EndUserText.label: 'Rewizja'
   @UI.fieldGroup: [{ qualifier: 'Scheduling', position: 20 }]

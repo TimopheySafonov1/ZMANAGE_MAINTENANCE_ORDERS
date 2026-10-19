@@ -46,7 +46,6 @@ authorization master ( global )
       Currency                    = currency;
       TotalPlannedCosts           = total_planned_costs;
       TotalActualCosts            = total_actual_costs;
-      Status                      = status;
       LocalLastChangedAt          = local_last_changed_at;
       LastChangedAt               = last_changed_at;
     }

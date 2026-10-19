@@ -6,6 +6,7 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
   composition [0..*] of ZR_TS_MAINTENANCE_OPERATION as _Operations
   composition [0..*] of ZR_TS_MAINTENANCE_COSTS     as _Costs
   association [0..1] to ZC_TS_MAINT_ORDER_TYPE_VH   as _OrderType on $projection.OrderType = _OrderType.MaintenanceOrderType
+  association [0..*] to ZC_TS_MAINT_ORDER_STATUS    as _Status    on $projection.OrderUuid = _Status.OrderUuid
 {
   key OrderUuid,
       OrderId,
@@ -29,12 +30,12 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       TotalPlannedCosts,
       @Semantics.amount.currencyCode: 'Currency'
       TotalActualCosts,
-      Status,
       @Semantics.systemDateTime.localInstanceLastChangedAt: true
       LocalLastChangedAt,
       @Semantics.systemDateTime.lastChangedAt: true
       LastChangedAt,
       _Operations,
       _Costs,
-      _OrderType
+      _OrderType,
+      _Status
 }
