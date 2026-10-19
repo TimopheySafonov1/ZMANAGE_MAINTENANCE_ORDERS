@@ -5,8 +5,9 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
   as select from ZI_TS_MAINTENANCE_ORDER
   composition [0..*] of ZR_TS_MAINTENANCE_OPERATION as _Operations
   composition [0..*] of ZR_TS_MAINTENANCE_COSTS     as _Costs
-  association [0..1] to ZC_TS_MAINT_ORDER_TYPE_VH   as _OrderType on $projection.OrderType = _OrderType.MaintenanceOrderType
-  association [0..*] to ZC_TS_MAINT_ORDER_STATUS    as _Status    on $projection.OrderUuid = _Status.OrderUuid
+  association [0..1] to ZC_TS_MAINT_ORDER_TYPE_VH   as _OrderType     on $projection.OrderType = _OrderType.MaintenanceOrderType
+  association [0..1] to ZC_TS_PLANT_VH              as _PlanningPlant on $projection.PlanningPlant = _PlanningPlant.Plant
+  association [0..*] to ZC_TS_MAINT_ORDER_STATUS    as _Status        on $projection.OrderUuid = _Status.OrderUuid
 {
   key OrderUuid,
       OrderId,
@@ -37,5 +38,6 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       _Operations,
       _Costs,
       _OrderType,
+      _PlanningPlant,
       _Status
 }

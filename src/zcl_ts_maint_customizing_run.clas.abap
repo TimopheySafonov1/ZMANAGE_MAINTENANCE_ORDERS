@@ -12,9 +12,11 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
     CONSTANTS:
       BEGIN OF delete,
         maint_order_types TYPE abap_bool VALUE abap_true,
+        plants            TYPE abap_bool VALUE abap_true,
       END OF delete,
       BEGIN OF fill,
         maint_order_types TYPE abap_bool VALUE abap_true,
+        plants            TYPE abap_bool VALUE abap_true,
       END OF fill.
     " ----------------------------------------------------------------------
 
@@ -24,8 +26,16 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->delete_maint_order_types( ) ).
     ENDIF.
 
+    IF delete-plants = abap_true.
+      out->write( customizing->delete_plants( ) ).
+    ENDIF.
+
     IF fill-maint_order_types = abap_true.
       out->write( customizing->fill_maint_order_types( ) ).
+    ENDIF.
+
+    IF fill-plants = abap_true.
+      out->write( customizing->fill_plants( ) ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.

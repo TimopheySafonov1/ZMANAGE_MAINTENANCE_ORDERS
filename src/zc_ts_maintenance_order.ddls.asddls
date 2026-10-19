@@ -15,7 +15,13 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       LongText,
       TechObject,
       TechObjType,
+      @ObjectModel.text.element: [ 'PlanningPlantName' ]
+      @UI.textArrangement: #TEXT_FIRST
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PLANT_VH', element: 'Plant' },
+                                           useForValidation: true }]
       PlanningPlant,
+      @UI.hidden: true
+      _PlanningPlant.PlantName            as PlanningPlantName,
       WorkCenter,
       Priority,
       MaintRevision,

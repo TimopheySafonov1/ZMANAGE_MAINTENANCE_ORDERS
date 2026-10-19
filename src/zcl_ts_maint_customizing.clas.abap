@@ -11,6 +11,15 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     "! Deletes all maintenance order types and all their texts (every language)
     METHODS delete_maint_order_types
       RETURNING VALUE(result) TYPE string.
+
+    "! Plants (ZTS_PLANT) and their names (ZTS_PLANT_T) in EN and PL.
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_plants
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all plants and all their names (every language)
+    METHODS delete_plants
+      RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS zcl_ts_maint_customizing IMPLEMENTATION.
@@ -42,6 +51,48 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA(deleted_types) = sy-dbcnt.
 
     result = |Order types deleted: { deleted_types } types, { deleted_texts } texts|.
+  ENDMETHOD.
+
+  METHOD fill_plants.
+    DATA plants TYPE STANDARD TABLE OF zts_plant WITH EMPTY KEY.
+    DATA texts  TYPE STANDARD TABLE OF zts_plant_t WITH EMPTY KEY.
+
+    plants = VALUE #( ( plant = '0001' )
+                      ( plant = '0002' )
+                      ( plant = '0003' )
+                      ( plant = '0004' )
+                      ( plant = '0005' )
+                      ( plant = '0006' ) ).
+
+    " Language keys: E = English, L = Polish
+    texts = VALUE #( ( language = 'E' plant = '0001' plant_name = 'Warsaw Plant' )
+                     ( language = 'L' plant = '0001' plant_name = 'Zakład Warszawski' )
+                     ( language = 'E' plant = '0002' plant_name = 'Krakow Plant' )
+                     ( language = 'L' plant = '0002' plant_name = 'Zakład Krakowski' )
+                     ( language = 'E' plant = '0003' plant_name = 'Gdansk Plant' )
+                     ( language = 'L' plant = '0003' plant_name = 'Zakład Gdański' )
+                     ( language = 'E' plant = '0004' plant_name = 'Wroclaw Plant' )
+                     ( language = 'L' plant = '0004' plant_name = 'Zakład Wrocławski' )
+                     ( language = 'E' plant = '0005' plant_name = 'Poznan Plant' )
+                     ( language = 'L' plant = '0005' plant_name = 'Zakład Poznański' )
+                     ( language = 'E' plant = '0006' plant_name = 'Lodz Plant' )
+                     ( language = 'L' plant = '0006' plant_name = 'Zakład Łódzki' ) ).
+
+    " The plant table has only key fields, so it can't be MODIFYed - insert and skip existing ones
+    INSERT zts_plant FROM TABLE @plants ACCEPTING DUPLICATE KEYS.
+    MODIFY zts_plant_t FROM TABLE @texts.
+
+    result = |Plants filled: { lines( plants ) } plants, { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_plants.
+    DELETE FROM zts_plant_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_plant.
+    DATA(deleted_plants) = sy-dbcnt.
+
+    result = |Plants deleted: { deleted_plants } plants, { deleted_texts } texts|.
   ENDMETHOD.
 ENDCLASS.
 
