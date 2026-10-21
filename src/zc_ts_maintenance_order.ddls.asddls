@@ -33,7 +33,13 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       WorkCenter,
       @UI.hidden: true
       _WorkCenter.WorkCenterText          as WorkCenterText,
+      @ObjectModel.text.element: [ 'PriorityName' ]
+      @UI.textArrangement: #TEXT_FIRST
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PRIORITY_VH', element: 'Priority' },
+                                           useForValidation: true }]
       Priority,
+      @UI.hidden: true
+      _Priority.PriorityName              as PriorityName,
       MaintRevision,
       MaintOrdBasicStartDateTime,
       MaintOrdBasicFinishDateTime,

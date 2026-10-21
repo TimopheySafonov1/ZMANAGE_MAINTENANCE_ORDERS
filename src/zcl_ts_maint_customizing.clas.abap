@@ -39,6 +39,15 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     "! Deletes all work centers and all their texts (every language)
     METHODS delete_work_centers
       RETURNING VALUE(result) TYPE string.
+
+    "! Maintenance order priorities (ZTS_PRIORITY) and their texts (ZTS_PRIORITY_T) in EN and PL.
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_priorities
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all priorities and all their texts (every language)
+    METHODS delete_priorities
+      RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS zcl_ts_maint_customizing IMPLEMENTATION.
@@ -200,6 +209,42 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA(deleted_work_centers) = sy-dbcnt.
 
     result = |Work centers deleted: { deleted_work_centers } work centers, { deleted_texts } texts|.
+  ENDMETHOD.
+
+  METHOD fill_priorities.
+    DATA priorities TYPE STANDARD TABLE OF zts_priority WITH EMPTY KEY.
+    DATA texts      TYPE STANDARD TABLE OF zts_priority_t WITH EMPTY KEY.
+
+    priorities = VALUE #( ( priority = '1' )
+                          ( priority = '2' )
+                          ( priority = '3' )
+                          ( priority = '4' ) ).
+
+    " Language keys: E = English, L = Polish
+    texts = VALUE #( ( language = 'E' priority = '1' priority_name = 'Very High' )
+                     ( language = 'L' priority = '1' priority_name = 'Bardzo wysoki' )
+                     ( language = 'E' priority = '2' priority_name = 'High' )
+                     ( language = 'L' priority = '2' priority_name = 'Wysoki' )
+                     ( language = 'E' priority = '3' priority_name = 'Medium' )
+                     ( language = 'L' priority = '3' priority_name = 'Średni' )
+                     ( language = 'E' priority = '4' priority_name = 'Low' )
+                     ( language = 'L' priority = '4' priority_name = 'Niski' ) ).
+
+    " The priority table has only key fields, so it can't be MODIFYed - insert and skip existing ones
+    INSERT zts_priority FROM TABLE @priorities ACCEPTING DUPLICATE KEYS.
+    MODIFY zts_priority_t FROM TABLE @texts.
+
+    result = |Priorities filled: { lines( priorities ) } priorities, { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_priorities.
+    DELETE FROM zts_priority_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_priority.
+    DATA(deleted_priorities) = sy-dbcnt.
+
+    result = |Priorities deleted: { deleted_priorities } priorities, { deleted_texts } texts|.
   ENDMETHOD.
 ENDCLASS.
 

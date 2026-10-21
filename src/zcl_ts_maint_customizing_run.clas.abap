@@ -15,17 +15,20 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         plants                 TYPE abap_bool VALUE abap_true,
         work_center_categories TYPE abap_bool VALUE abap_true,
         work_centers           TYPE abap_bool VALUE abap_true,
+        priorities             TYPE abap_bool VALUE abap_true,
       END OF delete,
       BEGIN OF fill,
         maint_order_types      TYPE abap_bool VALUE abap_true,
         plants                 TYPE abap_bool VALUE abap_true,
         work_center_categories TYPE abap_bool VALUE abap_true,
         work_centers           TYPE abap_bool VALUE abap_true,
+        priorities             TYPE abap_bool VALUE abap_true,
       END OF fill.
     " ----------------------------------------------------------------------
 
     DATA(customizing) = NEW zcl_ts_maint_customizing( ).
 
+    " Deletes first, so a table that is both deleted and filled ends up with fresh content
     IF delete-maint_order_types = abap_true.
       out->write( customizing->delete_maint_order_types( ) ).
     ENDIF.
@@ -42,6 +45,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->delete_work_centers( ) ).
     ENDIF.
 
+    IF delete-priorities = abap_true.
+      out->write( customizing->delete_priorities( ) ).
+    ENDIF.
+
     IF fill-maint_order_types = abap_true.
       out->write( customizing->fill_maint_order_types( ) ).
     ENDIF.
@@ -56,6 +63,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
 
     IF fill-work_centers = abap_true.
       out->write( customizing->fill_work_centers( ) ).
+    ENDIF.
+
+    IF fill-priorities = abap_true.
+      out->write( customizing->fill_priorities( ) ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
