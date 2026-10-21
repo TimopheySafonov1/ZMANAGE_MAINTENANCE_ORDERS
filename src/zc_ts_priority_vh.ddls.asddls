@@ -13,10 +13,10 @@ define view entity ZC_TS_PRIORITY_VH
       @UI.textArrangement: #TEXT_FIRST
       @UI.lineItem: [{ position: 10 }]
       @UI.selectionField: [{ position: 10 }]
-      @EndUserText.label: 'Priority'
+      @EndUserText.label: 'Priorytet'
   key Priority,
       @Search: { defaultSearchElement: true, ranking: #HIGH, fuzzinessThreshold: 0.8 }
       @Semantics.text: true
-      @EndUserText.label: 'Priority Text'
+      @EndUserText.label: 'Tekst priorytetu'
       _Text[1: Language = $session.system_language].PriorityName as PriorityName
 }

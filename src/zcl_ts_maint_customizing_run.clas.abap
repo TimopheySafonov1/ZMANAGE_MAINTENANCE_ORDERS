@@ -16,6 +16,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         work_center_categories TYPE abap_bool VALUE abap_true,
         work_centers           TYPE abap_bool VALUE abap_true,
         priorities             TYPE abap_bool VALUE abap_true,
+        revisions              TYPE abap_bool VALUE abap_true,
       END OF delete,
       BEGIN OF fill,
         maint_order_types      TYPE abap_bool VALUE abap_true,
@@ -23,6 +24,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         work_center_categories TYPE abap_bool VALUE abap_true,
         work_centers           TYPE abap_bool VALUE abap_true,
         priorities             TYPE abap_bool VALUE abap_true,
+        revisions              TYPE abap_bool VALUE abap_true,
       END OF fill.
     " ----------------------------------------------------------------------
 
@@ -49,6 +51,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->delete_priorities( ) ).
     ENDIF.
 
+    IF delete-revisions = abap_true.
+      out->write( customizing->delete_revisions( ) ).
+    ENDIF.
+
     IF fill-maint_order_types = abap_true.
       out->write( customizing->fill_maint_order_types( ) ).
     ENDIF.
@@ -67,6 +73,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
 
     IF fill-priorities = abap_true.
       out->write( customizing->fill_priorities( ) ).
+    ENDIF.
+
+    IF fill-revisions = abap_true.
+      out->write( customizing->fill_revisions( ) ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.

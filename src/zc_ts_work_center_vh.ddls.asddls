@@ -12,26 +12,26 @@ define view entity ZC_TS_WORK_CENTER_VH
       @ObjectModel.text.element: [ 'WorkCenterText' ]
       @UI.lineItem: [{ position: 10 }]
       @UI.selectionField: [{ position: 10 }]
-      @EndUserText.label: 'Work Center'
+      @EndUserText.label: 'Gniazdo robocze'
   key WorkCenter,
       @UI.lineItem: [{ position: 20 }]
       @UI.selectionField: [{ position: 30 }]
-      @EndUserText.label: 'Plant'
+      @EndUserText.label: 'Zakład'
   key Plant,
       @Search: { defaultSearchElement: true, ranking: #HIGH, fuzzinessThreshold: 0.8 }
       @Semantics.text: true
       @UI.lineItem: [{ position: 30 }]
       @UI.selectionField: [{ position: 20 }]
-      @EndUserText.label: 'Work Center Text'
+      @EndUserText.label: 'Tekst gniazda roboczego'
       _Text[1: Language = $session.system_language].WorkCenterText                as WorkCenterText,
       @ObjectModel.text.element: [ 'WorkCenterCategoryName' ]
       @UI.lineItem: [{ position: 40 }]
       @UI.selectionField: [{ position: 40 }]
-      @EndUserText.label: 'Work Center Category'
+      @EndUserText.label: 'Kategoria gniazda roboczego'
       WorkCenterCategory,
       @Semantics.text: true
       @UI.lineItem: [{ position: 50 }]
       @UI.selectionField: [{ position: 50 }]
-      @EndUserText.label: 'Category Name'
+      @EndUserText.label: 'Nazwa kategorii'
       _Category._Text[1: Language = $session.system_language].WorkCenterCategoryName as WorkCenterCategoryName
 }

@@ -10,6 +10,8 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
   association [0..1] to ZC_TS_WORK_CENTER_VH        as _WorkCenter    on  $projection.PlanningPlant = _WorkCenter.Plant
                                                                       and $projection.WorkCenter    = _WorkCenter.WorkCenter
   association [0..1] to ZC_TS_PRIORITY_VH           as _Priority      on $projection.Priority = _Priority.Priority
+  association [0..1] to ZC_TS_REVISION_VH           as _MaintRevision on  $projection.PlanningPlant = _MaintRevision.Plant
+                                                                      and $projection.MaintRevision = _MaintRevision.MaintenanceRevision
   association [0..*] to ZC_TS_MAINT_ORDER_STATUS    as _Status        on $projection.OrderUuid = _Status.OrderUuid
 {
   key OrderUuid,
@@ -44,5 +46,6 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       _PlanningPlant,
       _WorkCenter,
       _Priority,
+      _MaintRevision,
       _Status
 }

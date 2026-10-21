@@ -40,7 +40,17 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       Priority,
       @UI.hidden: true
       _Priority.PriorityName              as PriorityName,
+      @ObjectModel.text.element: [ 'MaintRevisionText' ]
+      @UI.textArrangement: #TEXT_FIRST
+      // Only revisions of the order's planning plant are offered; picking one fills the plant
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_REVISION_VH', element: 'MaintenanceRevision' },
+                                           additionalBinding: [{ localElement: 'PlanningPlant',
+                                                                 element: 'Plant',
+                                                                 usage: #FILTER_AND_RESULT }],
+                                           useForValidation: true }]
       MaintRevision,
+      @UI.hidden: true
+      _MaintRevision.MaintenanceRevisionText as MaintRevisionText,
       MaintOrdBasicStartDateTime,
       MaintOrdBasicFinishDateTime,
       MaintOrdFinalDueDateTime,

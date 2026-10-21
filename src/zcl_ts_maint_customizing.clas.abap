@@ -48,6 +48,16 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     "! Deletes all priorities and all their texts (every language)
     METHODS delete_priorities
       RETURNING VALUE(result) TYPE string.
+
+    "! Maintenance revisions (ZTS_REVISION) and their texts (ZTS_REVISION_T) in EN and PL.
+    "! The same set of revisions is created in every plant of ZTS_PLANT, so fill the plants first.
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_revisions
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all maintenance revisions and all their texts (every language)
+    METHODS delete_revisions
+      RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS zcl_ts_maint_customizing IMPLEMENTATION.
@@ -245,6 +255,80 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA(deleted_priorities) = sy-dbcnt.
 
     result = |Priorities deleted: { deleted_priorities } priorities, { deleted_texts } texts|.
+  ENDMETHOD.
+
+  METHOD fill_revisions.
+    TYPES: BEGIN OF revision_template,
+             revision      TYPE zts_revision-revision,
+             revision_type TYPE zts_revision-revision_type,
+             start_date    TYPE d,
+             start_time    TYPE t,
+             end_date      TYPE d,
+             end_time      TYPE t,
+             text_en       TYPE zts_revision_t-revision_text,
+             text_pl       TYPE zts_revision_t-revision_text,
+           END OF revision_template,
+           revision_templates TYPE STANDARD TABLE OF revision_template WITH EMPTY KEY.
+
+    DATA revisions      TYPE STANDARD TABLE OF zts_revision WITH EMPTY KEY.
+    DATA texts          TYPE STANDARD TABLE OF zts_revision_t WITH EMPTY KEY.
+    DATA revision_start TYPE utclong.
+    DATA revision_end   TYPE utclong.
+
+    " Templates without a plant - they are copied into every plant below
+    " Revision types: SD = Shutdown, IN = Inspection, OH = Overhaul
+    DATA(templates) = VALUE revision_templates(
+        ( revision = '00000001' revision_type = 'SD'
+          start_date = '20260302' start_time = '060000' end_date = '20260309' end_time = '180000'
+          text_en = 'Spring shutdown 2026'   text_pl = 'Postój wiosenny 2026' )
+        ( revision = '00000002' revision_type = 'IN'
+          start_date = '20260615' start_time = '070000' end_date = '20260617' end_time = '150000'
+          text_en = 'Summer inspection 2026' text_pl = 'Przegląd letni 2026' )
+        ( revision = '00000003' revision_type = 'OH'
+          start_date = '20260907' start_time = '060000' end_date = '20260920' end_time = '180000'
+          text_en = 'Annual overhaul 2026'   text_pl = 'Remont roczny 2026' )
+        ( revision = '00000004' revision_type = 'SD'
+          start_date = '20261123' start_time = '060000' end_date = '20261127' end_time = '180000'
+          text_en = 'Autumn shutdown 2026'   text_pl = 'Postój jesienny 2026' )
+        ( revision = '00000005' revision_type = 'IN'
+          start_date = '20270208' start_time = '070000' end_date = '20270210' end_time = '150000'
+          text_en = 'Winter inspection 2027' text_pl = 'Przegląd zimowy 2027' ) ).
+
+    SELECT plant FROM zts_plant INTO TABLE @DATA(plants).
+
+    LOOP AT plants INTO DATA(plant).
+      LOOP AT templates INTO DATA(template).
+        CONVERT DATE template-start_date TIME template-start_time INTO UTCLONG revision_start TIME ZONE 'UTC'.
+        CONVERT DATE template-end_date TIME template-end_time INTO UTCLONG revision_end TIME ZONE 'UTC'.
+
+        APPEND VALUE #( plant          = plant-plant
+                        revision       = template-revision
+                        revision_type  = template-revision_type
+                        start_date     = template-start_date
+                        end_date       = template-end_date
+                        revision_start = revision_start
+                        revision_end   = revision_end ) TO revisions.
+
+        " Language keys: E = English, L = Polish
+        APPEND VALUE #( language = 'E' plant = plant-plant revision = template-revision revision_text = template-text_en ) TO texts.
+        APPEND VALUE #( language = 'L' plant = plant-plant revision = template-revision revision_text = template-text_pl ) TO texts.
+      ENDLOOP.
+    ENDLOOP.
+
+    MODIFY zts_revision FROM TABLE @revisions.
+    MODIFY zts_revision_t FROM TABLE @texts.
+
+    result = |Revisions filled: { lines( revisions ) } revisions in { lines( plants ) } plants, { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_revisions.
+    DELETE FROM zts_revision_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_revision.
+    DATA(deleted_revisions) = sy-dbcnt.
+
+    result = |Revisions deleted: { deleted_revisions } revisions, { deleted_texts } texts|.
   ENDMETHOD.
 ENDCLASS.
 
