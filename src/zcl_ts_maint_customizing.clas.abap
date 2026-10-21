@@ -20,6 +20,25 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     "! Deletes all plants and all their names (every language)
     METHODS delete_plants
       RETURNING VALUE(result) TYPE string.
+
+    "! Work center categories (ZTS_WC_CAT) and their names (ZTS_WC_CAT_T) in EN and PL.
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_work_center_categories
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all work center categories and all their names (every language)
+    METHODS delete_work_center_categories
+      RETURNING VALUE(result) TYPE string.
+
+    "! Work centers (ZTS_WORKCEN) and their texts (ZTS_WORKCEN_T) in EN and PL.
+    "! The same set of work centers is created in every plant of ZTS_PLANT, so fill the plants first.
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_work_centers
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all work centers and all their texts (every language)
+    METHODS delete_work_centers
+      RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS zcl_ts_maint_customizing IMPLEMENTATION.
@@ -93,6 +112,94 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA(deleted_plants) = sy-dbcnt.
 
     result = |Plants deleted: { deleted_plants } plants, { deleted_texts } texts|.
+  ENDMETHOD.
+
+  METHOD fill_work_center_categories.
+    DATA categories TYPE STANDARD TABLE OF zts_wc_cat WITH EMPTY KEY.
+    DATA texts      TYPE STANDARD TABLE OF zts_wc_cat_t WITH EMPTY KEY.
+
+    categories = VALUE #( ( category = '0001' )
+                          ( category = '0005' ) ).
+
+    " Language keys: E = English, L = Polish
+    texts = VALUE #( ( language = 'E' category = '0001' category_name = 'Production' )
+                     ( language = 'L' category = '0001' category_name = 'Produkcja' )
+                     ( language = 'E' category = '0005' category_name = 'Plant Maintenance' )
+                     ( language = 'L' category = '0005' category_name = 'Utrzymanie ruchu' ) ).
+
+    " The category table has only key fields, so it can't be MODIFYed - insert and skip existing ones
+    INSERT zts_wc_cat FROM TABLE @categories ACCEPTING DUPLICATE KEYS.
+    MODIFY zts_wc_cat_t FROM TABLE @texts.
+
+    result = |Work center categories filled: { lines( categories ) } categories, { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_work_center_categories.
+    DELETE FROM zts_wc_cat_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_wc_cat.
+    DATA(deleted_categories) = sy-dbcnt.
+
+    result = |Work center categories deleted: { deleted_categories } categories, { deleted_texts } texts|.
+  ENDMETHOD.
+
+  METHOD fill_work_centers.
+    DATA work_center_template TYPE STANDARD TABLE OF zts_workcen WITH EMPTY KEY.
+    DATA text_template        TYPE STANDARD TABLE OF zts_workcen_t WITH EMPTY KEY.
+    DATA work_centers         TYPE STANDARD TABLE OF zts_workcen WITH EMPTY KEY.
+    DATA texts                TYPE STANDARD TABLE OF zts_workcen_t WITH EMPTY KEY.
+
+    " Templates without a plant - they are copied into every plant below
+    work_center_template = VALUE #( ( work_center = 'MECH'     category = '0005' )
+                                    ( work_center = 'ELEC'     category = '0005' )
+                                    ( work_center = 'INST'     category = '0005' )
+                                    ( work_center = 'HVAC'     category = '0005' )
+                                    ( work_center = 'ASSEMBLY' category = '0001' )
+                                    ( work_center = 'WELDING'  category = '0001' ) ).
+
+    " Language keys: E = English, L = Polish
+    text_template = VALUE #( ( language = 'E' work_center = 'MECH'     work_center_text = 'Mechanics' )
+                             ( language = 'L' work_center = 'MECH'     work_center_text = 'Mechanika' )
+                             ( language = 'E' work_center = 'ELEC'     work_center_text = 'Electric' )
+                             ( language = 'L' work_center = 'ELEC'     work_center_text = 'Elektryka' )
+                             ( language = 'E' work_center = 'INST'     work_center_text = 'Instrumentation' )
+                             ( language = 'L' work_center = 'INST'     work_center_text = 'Aparatura kontrolno-pomiarowa' )
+                             ( language = 'E' work_center = 'HVAC'     work_center_text = 'HVAC' )
+                             ( language = 'L' work_center = 'HVAC'     work_center_text = 'Wentylacja i klimatyzacja' )
+                             ( language = 'E' work_center = 'ASSEMBLY' work_center_text = 'Assembly' )
+                             ( language = 'L' work_center = 'ASSEMBLY' work_center_text = 'Montaż' )
+                             ( language = 'E' work_center = 'WELDING'  work_center_text = 'Welding' )
+                             ( language = 'L' work_center = 'WELDING'  work_center_text = 'Spawalnia' ) ).
+
+    SELECT plant FROM zts_plant INTO TABLE @DATA(plants).
+
+    LOOP AT plants INTO DATA(plant).
+      LOOP AT work_center_template INTO DATA(work_center).
+        work_center-plant = plant-plant.
+        APPEND work_center TO work_centers.
+      ENDLOOP.
+
+      LOOP AT text_template INTO DATA(text).
+        text-plant = plant-plant.
+        APPEND text TO texts.
+      ENDLOOP.
+    ENDLOOP.
+
+    MODIFY zts_workcen FROM TABLE @work_centers.
+    MODIFY zts_workcen_t FROM TABLE @texts.
+
+    result = |Work centers filled: { lines( work_centers ) } work centers in { lines( plants ) } plants, { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_work_centers.
+    DELETE FROM zts_workcen_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_workcen.
+    DATA(deleted_work_centers) = sy-dbcnt.
+
+    result = |Work centers deleted: { deleted_work_centers } work centers, { deleted_texts } texts|.
   ENDMETHOD.
 ENDCLASS.
 

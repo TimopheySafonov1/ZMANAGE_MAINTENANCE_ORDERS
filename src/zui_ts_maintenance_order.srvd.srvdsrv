@@ -8,4 +8,5 @@ define service ZUI_TS_MAINTENANCE_ORDER {
   expose ZC_TS_MAINT_ORDER_STATUS    as MaintenanceOrderStatus;
   expose ZC_TS_MAINT_ORDER_TYPE_VH   as MaintenanceOrderTypeVH;
   expose ZC_TS_PLANT_VH              as PlantVH;
+  expose ZC_TS_WORK_CENTER_VH        as WorkCenterVH;
 }

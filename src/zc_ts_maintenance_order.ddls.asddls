@@ -22,7 +22,17 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       PlanningPlant,
       @UI.hidden: true
       _PlanningPlant.PlantName            as PlanningPlantName,
+      @ObjectModel.text.element: [ 'WorkCenterText' ]
+      @UI.textArrangement: #TEXT_FIRST
+      // Only work centers of the order's planning plant are offered; picking one fills the plant
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_WORK_CENTER_VH', element: 'WorkCenter' },
+                                           additionalBinding: [{ localElement: 'PlanningPlant',
+                                                                 element: 'Plant',
+                                                                 usage: #FILTER_AND_RESULT }],
+                                           useForValidation: true }]
       WorkCenter,
+      @UI.hidden: true
+      _WorkCenter.WorkCenterText          as WorkCenterText,
       Priority,
       MaintRevision,
       MaintOrdBasicStartDateTime,
