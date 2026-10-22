@@ -6,6 +6,7 @@ define view entity ZR_TS_MAINTENANCE_OPERATION
   association to parent ZR_TS_MAINTENANCE_ORDER as _MaintenanceOrder on $projection.OrderUuid = _MaintenanceOrder.OrderUuid
   composition [0..*] of ZR_TS_MAINTENANCE_COMPONENT as _Components
   composition [0..*] of ZR_TS_MAINTENANCE_PRT       as _PRTs
+  association [0..1] to ZI_TS_RESP_PERSON           as _PersonResp on $projection.PersonResp = _PersonResp.PersonResp
 {
   key OperationUuid,
       OrderUuid,
@@ -30,5 +31,6 @@ define view entity ZR_TS_MAINTENANCE_OPERATION
       ActualFinish,
       _MaintenanceOrder,
       _Components,
-      _PRTs
+      _PRTs,
+      _PersonResp
 }

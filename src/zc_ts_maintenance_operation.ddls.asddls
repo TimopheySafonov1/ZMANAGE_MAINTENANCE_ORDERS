@@ -9,7 +9,13 @@ define view entity ZC_TS_MAINTENANCE_OPERATION
       OrderUuid,
       OperationId,
       Description,
+      @ObjectModel.text.element: [ 'PersonRespName' ]
+      @UI.textArrangement: #TEXT_FIRST
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_RESPONSIBLE_PERSON_VH', element: 'PersonResp' },
+                                           useForValidation: true }]
       PersonResp,
+      @UI.hidden: true
+      _PersonResp.FullName as PersonRespName,
       PlannedWorkUnit,
       PlannedDurationUnit,
       ActualWorkUnit,

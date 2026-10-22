@@ -58,6 +58,15 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     "! Deletes all maintenance revisions and all their texts (every language)
     METHODS delete_revisions
       RETURNING VALUE(result) TYPE string.
+
+    "! Demo responsible persons (ZTS_RESP_PERSON) with Polish names and job titles.
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_responsible_persons
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all responsible persons
+    METHODS delete_responsible_persons
+      RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS zcl_ts_maint_customizing IMPLEMENTATION.
@@ -329,6 +338,32 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA(deleted_revisions) = sy-dbcnt.
 
     result = |Revisions deleted: { deleted_revisions } revisions, { deleted_texts } texts|.
+  ENDMETHOD.
+
+  METHOD fill_responsible_persons.
+    DATA persons TYPE STANDARD TABLE OF zts_resp_person WITH EMPTY KEY.
+
+    " Demo people only - names and job titles are in Polish, there is no translation
+    persons = VALUE #( ( person_resp = '1'  first_name = 'Jan'       last_name = 'Kowalski'     job_title = 'Kierownik utrzymania ruchu' )
+                       ( person_resp = '2'  first_name = 'Anna'      last_name = 'Nowak'        job_title = 'Planista utrzymania ruchu' )
+                       ( person_resp = '3'  first_name = 'Piotr'     last_name = 'Wiśniewski'   job_title = 'Mechanik' )
+                       ( person_resp = '4'  first_name = 'Katarzyna' last_name = 'Wójcik'       job_title = 'Inżynier niezawodności' )
+                       ( person_resp = '5'  first_name = 'Tomasz'    last_name = 'Kowalczyk'    job_title = 'Elektryk' )
+                       ( person_resp = '6'  first_name = 'Magdalena' last_name = 'Kamińska'     job_title = 'Automatyk' )
+                       ( person_resp = '7'  first_name = 'Marek'     last_name = 'Lewandowski'  job_title = 'Brygadzista' )
+                       ( person_resp = '8'  first_name = 'Agnieszka' last_name = 'Zielińska'    job_title = 'Technik HVAC' )
+                       ( person_resp = '9'  first_name = 'Krzysztof' last_name = 'Szymański'    job_title = 'Spawacz' )
+                       ( person_resp = '10' first_name = 'Ewa'       last_name = 'Dąbrowska'    job_title = 'Specjalista ds. BHP' ) ).
+
+    MODIFY zts_resp_person FROM TABLE @persons.
+
+    result = |Responsible persons filled: { lines( persons ) } persons, IDs { persons[ 1 ]-person_resp }-{ persons[ lines( persons ) ]-person_resp }|.
+  ENDMETHOD.
+
+  METHOD delete_responsible_persons.
+    DELETE FROM zts_resp_person.
+
+    result = |Responsible persons deleted: { sy-dbcnt } persons|.
   ENDMETHOD.
 ENDCLASS.
 
