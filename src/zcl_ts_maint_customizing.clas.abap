@@ -67,6 +67,15 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     "! Deletes all responsible persons
     METHODS delete_responsible_persons
       RETURNING VALUE(result) TYPE string.
+
+    "! Time units for work and duration (ZTS_TIME_UNIT) with Polish names.
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_time_units
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all time units
+    METHODS delete_time_units
+      RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS zcl_ts_maint_customizing IMPLEMENTATION.
@@ -357,13 +366,34 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
 
     MODIFY zts_resp_person FROM TABLE @persons.
 
-    result = |Responsible persons filled: { lines( persons ) } persons, IDs { persons[ 1 ]-person_resp }-{ persons[ lines( persons ) ]-person_resp }|.
+    result = |Responsible persons filled: { lines( persons ) } persons, IDs { persons[ 1 ]-person_resp ALPHA = OUT }-{ persons[ lines( persons ) ]-person_resp ALPHA = OUT }|.
   ENDMETHOD.
 
   METHOD delete_responsible_persons.
     DELETE FROM zts_resp_person.
 
     result = |Responsible persons deleted: { sy-dbcnt } persons|.
+  ENDMETHOD.
+
+  METHOD fill_time_units.
+    DATA time_units TYPE STANDARD TABLE OF zts_time_unit WITH EMPTY KEY.
+
+    " SAP internal unit codes (T006); names are in Polish only, there is no translation
+    time_units = VALUE #( ( time_unit = 'MIN' unit_name = 'Minuta' )
+                          ( time_unit = 'H'   unit_name = 'Godzina' )
+                          ( time_unit = 'TAG' unit_name = 'Dzień' )
+                          ( time_unit = 'WCH' unit_name = 'Tydzień' )
+                          ( time_unit = 'MON' unit_name = 'Miesiąc' ) ).
+
+    MODIFY zts_time_unit FROM TABLE @time_units.
+
+    result = |Time units filled: { lines( time_units ) } units|.
+  ENDMETHOD.
+
+  METHOD delete_time_units.
+    DELETE FROM zts_time_unit.
+
+    result = |Time units deleted: { sy-dbcnt } units|.
   ENDMETHOD.
 ENDCLASS.
 

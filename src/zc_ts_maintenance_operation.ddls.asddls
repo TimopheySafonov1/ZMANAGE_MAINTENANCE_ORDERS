@@ -16,9 +16,18 @@ define view entity ZC_TS_MAINTENANCE_OPERATION
       PersonResp,
       @UI.hidden: true
       _PersonResp.FullName as PersonRespName,
+      // Work and duration are times, so only the time units of ZTS_TIME_UNIT are offered
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TIME_UNIT_VH', element: 'TimeUnit' },
+                                           useForValidation: true }]
       PlannedWorkUnit,
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TIME_UNIT_VH', element: 'TimeUnit' },
+                                           useForValidation: true }]
       PlannedDurationUnit,
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TIME_UNIT_VH', element: 'TimeUnit' },
+                                           useForValidation: true }]
       ActualWorkUnit,
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TIME_UNIT_VH', element: 'TimeUnit' },
+                                           useForValidation: true }]
       ActualDurationUnit,
       @Semantics.quantity.unitOfMeasure: 'PlannedWorkUnit'
       PlannedWork,

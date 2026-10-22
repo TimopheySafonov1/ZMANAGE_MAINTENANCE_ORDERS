@@ -11,7 +11,8 @@
 annotate entity ZC_TS_MAINTENANCE_OPERATION with
 {
   @UI.facet: [
-    { id: 'GeneralInfo', purpose: #STANDARD, type: #COLLECTION,             label: 'Informacje ogólne', position: 10 },
+    { id: 'GeneralInfo', purpose: #STANDARD, type: #COLLECTION,
+      label: 'Informacje ogólne', position: 10 },
     { id: 'BasicData',   parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
       targetQualifier: 'BasicData', label: 'Dane podstawowe', position: 10 },
     { id: 'Work',        parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
@@ -56,7 +57,7 @@ annotate entity ZC_TS_MAINTENANCE_OPERATION with
   PlannedWorkUnit;
 
   @EndUserText.label: 'Planowany czas trwania'
-  @UI: { lineItem:   [{ position: 50, importance: #LOW }],
+  @UI: { lineItem:   [{ position: 50, importance: #MEDIUM }],
          fieldGroup: [{ qualifier: 'Work', position: 20 }] }
   PlannedWorkDuration;
 
@@ -74,7 +75,7 @@ annotate entity ZC_TS_MAINTENANCE_OPERATION with
   ActualWorkUnit;
 
   @EndUserText.label: 'Rzeczywisty czas trwania'
-  @UI: { lineItem:   [{ position: 70, importance: #LOW }],
+  @UI: { lineItem:   [{ position: 70, importance: #MEDIUM }],
          fieldGroup: [{ qualifier: 'Work', position: 40 }] }
   ActualWorkDuration;
 
