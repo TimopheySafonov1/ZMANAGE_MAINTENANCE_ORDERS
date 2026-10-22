@@ -65,7 +65,9 @@ authorization dependent by _MaintenanceOrder
   association _PRTs { create; with draft; }
 
   field ( numbering : managed, readonly ) OperationUuid;
-  field ( readonly ) OrderUuid;
+  field ( readonly ) OrderUuid, OperationId;
+
+  determination setOperationId on modify { create; }
 
   mapping for zts_maint_operat
     {

@@ -3,8 +3,8 @@
   headerInfo: {
     typeName:       'Operacja',
     typeNamePlural: 'Operacje',
-    title:          { type: #STANDARD, value: 'OperationId' },
-    description:    { type: #STANDARD, value: 'Description' }
+    title:       { type: #STANDARD, value: 'Description' },
+    description: { type: #STANDARD, value: 'OperationId' }
   },
   presentationVariant: [{ sortOrder: [{ by: 'OperationId', direction: #ASC }] }]
 }

@@ -41,6 +41,65 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   ENDMETHOD.
 ENDCLASS.
 
+CLASS lhc_maintenanceoperation DEFINITION INHERITING FROM cl_abap_behavior_handler.
+  PRIVATE SECTION.
+    METHODS setoperationid FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOperation~setOperationId.
+ENDCLASS.
+
+CLASS lhc_maintenanceoperation IMPLEMENTATION.
+  METHOD setoperationid.
+    " Operations are numbered 1, 2, 3 ... per order right on create, so the number is visible in the draft
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        FIELDS ( OrderUuid OperationId ) WITH CORRESPONDING #( keys )
+        RESULT DATA(new_operations).
+
+    DELETE new_operations WHERE OperationId IS NOT INITIAL.
+    IF new_operations IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " The orders of the new operations - draft or active, the same as the operations
+    DATA orders TYPE TABLE FOR READ IMPORT zr_ts_maintenance_order\\MaintenanceOrder\_Operations.
+    LOOP AT new_operations INTO DATA(new_operation).
+      IF NOT line_exists( orders[ KEY id %is_draft = new_operation-%is_draft OrderUuid = new_operation-OrderUuid ] ).
+        APPEND VALUE #( %is_draft = new_operation-%is_draft
+                        OrderUuid = new_operation-OrderUuid ) TO orders.
+      ENDIF.
+    ENDLOOP.
+
+    " All operations of these orders, including the new ones (their number is still 0)
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder BY \_Operations
+        FIELDS ( OrderUuid OperationId ) WITH orders
+        RESULT DATA(all_operations).
+
+    DATA updates      TYPE TABLE FOR UPDATE zr_ts_maintenance_order\\MaintenanceOperation.
+    DATA operation_id TYPE i.
+
+    LOOP AT orders INTO DATA(order).
+      " Continue after the highest number already used in the order
+      operation_id = 0.
+      LOOP AT all_operations INTO DATA(existing)
+           WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid.
+        operation_id = nmax( val1 = operation_id val2 = CONV i( existing-OperationId ) ).
+      ENDLOOP.
+
+      LOOP AT new_operations INTO new_operation
+           WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid.
+        operation_id += 1.
+        APPEND VALUE #( %tky        = new_operation-%tky
+                        OperationId = operation_id ) TO updates.
+      ENDLOOP.
+    ENDLOOP.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        UPDATE FIELDS ( OperationId ) WITH updates.
+  ENDMETHOD.
+ENDCLASS.
+
 CLASS lhc_maintenancecomponent DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
     METHODS setorderuuid FOR DETERMINE ON MODIFY
