@@ -106,6 +106,26 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     "! Deletes all units of measure, all dimensions and all their texts (every language)
     METHODS delete_units_of_measure
       RETURNING VALUE(result) TYPE string.
+
+    "! Storage locations (ZTS_STOR_LOC) with Polish names (ZTS_STOR_LOC_T).
+    "! The same set of storage locations is created in every plant of ZTS_PLANT, so fill the plants first.
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_storage_locations
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all storage locations and all their names (every language)
+    METHODS delete_storage_locations
+      RETURNING VALUE(result) TYPE string.
+
+    "! Demo stock (ZTS_COMP_STOCK) of every component in every storage location, in the component's unit.
+    "! Non-stock components (item category N) get zero stock. Fill components and storage locations first.
+    "! Existing entries are overwritten, so it can be re-run safely.
+    METHODS fill_component_stock
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all component stock
+    METHODS delete_component_stock
+      RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS zcl_ts_maint_customizing IMPLEMENTATION.
@@ -579,6 +599,98 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA(deleted_dimensions) = sy-dbcnt.
 
     result = |Units of measure deleted: { deleted_units } units, { deleted_dimensions } dimensions, { deleted_texts } texts|.
+  ENDMETHOD.
+
+  METHOD fill_storage_locations.
+    TYPES: BEGIN OF storage_loc_template,
+             storage_loc TYPE zts_stor_loc-storage_loc,
+             name        TYPE zts_stor_loc_t-storage_loc_name,
+           END OF storage_loc_template,
+           storage_loc_templates TYPE STANDARD TABLE OF storage_loc_template WITH EMPTY KEY.
+
+    DATA storage_locs TYPE STANDARD TABLE OF zts_stor_loc WITH EMPTY KEY.
+    DATA texts        TYPE STANDARD TABLE OF zts_stor_loc_t WITH EMPTY KEY.
+
+    " Templates without a plant - they are copied into every plant below
+    DATA(templates) = VALUE storage_loc_templates( ( storage_loc = '0001' name = 'Magazyn główny' )
+                                                   ( storage_loc = '0002' name = 'Magazyn części zamiennych' )
+                                                   ( storage_loc = '0003' name = 'Magazyn olejów i smarów' )
+                                                   ( storage_loc = '0004' name = 'Magazyn warsztatowy' ) ).
+
+    SELECT plant FROM zts_plant INTO TABLE @DATA(plants).
+
+    LOOP AT plants INTO DATA(plant).
+      LOOP AT templates INTO DATA(template).
+        APPEND VALUE #( plant = plant-plant storage_loc = template-storage_loc ) TO storage_locs.
+
+        " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
+        APPEND VALUE #( language = 'E' plant = plant-plant storage_loc = template-storage_loc
+                        storage_loc_name = template-name ) TO texts.
+        APPEND VALUE #( language = 'L' plant = plant-plant storage_loc = template-storage_loc
+                        storage_loc_name = template-name ) TO texts.
+      ENDLOOP.
+    ENDLOOP.
+
+    " The storage location table has only key fields, so it can't be MODIFYed - insert and skip existing ones
+    INSERT zts_stor_loc FROM TABLE @storage_locs ACCEPTING DUPLICATE KEYS.
+    MODIFY zts_stor_loc_t FROM TABLE @texts.
+
+    result = |Storage locations filled: { lines( storage_locs ) } storage locations in { lines( plants ) } plants, | &&
+             |{ lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_storage_locations.
+    DELETE FROM zts_stor_loc_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_stor_loc.
+    DATA(deleted_storage_locs) = sy-dbcnt.
+
+    result = |Storage locations deleted: { deleted_storage_locs } storage locations, { deleted_texts } texts|.
+  ENDMETHOD.
+
+  METHOD fill_component_stock.
+    DATA stock TYPE STANDARD TABLE OF zts_comp_stock WITH EMPTY KEY.
+
+    SELECT component, item_category, uom FROM zts_component ORDER BY component INTO TABLE @DATA(components).
+    SELECT plant, storage_loc FROM zts_stor_loc ORDER BY plant, storage_loc INTO TABLE @DATA(storage_locs).
+
+    LOOP AT components INTO DATA(component).
+      DATA(component_index) = sy-tabix.
+
+      LOOP AT storage_locs INTO DATA(storage_loc).
+        DATA(storage_loc_index) = sy-tabix.
+
+        " Made-up but repeatable quantities: some locations are empty, a few hold consignment stock.
+        " Non-stock components (N) are bought for the order directly, so they have no stock anywhere.
+        DATA(unrestricted) = COND i( WHEN component-item_category = 'N'
+                                       OR ( component_index + storage_loc_index ) MOD 4 = 0
+                                     THEN 0
+                                     ELSE ( component_index * 37 + storage_loc_index * 11 ) MOD 200 + 5 ).
+        DATA(consignment) = COND i( WHEN component-item_category = 'N'
+                                      OR ( component_index * storage_loc_index ) MOD 5 <> 0
+                                    THEN 0
+                                    ELSE 25 ).
+
+        APPEND VALUE #( component          = component-component
+                        plant              = storage_loc-plant
+                        storage_loc        = storage_loc-storage_loc
+                        uom                = component-uom
+                        unrestricted_stock = unrestricted
+                        consignment_stock  = consignment ) TO stock.
+      ENDLOOP.
+    ENDLOOP.
+
+    MODIFY zts_comp_stock FROM TABLE @stock.
+
+    result = |Component stock filled: { lines( stock ) } entries for { lines( components ) } components | &&
+             |in { lines( storage_locs ) } storage locations|.
+  ENDMETHOD.
+
+  METHOD delete_component_stock.
+    DELETE FROM zts_comp_stock.
+
+    result = |Component stock deleted: { sy-dbcnt } entries|.
   ENDMETHOD.
 ENDCLASS.
 

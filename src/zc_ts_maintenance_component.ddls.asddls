@@ -27,6 +27,11 @@ define view entity ZC_TS_MAINTENANCE_COMPONENT
       Uom,
       @Semantics.quantity.unitOfMeasure: 'Uom'
       ReqQuantity,
+      // Storage locations with the stock of the chosen component (all storage locations without a component)
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_STOR_LOC_VH', element: 'StorageLoc' },
+                                           additionalBinding: [{ localElement: 'ComponentId',
+                                                                 element: 'Component',
+                                                                 usage: #FILTER }] }]
       StorageLoc,
       /* Associations */
       _MaintenanceOperation : redirected to parent ZC_TS_MAINTENANCE_OPERATION,

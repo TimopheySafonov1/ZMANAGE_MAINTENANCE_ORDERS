@@ -22,6 +22,8 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         item_categories        TYPE abap_bool VALUE abap_true,
         components             TYPE abap_bool VALUE abap_true,
         units_of_measure       TYPE abap_bool VALUE abap_true,
+        storage_locations      TYPE abap_bool VALUE abap_true,
+        component_stock        TYPE abap_bool VALUE abap_true,
       END OF delete,
       BEGIN OF fill,
         maint_order_types      TYPE abap_bool VALUE abap_true,
@@ -35,6 +37,8 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         item_categories        TYPE abap_bool VALUE abap_true,
         components             TYPE abap_bool VALUE abap_true,
         units_of_measure       TYPE abap_bool VALUE abap_true,
+        storage_locations      TYPE abap_bool VALUE abap_true,
+        component_stock        TYPE abap_bool VALUE abap_true,
       END OF fill.
     " ----------------------------------------------------------------------
 
@@ -85,6 +89,14 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->delete_units_of_measure( ) ).
     ENDIF.
 
+    IF delete-storage_locations = abap_true.
+      out->write( customizing->delete_storage_locations( ) ).
+    ENDIF.
+
+    IF delete-component_stock = abap_true.
+      out->write( customizing->delete_component_stock( ) ).
+    ENDIF.
+
     IF fill-maint_order_types = abap_true.
       out->write( customizing->fill_maint_order_types( ) ).
     ENDIF.
@@ -117,17 +129,26 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->fill_time_units( ) ).
     ENDIF.
 
-    " Item categories before components - components refer to them
+    " Item categories and units before components - components refer to them
     IF fill-item_categories = abap_true.
       out->write( customizing->fill_item_categories( ) ).
+    ENDIF.
+
+    IF fill-units_of_measure = abap_true.
+      out->write( customizing->fill_units_of_measure( ) ).
     ENDIF.
 
     IF fill-components = abap_true.
       out->write( customizing->fill_components( ) ).
     ENDIF.
 
-    IF fill-units_of_measure = abap_true.
-      out->write( customizing->fill_units_of_measure( ) ).
+    " Stock last - it is built from the components and the storage locations of every plant
+    IF fill-storage_locations = abap_true.
+      out->write( customizing->fill_storage_locations( ) ).
+    ENDIF.
+
+    IF fill-component_stock = abap_true.
+      out->write( customizing->fill_component_stock( ) ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
