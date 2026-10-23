@@ -8,6 +8,9 @@ define view entity ZC_TS_MAINTENANCE_COMPONENT
   key ComponentUuid,
       OperationUuid,
       OrderUuid,
+      // Description is read-only and filled by the setDescription determination (side effect refreshes it)
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_COMPONENT_VH', element: 'Component' },
+                                           useForValidation: true }]
       ComponentId,
       Description,
       ItemCategory,

@@ -76,6 +76,15 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     "! Deletes all time units
     METHODS delete_time_units
       RETURNING VALUE(result) TYPE string.
+
+    "! Components / spare parts (ZTS_COMPONENT, codes CZxxx = część zamienna) with Polish names
+    "! in ZTS_COMPONENT_T. Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_components
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all components and all their texts (every language)
+    METHODS delete_components
+      RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS zcl_ts_maint_customizing IMPLEMENTATION.
@@ -394,6 +403,46 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DELETE FROM zts_time_unit.
 
     result = |Time units deleted: { sy-dbcnt } units|.
+  ENDMETHOD.
+
+  METHOD fill_components.
+    DATA components TYPE STANDARD TABLE OF zts_component WITH EMPTY KEY.
+    DATA texts      TYPE STANDARD TABLE OF zts_component_t WITH EMPTY KEY.
+
+    " CZ = część zamienna (spare part)
+    DATA(polish_names) = VALUE string_table( ( `Łożysko` )
+                                             ( `Uszczelka` )
+                                             ( `Pasek klinowy` )
+                                             ( `Filtr oleju` )
+                                             ( `Olej hydrauliczny` )
+                                             ( `Bezpiecznik` )
+                                             ( `Stycznik` )
+                                             ( `Czujnik ciśnienia` ) ).
+
+    LOOP AT polish_names INTO DATA(polish_name).
+      DATA(component) = CONV zts_component-component( |CZ{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
+      APPEND VALUE #( component = component ) TO components.
+
+      " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
+      APPEND VALUE #( language = 'E' component = component component_text = polish_name ) TO texts.
+      APPEND VALUE #( language = 'L' component = component component_text = polish_name ) TO texts.
+    ENDLOOP.
+
+    " The component table has only key fields, so it can't be MODIFYed - insert and skip existing ones
+    INSERT zts_component FROM TABLE @components ACCEPTING DUPLICATE KEYS.
+    MODIFY zts_component_t FROM TABLE @texts.
+
+    result = |Components filled: { lines( components ) } components, { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_components.
+    DELETE FROM zts_component_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_component.
+    DATA(deleted_components) = sy-dbcnt.
+
+    result = |Components deleted: { deleted_components } components, { deleted_texts } texts|.
   ENDMETHOD.
 ENDCLASS.
 

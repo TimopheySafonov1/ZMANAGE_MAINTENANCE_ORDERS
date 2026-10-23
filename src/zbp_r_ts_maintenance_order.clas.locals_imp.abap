@@ -102,11 +102,31 @@ ENDCLASS.
 
 CLASS lhc_maintenancecomponent DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      IMPORTING keys REQUEST requested_features FOR MaintenanceComponent RESULT result.
+
     METHODS setorderuuid FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceComponent~setOrderUuid.
+
+    METHODS setdescription FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceComponent~setDescription.
 ENDCLASS.
 
 CLASS lhc_maintenancecomponent IMPLEMENTATION.
+  METHOD get_instance_features.
+    " Without a component the description is free text; with one it is the component's text
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceComponent
+        FIELDS ( ComponentId ) WITH CORRESPONDING #( keys )
+        RESULT DATA(components).
+
+    result = VALUE #( FOR component IN components
+                      ( %tky                 = component-%tky
+                        %field-Description = COND #( WHEN component-ComponentId IS INITIAL
+                                                       THEN if_abap_behv=>fc-f-unrestricted
+                                                       ELSE if_abap_behv=>fc-f-read_only ) ) ).
+  ENDMETHOD.
+
   METHOD setorderuuid.
     " OrderUuid is not stored on the component - take it from the parent operation
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
@@ -125,6 +145,33 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
         UPDATE FIELDS ( OrderUuid ) WITH updates.
+  ENDMETHOD.
+
+  METHOD setdescription.
+    " Runs only when ComponentId changes, so a description typed without a component is never touched
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceComponent
+        FIELDS ( ComponentId ) WITH CORRESPONDING #( keys )
+        RESULT DATA(components).
+
+    IF components IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT FROM zts_component_t
+      FIELDS component, component_text
+      FOR ALL ENTRIES IN @components
+      WHERE component = @components-ComponentId
+        AND language  = @sy-langu
+      INTO TABLE @DATA(texts).
+
+    " Component removed or unknown - the old component text is cleared, the field becomes editable again
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceComponent
+        UPDATE FIELDS ( Description )
+        WITH VALUE #( FOR component IN components
+                      ( %tky        = component-%tky
+                        Description = VALUE #( texts[ component = component-ComponentId ]-component_text OPTIONAL ) ) ).
   ENDMETHOD.
 ENDCLASS.
 
