@@ -77,8 +77,19 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS delete_time_units
       RETURNING VALUE(result) TYPE string.
 
-    "! Components / spare parts (ZTS_COMPONENT, codes CZxxx = część zamienna) with Polish names
-    "! in ZTS_COMPONENT_T. Existing entries are kept or overwritten, so it can be re-run safely.
+    "! Component item categories (ZTS_ITEM_CAT) with Polish names in ZTS_ITEM_CAT_T:
+    "! L = stock item, N = non-stock item (the SAP PM item category codes).
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_item_categories
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all item categories and all their texts (every language)
+    METHODS delete_item_categories
+      RETURNING VALUE(result) TYPE string.
+
+    "! Components / spare parts (ZTS_COMPONENT, codes CZxxx = część zamienna) with their item category
+    "! and Polish names in ZTS_COMPONENT_T. Fill the item categories first.
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_components
       RETURNING VALUE(result) TYPE string.
 
@@ -405,31 +416,66 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     result = |Time units deleted: { sy-dbcnt } units|.
   ENDMETHOD.
 
+  METHOD fill_item_categories.
+    DATA item_categories TYPE STANDARD TABLE OF zts_item_cat WITH EMPTY KEY.
+    DATA texts           TYPE STANDARD TABLE OF zts_item_cat_t WITH EMPTY KEY.
+
+    item_categories = VALUE #( ( item_category = 'L' )
+                               ( item_category = 'N' ) ).
+
+    " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
+    texts = VALUE #( ( language = 'E' item_category = 'L' item_category_name = 'Magazynowa' )
+                     ( language = 'L' item_category = 'L' item_category_name = 'Magazynowa' )
+                     ( language = 'E' item_category = 'N' item_category_name = 'Niemagazynowa' )
+                     ( language = 'L' item_category = 'N' item_category_name = 'Niemagazynowa' ) ).
+
+    " The item category table has only key fields, so it can't be MODIFYed - insert and skip existing ones
+    INSERT zts_item_cat FROM TABLE @item_categories ACCEPTING DUPLICATE KEYS.
+    MODIFY zts_item_cat_t FROM TABLE @texts.
+
+    result = |Item categories filled: { lines( item_categories ) } categories, { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_item_categories.
+    DELETE FROM zts_item_cat_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_item_cat.
+    DATA(deleted_categories) = sy-dbcnt.
+
+    result = |Item categories deleted: { deleted_categories } categories, { deleted_texts } texts|.
+  ENDMETHOD.
+
   METHOD fill_components.
+    TYPES: BEGIN OF component_template,
+             item_category TYPE zts_component-item_category,
+             name          TYPE zts_component_t-component_text,
+           END OF component_template,
+           component_templates TYPE STANDARD TABLE OF component_template WITH EMPTY KEY.
+
     DATA components TYPE STANDARD TABLE OF zts_component WITH EMPTY KEY.
     DATA texts      TYPE STANDARD TABLE OF zts_component_t WITH EMPTY KEY.
 
-    " CZ = część zamienna (spare part)
-    DATA(polish_names) = VALUE string_table( ( `Łożysko` )
-                                             ( `Uszczelka` )
-                                             ( `Pasek klinowy` )
-                                             ( `Filtr oleju` )
-                                             ( `Olej hydrauliczny` )
-                                             ( `Bezpiecznik` )
-                                             ( `Stycznik` )
-                                             ( `Czujnik ciśnienia` ) ).
+    " CZ = część zamienna (spare part); item category L = magazynowa, N = niemagazynowa
+    DATA(templates) = VALUE component_templates( ( item_category = 'L' name = 'Łożysko' )
+                                                 ( item_category = 'L' name = 'Uszczelka' )
+                                                 ( item_category = 'L' name = 'Pasek klinowy' )
+                                                 ( item_category = 'L' name = 'Filtr oleju' )
+                                                 ( item_category = 'N' name = 'Olej hydrauliczny' )
+                                                 ( item_category = 'L' name = 'Bezpiecznik' )
+                                                 ( item_category = 'N' name = 'Stycznik' )
+                                                 ( item_category = 'N' name = 'Czujnik ciśnienia' ) ).
 
-    LOOP AT polish_names INTO DATA(polish_name).
+    LOOP AT templates INTO DATA(template).
       DATA(component) = CONV zts_component-component( |CZ{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
-      APPEND VALUE #( component = component ) TO components.
+      APPEND VALUE #( component = component item_category = template-item_category ) TO components.
 
       " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
-      APPEND VALUE #( language = 'E' component = component component_text = polish_name ) TO texts.
-      APPEND VALUE #( language = 'L' component = component component_text = polish_name ) TO texts.
+      APPEND VALUE #( language = 'E' component = component component_text = template-name ) TO texts.
+      APPEND VALUE #( language = 'L' component = component component_text = template-name ) TO texts.
     ENDLOOP.
 
-    " The component table has only key fields, so it can't be MODIFYed - insert and skip existing ones
-    INSERT zts_component FROM TABLE @components ACCEPTING DUPLICATE KEYS.
+    MODIFY zts_component FROM TABLE @components.
     MODIFY zts_component_t FROM TABLE @texts.
 
     result = |Components filled: { lines( components ) } components, { lines( texts ) } texts|.

@@ -19,6 +19,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         revisions              TYPE abap_bool VALUE abap_true,
         responsible_persons    TYPE abap_bool VALUE abap_true,
         time_units             TYPE abap_bool VALUE abap_true,
+        item_categories        TYPE abap_bool VALUE abap_true,
         components             TYPE abap_bool VALUE abap_true,
       END OF delete,
       BEGIN OF fill,
@@ -30,6 +31,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         revisions              TYPE abap_bool VALUE abap_true,
         responsible_persons    TYPE abap_bool VALUE abap_true,
         time_units             TYPE abap_bool VALUE abap_true,
+        item_categories        TYPE abap_bool VALUE abap_true,
         components             TYPE abap_bool VALUE abap_true,
       END OF fill.
     " ----------------------------------------------------------------------
@@ -69,6 +71,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->delete_time_units( ) ).
     ENDIF.
 
+    IF delete-item_categories = abap_true.
+      out->write( customizing->delete_item_categories( ) ).
+    ENDIF.
+
     IF delete-components = abap_true.
       out->write( customizing->delete_components( ) ).
     ENDIF.
@@ -103,6 +109,11 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
 
     IF fill-time_units = abap_true.
       out->write( customizing->fill_time_units( ) ).
+    ENDIF.
+
+    " Item categories before components - components refer to them
+    IF fill-item_categories = abap_true.
+      out->write( customizing->fill_item_categories( ) ).
     ENDIF.
 
     IF fill-components = abap_true.

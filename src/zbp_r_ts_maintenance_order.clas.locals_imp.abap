@@ -108,23 +108,25 @@ CLASS lhc_maintenancecomponent DEFINITION INHERITING FROM cl_abap_behavior_handl
     METHODS setorderuuid FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceComponent~setOrderUuid.
 
-    METHODS setdescription FOR DETERMINE ON MODIFY
-      IMPORTING keys FOR MaintenanceComponent~setDescription.
+    METHODS setcomponentdata FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceComponent~setComponentData.
 ENDCLASS.
 
 CLASS lhc_maintenancecomponent IMPLEMENTATION.
   METHOD get_instance_features.
-    " Without a component the description is free text; with one it is the component's text
+    " Without a component description and item category are free input; with one they come from the component
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
         FIELDS ( ComponentId ) WITH CORRESPONDING #( keys )
         RESULT DATA(components).
 
     result = VALUE #( FOR component IN components
-                      ( %tky                 = component-%tky
-                        %field-Description = COND #( WHEN component-ComponentId IS INITIAL
-                                                       THEN if_abap_behv=>fc-f-unrestricted
-                                                       ELSE if_abap_behv=>fc-f-read_only ) ) ).
+                      LET field_control = COND #( WHEN component-ComponentId IS INITIAL
+                                                    THEN if_abap_behv=>fc-f-unrestricted
+                                                    ELSE if_abap_behv=>fc-f-read_only ) IN
+                      ( %tky                = component-%tky
+                        %field-Description  = field_control
+                        %field-ItemCategory = field_control ) ).
   ENDMETHOD.
 
   METHOD setorderuuid.
@@ -147,8 +149,8 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
         UPDATE FIELDS ( OrderUuid ) WITH updates.
   ENDMETHOD.
 
-  METHOD setdescription.
-    " Runs only when ComponentId changes, so a description typed without a component is never touched
+  METHOD setcomponentdata.
+    " Runs only when ComponentId changes, so values typed without a component are never touched
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
         FIELDS ( ComponentId ) WITH CORRESPONDING #( keys )
@@ -158,20 +160,24 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    SELECT FROM zts_component_t
-      FIELDS component, component_text
+    SELECT FROM zts_component AS component
+      LEFT OUTER JOIN zts_component_t AS text
+        ON  text~component = component~component
+        AND text~language  = @sy-langu
+      FIELDS component~component, component~item_category, text~component_text
       FOR ALL ENTRIES IN @components
-      WHERE component = @components-ComponentId
-        AND language  = @sy-langu
-      INTO TABLE @DATA(texts).
+      WHERE component~component = @components-ComponentId
+      INTO TABLE @DATA(master_data).
 
-    " Component removed or unknown - the old component text is cleared, the field becomes editable again
+    " Component removed or unknown - the old values are cleared, the fields become editable again
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
-        UPDATE FIELDS ( Description )
+        UPDATE FIELDS ( Description ItemCategory )
         WITH VALUE #( FOR component IN components
-                      ( %tky        = component-%tky
-                        Description = VALUE #( texts[ component = component-ComponentId ]-component_text OPTIONAL ) ) ).
+                      LET master = VALUE #( master_data[ component = component-ComponentId ] OPTIONAL ) IN
+                      ( %tky         = component-%tky
+                        Description  = master-component_text
+                        ItemCategory = master-item_category ) ).
   ENDMETHOD.
 ENDCLASS.
 

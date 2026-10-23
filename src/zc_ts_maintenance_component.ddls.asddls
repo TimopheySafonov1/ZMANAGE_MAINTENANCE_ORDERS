@@ -8,12 +8,19 @@ define view entity ZC_TS_MAINTENANCE_COMPONENT
   key ComponentUuid,
       OperationUuid,
       OrderUuid,
-      // Description is read-only and filled by the setDescription determination (side effect refreshes it)
+      // Description and ItemCategory come from the chosen component (setComponentData, side effect refreshes them)
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_COMPONENT_VH', element: 'Component' },
                                            useForValidation: true }]
       ComponentId,
       Description,
+      // Dropdown (Magazynowa / Niemagazynowa) - editable only when no component is chosen
+      @ObjectModel.text.element: [ 'ItemCategoryName' ]
+      @UI.textArrangement: #TEXT_ONLY
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_ITEM_CATEGORY_VH', element: 'ItemCategory' },
+                                           useForValidation: true }]
       ItemCategory,
+      @UI.hidden: true
+      _ItemCategory._Text[1: Language = $session.system_language].ItemCategoryName as ItemCategoryName,
       Uom,
       @Semantics.quantity.unitOfMeasure: 'Uom'
       ReqQuantity,
