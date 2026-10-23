@@ -7,12 +7,16 @@ define view entity ZI_TS_COMPONENT
   as select from zts_component
   association [0..*] to ZI_TS_COMPONENT_T   as _Text         on $projection.Component = _Text.Component
   association [0..1] to ZI_TS_ITEM_CATEGORY as _ItemCategory on $projection.ItemCategory = _ItemCategory.ItemCategory
+  association [0..1] to ZI_TS_UOM           as _Uom          on $projection.Uom = _Uom.Uom
 {
       @ObjectModel.text.association: '_Text'
   key component     as Component,
       @ObjectModel.foreignKey.association: '_ItemCategory'
       item_category as ItemCategory,
+      @ObjectModel.foreignKey.association: '_Uom'
+      uom           as Uom,
 
       _Text,
-      _ItemCategory
+      _ItemCategory,
+      _Uom
 }

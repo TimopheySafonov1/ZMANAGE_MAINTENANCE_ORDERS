@@ -131,15 +131,15 @@ authorization dependent by _MaintenanceOrder
   field ( numbering : managed, readonly ) ComponentUuid;
   field ( readonly ) OperationUuid, OrderUuid;
   // Free input without a component, read-only once a component is chosen (taken from the component)
-  field ( features : instance ) Description, ItemCategory;
+  field ( features : instance ) Description, ItemCategory, Uom;
 
   determination setOrderUuid on modify { create; }
   determination setComponentData on modify { field ComponentId; }
 
   side effects
   {
-    field ComponentId affects field Description, field ItemCategory,
-                              permissions ( field Description, field ItemCategory );
+    field ComponentId affects field Description, field ItemCategory, field Uom,
+                              permissions ( field Description, field ItemCategory, field Uom );
   }
 
   mapping for zts_maint_compon

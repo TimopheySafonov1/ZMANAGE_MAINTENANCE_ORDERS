@@ -21,6 +21,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         time_units             TYPE abap_bool VALUE abap_true,
         item_categories        TYPE abap_bool VALUE abap_true,
         components             TYPE abap_bool VALUE abap_true,
+        units_of_measure       TYPE abap_bool VALUE abap_true,
       END OF delete,
       BEGIN OF fill,
         maint_order_types      TYPE abap_bool VALUE abap_true,
@@ -33,6 +34,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         time_units             TYPE abap_bool VALUE abap_true,
         item_categories        TYPE abap_bool VALUE abap_true,
         components             TYPE abap_bool VALUE abap_true,
+        units_of_measure       TYPE abap_bool VALUE abap_true,
       END OF fill.
     " ----------------------------------------------------------------------
 
@@ -79,6 +81,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->delete_components( ) ).
     ENDIF.
 
+    IF delete-units_of_measure = abap_true.
+      out->write( customizing->delete_units_of_measure( ) ).
+    ENDIF.
+
     IF fill-maint_order_types = abap_true.
       out->write( customizing->fill_maint_order_types( ) ).
     ENDIF.
@@ -118,6 +124,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
 
     IF fill-components = abap_true.
       out->write( customizing->fill_components( ) ).
+    ENDIF.
+
+    IF fill-units_of_measure = abap_true.
+      out->write( customizing->fill_units_of_measure( ) ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.

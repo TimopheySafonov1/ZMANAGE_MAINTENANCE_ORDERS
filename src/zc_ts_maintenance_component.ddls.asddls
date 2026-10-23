@@ -21,6 +21,9 @@ define view entity ZC_TS_MAINTENANCE_COMPONENT
       ItemCategory,
       @UI.hidden: true
       _ItemCategory._Text[1: Language = $session.system_language].ItemCategoryName as ItemCategoryName,
+      // Only the units of ZTS_UOM are offered, not the whole SAP unit list
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_UOM_VH', element: 'Uom' },
+                                           useForValidation: true }]
       Uom,
       @Semantics.quantity.unitOfMeasure: 'Uom'
       ReqQuantity,

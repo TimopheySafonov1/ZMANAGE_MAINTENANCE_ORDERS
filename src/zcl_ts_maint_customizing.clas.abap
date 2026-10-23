@@ -87,14 +87,24 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS delete_item_categories
       RETURNING VALUE(result) TYPE string.
 
-    "! Components / spare parts (ZTS_COMPONENT, codes CZxxx = część zamienna) with their item category
-    "! and Polish names in ZTS_COMPONENT_T. Fill the item categories first.
+    "! Components / spare parts (ZTS_COMPONENT, codes CZxxx = część zamienna) with their item category,
+    "! unit of measure and Polish names in ZTS_COMPONENT_T. Fill item categories and units of measure first.
     "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_components
       RETURNING VALUE(result) TYPE string.
 
     "! Deletes all components and all their texts (every language)
     METHODS delete_components
+      RETURNING VALUE(result) TYPE string.
+
+    "! Units of measure for components (ZTS_UOM, ZTS_UOM_T) and their dimensions (ZTS_UOM_DIM, ZTS_UOM_DIM_T)
+    "! with Polish names. Unit codes are SAP internal codes (T006), dimensions the SAP dimension keys (T006D).
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_units_of_measure
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all units of measure, all dimensions and all their texts (every language)
+    METHODS delete_units_of_measure
       RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
@@ -449,6 +459,7 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
   METHOD fill_components.
     TYPES: BEGIN OF component_template,
              item_category TYPE zts_component-item_category,
+             uom           TYPE zts_component-uom,
              name          TYPE zts_component_t-component_text,
            END OF component_template,
            component_templates TYPE STANDARD TABLE OF component_template WITH EMPTY KEY.
@@ -456,19 +467,22 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA components TYPE STANDARD TABLE OF zts_component WITH EMPTY KEY.
     DATA texts      TYPE STANDARD TABLE OF zts_component_t WITH EMPTY KEY.
 
-    " CZ = część zamienna (spare part); item category L = magazynowa, N = niemagazynowa
-    DATA(templates) = VALUE component_templates( ( item_category = 'L' name = 'Łożysko' )
-                                                 ( item_category = 'L' name = 'Uszczelka' )
-                                                 ( item_category = 'L' name = 'Pasek klinowy' )
-                                                 ( item_category = 'L' name = 'Filtr oleju' )
-                                                 ( item_category = 'N' name = 'Olej hydrauliczny' )
-                                                 ( item_category = 'L' name = 'Bezpiecznik' )
-                                                 ( item_category = 'N' name = 'Stycznik' )
-                                                 ( item_category = 'N' name = 'Czujnik ciśnienia' ) ).
+    " CZ = część zamienna (spare part); item category L = magazynowa, N = niemagazynowa;
+    " units are SAP internal codes from ZTS_UOM (ST = sztuka, L = litr, PAK = opakowanie)
+    DATA(templates) = VALUE component_templates( ( item_category = 'L' uom = 'ST'  name = 'Łożysko' )
+                                                 ( item_category = 'L' uom = 'ST'  name = 'Uszczelka' )
+                                                 ( item_category = 'L' uom = 'ST'  name = 'Pasek klinowy' )
+                                                 ( item_category = 'L' uom = 'ST'  name = 'Filtr oleju' )
+                                                 ( item_category = 'N' uom = 'L'   name = 'Olej hydrauliczny' )
+                                                 ( item_category = 'L' uom = 'PAK' name = 'Bezpiecznik' )
+                                                 ( item_category = 'N' uom = 'ST'  name = 'Stycznik' )
+                                                 ( item_category = 'N' uom = 'ST'  name = 'Czujnik ciśnienia' ) ).
 
     LOOP AT templates INTO DATA(template).
       DATA(component) = CONV zts_component-component( |CZ{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
-      APPEND VALUE #( component = component item_category = template-item_category ) TO components.
+      APPEND VALUE #( component     = component
+                      item_category = template-item_category
+                      uom           = template-uom ) TO components.
 
       " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
       APPEND VALUE #( language = 'E' component = component component_text = template-name ) TO texts.
@@ -489,6 +503,82 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA(deleted_components) = sy-dbcnt.
 
     result = |Components deleted: { deleted_components } components, { deleted_texts } texts|.
+  ENDMETHOD.
+
+  METHOD fill_units_of_measure.
+    TYPES: BEGIN OF dimension_template,
+             dimension TYPE zts_uom_dim-dimension,
+             name      TYPE zts_uom_dim_t-dimension_text,
+           END OF dimension_template,
+           dimension_templates TYPE STANDARD TABLE OF dimension_template WITH EMPTY KEY,
+           BEGIN OF uom_template,
+             uom       TYPE zts_uom-uom,
+             dimension TYPE zts_uom-dimension,
+             name      TYPE zts_uom_t-uom_text,
+           END OF uom_template,
+           uom_templates TYPE STANDARD TABLE OF uom_template WITH EMPTY KEY.
+
+    DATA dimensions      TYPE STANDARD TABLE OF zts_uom_dim WITH EMPTY KEY.
+    DATA dimension_texts TYPE STANDARD TABLE OF zts_uom_dim_t WITH EMPTY KEY.
+    DATA units           TYPE STANDARD TABLE OF zts_uom WITH EMPTY KEY.
+    DATA unit_texts      TYPE STANDARD TABLE OF zts_uom_t WITH EMPTY KEY.
+
+    " SAP dimension keys (T006D)
+    DATA(dimension_templates) = VALUE dimension_templates( ( dimension = 'AAAADL' name = 'Bez wymiaru' )
+                                                           ( dimension = 'MASS'   name = 'Masa' )
+                                                           ( dimension = 'VOLUME' name = 'Objętość' )
+                                                           ( dimension = 'LENGTH' name = 'Długość' )
+                                                           ( dimension = 'SURFAC' name = 'Powierzchnia' ) ).
+
+    " SAP internal unit codes (T006) - the units a spare part is usually counted in
+    DATA(uom_templates) = VALUE uom_templates( ( uom = 'ST'  dimension = 'AAAADL' name = 'Sztuka' )
+                                               ( uom = 'PAA' dimension = 'AAAADL' name = 'Para' )
+                                               ( uom = 'PAK' dimension = 'AAAADL' name = 'Opakowanie' )
+                                               ( uom = 'KG'  dimension = 'MASS'   name = 'Kilogram' )
+                                               ( uom = 'G'   dimension = 'MASS'   name = 'Gram' )
+                                               ( uom = 'L'   dimension = 'VOLUME' name = 'Litr' )
+                                               ( uom = 'ML'  dimension = 'VOLUME' name = 'Mililitr' )
+                                               ( uom = 'M'   dimension = 'LENGTH' name = 'Metr' )
+                                               ( uom = 'MM'  dimension = 'LENGTH' name = 'Milimetr' )
+                                               ( uom = 'M2'  dimension = 'SURFAC' name = 'Metr kwadratowy' ) ).
+
+    " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
+    LOOP AT dimension_templates INTO DATA(dimension).
+      APPEND VALUE #( dimension = dimension-dimension ) TO dimensions.
+      APPEND VALUE #( language = 'E' dimension = dimension-dimension dimension_text = dimension-name ) TO dimension_texts.
+      APPEND VALUE #( language = 'L' dimension = dimension-dimension dimension_text = dimension-name ) TO dimension_texts.
+    ENDLOOP.
+
+    LOOP AT uom_templates INTO DATA(unit).
+      APPEND VALUE #( uom = unit-uom dimension = unit-dimension ) TO units.
+      APPEND VALUE #( language = 'E' uom = unit-uom uom_text = unit-name ) TO unit_texts.
+      APPEND VALUE #( language = 'L' uom = unit-uom uom_text = unit-name ) TO unit_texts.
+    ENDLOOP.
+
+    " The dimension table has only key fields, so it can't be MODIFYed - insert and skip existing ones
+    INSERT zts_uom_dim FROM TABLE @dimensions ACCEPTING DUPLICATE KEYS.
+    MODIFY zts_uom_dim_t FROM TABLE @dimension_texts.
+    MODIFY zts_uom FROM TABLE @units.
+    MODIFY zts_uom_t FROM TABLE @unit_texts.
+
+    result = |Units of measure filled: { lines( units ) } units in { lines( dimensions ) } dimensions, | &&
+             |{ lines( unit_texts ) + lines( dimension_texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_units_of_measure.
+    DELETE FROM zts_uom_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_uom.
+    DATA(deleted_units) = sy-dbcnt.
+
+    DELETE FROM zts_uom_dim_t.
+    deleted_texts += sy-dbcnt.
+
+    DELETE FROM zts_uom_dim.
+    DATA(deleted_dimensions) = sy-dbcnt.
+
+    result = |Units of measure deleted: { deleted_units } units, { deleted_dimensions } dimensions, { deleted_texts } texts|.
   ENDMETHOD.
 ENDCLASS.
 

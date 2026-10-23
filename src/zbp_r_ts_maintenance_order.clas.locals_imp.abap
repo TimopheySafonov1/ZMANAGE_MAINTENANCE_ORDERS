@@ -114,7 +114,7 @@ ENDCLASS.
 
 CLASS lhc_maintenancecomponent IMPLEMENTATION.
   METHOD get_instance_features.
-    " Without a component description and item category are free input; with one they come from the component
+    " Without a component description, item category and unit are free input; with one they come from the component
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
         FIELDS ( ComponentId ) WITH CORRESPONDING #( keys )
@@ -126,7 +126,8 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
                                                     ELSE if_abap_behv=>fc-f-read_only ) IN
                       ( %tky                = component-%tky
                         %field-Description  = field_control
-                        %field-ItemCategory = field_control ) ).
+                        %field-ItemCategory = field_control
+                        %field-Uom          = field_control ) ).
   ENDMETHOD.
 
   METHOD setorderuuid.
@@ -164,7 +165,7 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
       LEFT OUTER JOIN zts_component_t AS text
         ON  text~component = component~component
         AND text~language  = @sy-langu
-      FIELDS component~component, component~item_category, text~component_text
+      FIELDS component~component, component~item_category, component~uom, text~component_text
       FOR ALL ENTRIES IN @components
       WHERE component~component = @components-ComponentId
       INTO TABLE @DATA(master_data).
@@ -172,12 +173,13 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
     " Component removed or unknown - the old values are cleared, the fields become editable again
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
-        UPDATE FIELDS ( Description ItemCategory )
+        UPDATE FIELDS ( Description ItemCategory Uom )
         WITH VALUE #( FOR component IN components
                       LET master = VALUE #( master_data[ component = component-ComponentId ] OPTIONAL ) IN
                       ( %tky         = component-%tky
                         Description  = master-component_text
-                        ItemCategory = master-item_category ) ).
+                        ItemCategory = master-item_category
+                        Uom          = master-uom ) ).
   ENDMETHOD.
 ENDCLASS.
 

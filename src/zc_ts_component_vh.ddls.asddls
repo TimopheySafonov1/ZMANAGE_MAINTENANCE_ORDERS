@@ -30,5 +30,16 @@ define view entity ZC_TS_COMPONENT_VH
       @Semantics.text: true
       @UI.hidden: true
       @EndUserText.label: 'Nazwa typu pozycji'
-      _ItemCategory._Text[1: Language = $session.system_language].ItemCategoryName as ItemCategoryName
+      _ItemCategory._Text[1: Language = $session.system_language].ItemCategoryName as ItemCategoryName,
+      @ObjectModel.text.element: [ 'UomText' ]
+      @UI.textArrangement: #TEXT_LAST
+      @UI.lineItem: [{ position: 40 }]
+      @UI.selectionField: [{ position: 40 }]
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_UOM_VH', element: 'Uom' } }]
+      @EndUserText.label: 'Jednostka miary'
+      Uom,
+      @Semantics.text: true
+      @UI.hidden: true
+      @EndUserText.label: 'Nazwa jednostki'
+      _Uom._Text[1: Language = $session.system_language].UomText                     as UomText
 }
