@@ -101,6 +101,12 @@
      <MASK>  UTCL</MASK>
     </DD03P>
    </DD03P_TABLE>
+   <TABL_EXTRAS>
+    <TDDAT>
+     <TABNAME>ZTS_REVISION</TABNAME>
+     <CCLASS>CUS_DEV_SUP_RO</CCLASS>
+    </TDDAT>
+   </TABL_EXTRAS>
   </asx:values>
  </asx:abap>
 </abapGit>

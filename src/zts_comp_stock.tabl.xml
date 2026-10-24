@@ -98,6 +98,12 @@
      <MASK>  QUAN</MASK>
     </DD03P>
    </DD03P_TABLE>
+   <TABL_EXTRAS>
+    <TDDAT>
+     <TABNAME>ZTS_COMP_STOCK</TABNAME>
+     <CCLASS>CUS_DEV_SUP_DA</CCLASS>
+    </TDDAT>
+   </TABL_EXTRAS>
   </asx:values>
  </asx:abap>
 </abapGit>

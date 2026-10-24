@@ -1,13 +1,13 @@
-@Metadata.layer: #CUSTOMER
-@UI: {
-  headerInfo: {
-    typeName:       'Komponent',
-    typeNamePlural: 'Komponenty',
-    title:          { type: #STANDARD, value: 'ComponentId' },
-    description:    { type: #STANDARD, value: 'Description' }
-  },
-  presentationVariant: [{ sortOrder: [{ by: 'ComponentId', direction: #ASC }] }]
-}
+  @Metadata.layer: #CUSTOMER
+  @UI: {
+    headerInfo: {
+      typeName:       'Komponent',
+      typeNamePlural: 'Komponenty',
+      title:          { type: #STANDARD, value: 'Description' },
+      description:    { type: #STANDARD, value: 'ComponentId' }
+    },
+    presentationVariant: [{ sortOrder: [{ by: 'ComponentId', direction: #ASC }] }]
+  }
 annotate entity ZC_TS_MAINTENANCE_COMPONENT with
 {
   @UI.facet: [
