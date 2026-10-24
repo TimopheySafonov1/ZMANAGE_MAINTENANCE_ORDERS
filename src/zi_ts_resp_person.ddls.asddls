@@ -12,5 +12,8 @@ define view entity ZI_TS_RESP_PERSON
       last_name                                     as LastName,
       @Semantics.text: true
       concat_with_space( first_name, last_name, 1 ) as FullName,
-      job_title                                     as JobTitle
+      job_title                                     as JobTitle,
+      @Semantics.amount.currencyCode: 'Currency'
+      hourly_rate                                   as HourlyRate,
+      currency                                      as Currency
 }

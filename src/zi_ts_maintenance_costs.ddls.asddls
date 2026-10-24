@@ -7,14 +7,30 @@ define view entity ZI_TS_MAINTENANCE_COSTS
   association        to parent ZI_TS_MAINTENANCE_ORDER as _MaintenanceOrder     on $projection.OrderUuid = _MaintenanceOrder.OrderUuid
   association [0..1] to ZI_TS_MAINTENANCE_OPERATION    as _MaintenanceOperation on $projection.OperationUuid = _MaintenanceOperation.OperationUuid
 {
-  key cost_item_uuid as CostItemUuid,
-      order_uuid     as OrderUuid,
-      operation_uuid as OperationUuid,
-      currency       as Currency,
+  key cost_item_uuid         as CostItemUuid,
+      order_uuid             as OrderUuid,
+      operation_uuid         as OperationUuid,
+      // Copied from the operation, so they are also shown for an operation that exists only in the draft
+      operation_id           as OperationId,
+      operation_desc         as OperationDescription,
+      currency               as Currency,
+      // Totals of the operation = labor + material (components) + PRTs
       @Semantics.amount.currencyCode: 'Currency'
-      planned_costs  as PlannedCosts,
+      planned_costs          as PlannedCosts,
       @Semantics.amount.currencyCode: 'Currency'
-      actual_costs   as ActualCosts,
+      actual_costs           as ActualCosts,
+      @Semantics.amount.currencyCode: 'Currency'
+      labor_planned_costs    as LaborPlannedCosts,
+      @Semantics.amount.currencyCode: 'Currency'
+      labor_actual_costs     as LaborActualCosts,
+      @Semantics.amount.currencyCode: 'Currency'
+      material_planned_costs as MaterialPlannedCosts,
+      @Semantics.amount.currencyCode: 'Currency'
+      material_actual_costs  as MaterialActualCosts,
+      @Semantics.amount.currencyCode: 'Currency'
+      prt_planned_costs      as PrtPlannedCosts,
+      @Semantics.amount.currencyCode: 'Currency'
+      prt_actual_costs       as PrtActualCosts,
       _MaintenanceOrder,
       _MaintenanceOperation
 }

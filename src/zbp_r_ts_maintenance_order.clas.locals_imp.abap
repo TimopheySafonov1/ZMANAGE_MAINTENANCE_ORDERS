@@ -1,3 +1,393 @@
+"! Planned and actual costs of an order, recalculated from its current (draft or active) data, so the
+"! totals are also right in a draft. Per operation one cost item is generated with the split:
+"! labor     = labor hours * hourly rate of the responsible person
+"! material  = required quantity * price of the component (actual costs aren't tracked yet)
+"! PRT       = quantity * usage hours * (purchase price / useful life hours)
+"! Labor hours = work per day * days of the duration (only the work when no duration is given).
+"! PRT usage time is optional - without it the PRT is costed for the labor hours of the operation.
+"! All amounts are converted into the order currency with the rates of ZTS_EXCH_RATE.
+CLASS lcl_cost_calculator DEFINITION.
+  PUBLIC SECTION.
+    TYPES orders TYPE TABLE FOR READ IMPORT zr_ts_maintenance_order\\MaintenanceOrder.
+
+    "! Recalculates the given orders and the orders remembered by remember_orders
+    CLASS-METHODS recalculate
+      IMPORTING orders TYPE orders.
+
+    "! Remembers orders whose child instances are about to be deleted - after the delete only the keys
+    "! of the deleted instances are known, so their order can't be read anymore
+    CLASS-METHODS remember_orders
+      IMPORTING orders TYPE orders.
+
+  PRIVATE SECTION.
+    CONSTANTS default_currency TYPE zts_exch_rate-currency VALUE 'PLN'.
+
+    TYPES:
+      BEGIN OF cost_item,
+        is_draft         TYPE abp_behv_flag,
+        order_uuid       TYPE sysuuid_x16,
+        operation_uuid   TYPE sysuuid_x16,
+        operation_id     TYPE zts_maint_costs-operation_id,
+        operation_desc   TYPE zts_maint_costs-operation_desc,
+        planned          TYPE zts_maint_costs-planned_costs,
+        actual           TYPE zts_maint_costs-actual_costs,
+        labor_planned    TYPE zts_maint_costs-labor_planned_costs,
+        labor_actual     TYPE zts_maint_costs-labor_actual_costs,
+        material_planned TYPE zts_maint_costs-material_planned_costs,
+        material_actual  TYPE zts_maint_costs-material_actual_costs,
+        prt_planned      TYPE zts_maint_costs-prt_planned_costs,
+        prt_actual       TYPE zts_maint_costs-prt_actual_costs,
+      END OF cost_item,
+      cost_items TYPE STANDARD TABLE OF cost_item WITH EMPTY KEY.
+
+    CLASS-DATA remembered_orders TYPE orders.
+    CLASS-DATA time_units TYPE HASHED TABLE OF zts_time_unit WITH UNIQUE KEY time_unit.
+    CLASS-DATA exchange_rates TYPE HASHED TABLE OF zts_exch_rate WITH UNIQUE KEY currency.
+
+    "! Work in hours (a unit without a factor counts as hours)
+    CLASS-METHODS work_hours
+      IMPORTING quantity      TYPE zts_maint_prt-planned_usage
+                unit          TYPE zts_time_unit-time_unit
+      RETURNING VALUE(result) TYPE decfloat34.
+
+    "! Work per day * number of working days of the duration (at least one day)
+    CLASS-METHODS labor_hours
+      IMPORTING work          TYPE zts_maint_prt-planned_usage
+                work_unit     TYPE zts_time_unit-time_unit
+                duration      TYPE zts_maint_prt-planned_usage
+                duration_unit TYPE zts_time_unit-time_unit
+      RETURNING VALUE(result) TYPE decfloat34.
+
+    "! Amount in another currency; without an exchange rate the amount is taken over unchanged
+    CLASS-METHODS convert
+      IMPORTING amount        TYPE zts_resp_person-hourly_rate
+                !from         TYPE zts_exch_rate-currency
+                !to           TYPE zts_exch_rate-currency
+      RETURNING VALUE(result) TYPE decfloat34.
+ENDCLASS.
+
+CLASS lcl_cost_calculator IMPLEMENTATION.
+  METHOD remember_orders.
+    APPEND LINES OF orders TO remembered_orders.
+  ENDMETHOD.
+
+  METHOD recalculate.
+    DATA(all_orders) = orders.
+    APPEND LINES OF remembered_orders TO all_orders.
+    CLEAR remembered_orders.
+
+    SORT all_orders BY %is_draft OrderUuid.
+    DELETE ADJACENT DUPLICATES FROM all_orders COMPARING %is_draft OrderUuid.
+    DELETE all_orders WHERE OrderUuid IS INITIAL.
+    IF all_orders IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        FIELDS ( Currency TotalPlannedCosts TotalActualCosts ) WITH CORRESPONDING #( all_orders )
+        RESULT DATA(order_data)
+      ENTITY MaintenanceOrder BY \_Operations
+        FIELDS ( OrderUuid OperationId Description PersonResp PlannedWork PlannedWorkUnit PlannedWorkDuration PlannedDurationUnit
+                 ActualWork ActualWorkUnit ActualWorkDuration ActualDurationUnit )
+        WITH CORRESPONDING #( all_orders )
+        RESULT DATA(operations)
+      ENTITY MaintenanceOrder BY \_Costs
+        FIELDS ( OrderUuid OperationUuid OperationId OperationDescription Currency PlannedCosts ActualCosts
+                 LaborPlannedCosts LaborActualCosts MaterialPlannedCosts MaterialActualCosts
+                 PrtPlannedCosts PrtActualCosts )
+        WITH CORRESPONDING #( all_orders )
+        RESULT DATA(existing_costs).
+
+    IF order_data IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_Components
+        FIELDS ( OperationUuid ComponentId ReqQuantity ) WITH CORRESPONDING #( operations )
+        RESULT DATA(components)
+      ENTITY MaintenanceOperation BY \_PRTs
+        FIELDS ( OperationUuid PrtId ReqQuantity PlannedUsage PlannedUsageUnit ActualUsage ActualUsageUnit )
+        WITH CORRESPONDING #( operations )
+        RESULT DATA(prts).
+
+    " Master data: time unit factors, exchange rates, hourly rates, component and PRT prices
+    SELECT * FROM zts_time_unit INTO TABLE @time_units.
+    SELECT * FROM zts_exch_rate INTO TABLE @exchange_rates.
+
+    DATA persons TYPE HASHED TABLE OF zts_resp_person WITH UNIQUE KEY person_resp.
+    IF operations IS NOT INITIAL.
+      SELECT * FROM zts_resp_person
+        FOR ALL ENTRIES IN @operations
+        WHERE person_resp = @operations-PersonResp
+        INTO TABLE @persons.
+    ENDIF.
+
+    DATA component_master TYPE HASHED TABLE OF zts_component WITH UNIQUE KEY component.
+    IF components IS NOT INITIAL.
+      SELECT * FROM zts_component
+        FOR ALL ENTRIES IN @components
+        WHERE component = @components-ComponentId
+        INTO TABLE @component_master.
+    ENDIF.
+
+    DATA prt_master TYPE HASHED TABLE OF zts_prt WITH UNIQUE KEY prt.
+    IF prts IS NOT INITIAL.
+      SELECT * FROM zts_prt
+        FOR ALL ENTRIES IN @prts
+        WHERE prt = @prts-PrtId
+        INTO TABLE @prt_master.
+    ENDIF.
+
+    DATA cost_items    TYPE cost_items.
+    DATA order_updates TYPE TABLE FOR UPDATE zr_ts_maintenance_order\\MaintenanceOrder.
+
+    LOOP AT order_data INTO DATA(order).
+      DATA(currency) = COND #( WHEN order-Currency IS INITIAL THEN default_currency ELSE order-Currency ).
+
+      LOOP AT operations INTO DATA(operation)
+           WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid.
+        DATA(planned_hours) = labor_hours( work          = operation-PlannedWork
+                                           work_unit     = operation-PlannedWorkUnit
+                                           duration      = operation-PlannedWorkDuration
+                                           duration_unit = operation-PlannedDurationUnit ).
+        DATA(actual_hours) = labor_hours( work          = operation-ActualWork
+                                          work_unit     = operation-ActualWorkUnit
+                                          duration      = operation-ActualWorkDuration
+                                          duration_unit = operation-ActualDurationUnit ).
+
+        DATA(person) = VALUE #( persons[ person_resp = operation-PersonResp ] OPTIONAL ).
+        DATA(hourly_rate) = convert( amount = person-hourly_rate from = person-currency to = currency ).
+
+        DATA(cost_item) = VALUE cost_item( is_draft       = order-%is_draft
+                                           order_uuid     = order-OrderUuid
+                                           operation_uuid = operation-OperationUuid
+                                           operation_id   = operation-OperationId
+                                           operation_desc = operation-Description
+                                           labor_planned  = round( val = planned_hours * hourly_rate dec = 2 )
+                                           labor_actual   = round( val = actual_hours * hourly_rate dec = 2 ) ).
+
+        DATA material_planned TYPE decfloat34.
+        material_planned = 0.
+        LOOP AT components INTO DATA(component)
+             WHERE %is_draft = operation-%is_draft AND OperationUuid = operation-OperationUuid.
+          DATA(component_data) = VALUE #( component_master[ component = component-ComponentId ] OPTIONAL ).
+          material_planned += component-ReqQuantity
+                              * convert( amount = component_data-price from = component_data-currency to = currency ).
+        ENDLOOP.
+        cost_item-material_planned = round( val = material_planned dec = 2 ).
+
+        DATA prt_planned TYPE decfloat34.
+        DATA prt_actual  TYPE decfloat34.
+        prt_planned = 0.
+        prt_actual = 0.
+        LOOP AT prts INTO DATA(prt)
+             WHERE %is_draft = operation-%is_draft AND OperationUuid = operation-OperationUuid.
+          DATA(prt_data) = VALUE #( prt_master[ prt = prt-PrtId ] OPTIONAL ).
+          IF prt_data-useful_life_hours <= 0.
+            CONTINUE.
+          ENDIF.
+
+          " Wear per hour of use: the purchase price spread over the useful life
+          DATA(usage_rate) = convert( amount = prt_data-purchase_price from = prt_data-currency to = currency )
+                             / prt_data-useful_life_hours.
+          DATA(prt_quantity) = COND decfloat34( WHEN prt-ReqQuantity > 0 THEN prt-ReqQuantity ELSE 1 ).
+
+          " Without its own usage time the PRT is used for the whole operation
+          DATA(planned_usage) = COND #( WHEN prt-PlannedUsage > 0
+                                        THEN work_hours( quantity = prt-PlannedUsage unit = prt-PlannedUsageUnit )
+                                        ELSE planned_hours ).
+          DATA(actual_usage) = COND #( WHEN prt-ActualUsage > 0
+                                       THEN work_hours( quantity = prt-ActualUsage unit = prt-ActualUsageUnit )
+                                       ELSE actual_hours ).
+
+          prt_planned += prt_quantity * planned_usage * usage_rate.
+          prt_actual += prt_quantity * actual_usage * usage_rate.
+        ENDLOOP.
+        cost_item-prt_planned = round( val = prt_planned dec = 2 ).
+        cost_item-prt_actual = round( val = prt_actual dec = 2 ).
+
+        cost_item-planned = cost_item-labor_planned + cost_item-material_planned + cost_item-prt_planned.
+        cost_item-actual = cost_item-labor_actual + cost_item-material_actual + cost_item-prt_actual.
+        " Every operation gets its cost item, also while it has no costs yet
+        INSERT cost_item INTO TABLE cost_items.
+      ENDLOOP.
+
+      DATA(total_planned) = REDUCE zts_maint_costs-planned_costs(
+                              INIT sum = 0
+                              FOR item IN cost_items
+                              WHERE ( is_draft = order-%is_draft AND order_uuid = order-OrderUuid )
+                              NEXT sum = sum + item-planned ).
+      DATA(total_actual) = REDUCE zts_maint_costs-actual_costs(
+                             INIT sum = 0
+                             FOR item IN cost_items
+                             WHERE ( is_draft = order-%is_draft AND order_uuid = order-OrderUuid )
+                             NEXT sum = sum + item-actual ).
+
+      " Only real changes are written, so the Currency trigger doesn't fire again for nothing
+      IF    currency      <> order-Currency
+         OR total_planned <> order-TotalPlannedCosts
+         OR total_actual  <> order-TotalActualCosts.
+        APPEND VALUE #( %tky              = order-%tky
+                        Currency          = currency
+                        TotalPlannedCosts = total_planned
+                        TotalActualCosts  = total_actual ) TO order_updates.
+      ENDIF.
+    ENDLOOP.
+
+    " Compare with the existing cost items: update the changed, create the missing, delete the rest
+    DATA cost_creates TYPE TABLE FOR CREATE zr_ts_maintenance_order\\MaintenanceOrder\_Costs.
+    DATA cost_updates TYPE TABLE FOR UPDATE zr_ts_maintenance_order\\MaintenanceCosts.
+    DATA cost_deletes TYPE TABLE FOR DELETE zr_ts_maintenance_order\\MaintenanceCosts.
+    DATA order_create LIKE LINE OF cost_creates.
+    DATA used_costs   LIKE existing_costs.
+    DATA cid          TYPE i.
+
+    LOOP AT order_data INTO order.
+      currency = COND #( WHEN order-Currency IS INITIAL THEN default_currency ELSE order-Currency ).
+      order_create = VALUE #( %tky = order-%tky ).
+
+      LOOP AT cost_items INTO cost_item
+           WHERE is_draft = order-%is_draft AND order_uuid = order-OrderUuid.
+        " The first unused item of the operation is reused, further ones (e.g. from before the split
+        " per operation) are deleted below
+        DATA existing LIKE LINE OF existing_costs.
+        CLEAR existing.
+        LOOP AT existing_costs INTO DATA(candidate)
+             WHERE %is_draft = cost_item-is_draft AND OperationUuid = cost_item-operation_uuid.
+          IF NOT line_exists( used_costs[ KEY entity %tky = candidate-%tky ] ).
+            existing = candidate.
+            EXIT.
+          ENDIF.
+        ENDLOOP.
+
+        IF existing IS INITIAL.
+          cid += 1.
+          APPEND VALUE #( %cid                 = |COST{ cid }|
+                          %is_draft            = cost_item-is_draft
+                          OperationUuid        = cost_item-operation_uuid
+                          OperationId          = cost_item-operation_id
+                          OperationDescription = cost_item-operation_desc
+                          Currency             = currency
+                          PlannedCosts         = cost_item-planned
+                          ActualCosts          = cost_item-actual
+                          LaborPlannedCosts    = cost_item-labor_planned
+                          LaborActualCosts     = cost_item-labor_actual
+                          MaterialPlannedCosts = cost_item-material_planned
+                          MaterialActualCosts  = cost_item-material_actual
+                          PrtPlannedCosts      = cost_item-prt_planned
+                          PrtActualCosts       = cost_item-prt_actual
+                          %control             = VALUE #( OperationUuid        = if_abap_behv=>mk-on
+                                                          OperationId          = if_abap_behv=>mk-on
+                                                          OperationDescription = if_abap_behv=>mk-on
+                                                          Currency             = if_abap_behv=>mk-on
+                                                          PlannedCosts         = if_abap_behv=>mk-on
+                                                          ActualCosts          = if_abap_behv=>mk-on
+                                                          LaborPlannedCosts    = if_abap_behv=>mk-on
+                                                          LaborActualCosts     = if_abap_behv=>mk-on
+                                                          MaterialPlannedCosts = if_abap_behv=>mk-on
+                                                          MaterialActualCosts  = if_abap_behv=>mk-on
+                                                          PrtPlannedCosts      = if_abap_behv=>mk-on
+                                                          PrtActualCosts       = if_abap_behv=>mk-on ) )
+                 TO order_create-%target.
+          CONTINUE.
+        ENDIF.
+
+        APPEND existing TO used_costs.
+        IF    existing-OperationId          <> cost_item-operation_id
+           OR existing-OperationDescription <> cost_item-operation_desc
+           OR existing-Currency             <> currency
+           OR existing-PlannedCosts         <> cost_item-planned
+           OR existing-ActualCosts          <> cost_item-actual
+           OR existing-LaborPlannedCosts    <> cost_item-labor_planned
+           OR existing-LaborActualCosts     <> cost_item-labor_actual
+           OR existing-MaterialPlannedCosts <> cost_item-material_planned
+           OR existing-MaterialActualCosts  <> cost_item-material_actual
+           OR existing-PrtPlannedCosts      <> cost_item-prt_planned
+           OR existing-PrtActualCosts       <> cost_item-prt_actual.
+          APPEND VALUE #( %tky                 = existing-%tky
+                          OperationId          = cost_item-operation_id
+                          OperationDescription = cost_item-operation_desc
+                          Currency             = currency
+                          PlannedCosts         = cost_item-planned
+                          ActualCosts          = cost_item-actual
+                          LaborPlannedCosts    = cost_item-labor_planned
+                          LaborActualCosts     = cost_item-labor_actual
+                          MaterialPlannedCosts = cost_item-material_planned
+                          MaterialActualCosts  = cost_item-material_actual
+                          PrtPlannedCosts      = cost_item-prt_planned
+                          PrtActualCosts       = cost_item-prt_actual
+                          %control             = VALUE #( OperationId          = if_abap_behv=>mk-on
+                                                          OperationDescription = if_abap_behv=>mk-on
+                                                          Currency             = if_abap_behv=>mk-on
+                                                          PlannedCosts         = if_abap_behv=>mk-on
+                                                          ActualCosts          = if_abap_behv=>mk-on
+                                                          LaborPlannedCosts    = if_abap_behv=>mk-on
+                                                          LaborActualCosts     = if_abap_behv=>mk-on
+                                                          MaterialPlannedCosts = if_abap_behv=>mk-on
+                                                          MaterialActualCosts  = if_abap_behv=>mk-on
+                                                          PrtPlannedCosts      = if_abap_behv=>mk-on
+                                                          PrtActualCosts       = if_abap_behv=>mk-on ) )
+                 TO cost_updates.
+        ENDIF.
+      ENDLOOP.
+
+      IF order_create-%target IS NOT INITIAL.
+        APPEND order_create TO cost_creates.
+      ENDIF.
+    ENDLOOP.
+
+    " Cost items of deleted operations and old items from before the split per operation
+    LOOP AT existing_costs INTO DATA(old_cost).
+      IF NOT line_exists( used_costs[ KEY entity %tky = old_cost-%tky ] ).
+        APPEND VALUE #( %tky = old_cost-%tky ) TO cost_deletes.
+      ENDIF.
+    ENDLOOP.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FIELDS ( Currency TotalPlannedCosts TotalActualCosts ) WITH order_updates
+      ENTITY MaintenanceOrder
+        CREATE BY \_Costs FROM cost_creates
+      ENTITY MaintenanceCosts
+        UPDATE FROM cost_updates
+      ENTITY MaintenanceCosts
+        DELETE FROM cost_deletes.
+  ENDMETHOD.
+
+  METHOD work_hours.
+    DATA(factor) = VALUE #( time_units[ time_unit = unit ]-work_hours OPTIONAL ).
+    result = quantity * COND decfloat34( WHEN factor > 0 THEN factor ELSE 1 ).
+  ENDMETHOD.
+
+  METHOD labor_hours.
+    result = work_hours( quantity = work unit = work_unit ).
+
+    IF duration > 0.
+      DATA(factor) = VALUE #( time_units[ time_unit = duration_unit ]-working_days OPTIONAL ).
+      DATA(days) = CONV decfloat34( duration * COND decfloat34( WHEN factor > 0 THEN factor ELSE 1 ) ).
+      " A duration shorter than a day still is one day of work
+      result = result * nmax( val1 = CONV decfloat34( 1 ) val2 = ceil( days ) ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD convert.
+    result = amount.
+    IF from IS INITIAL OR to IS INITIAL OR from = to.
+      RETURN.
+    ENDIF.
+
+    DATA(from_rate) = COND decfloat34( WHEN from = default_currency THEN 1
+                                       ELSE VALUE #( exchange_rates[ currency = from ]-pln_rate OPTIONAL ) ).
+    DATA(to_rate) = COND decfloat34( WHEN to = default_currency THEN 1
+                                     ELSE VALUE #( exchange_rates[ currency = to ]-pln_rate OPTIONAL ) ).
+    IF from_rate > 0 AND to_rate > 0.
+      result = amount * from_rate / to_rate.
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.
+
 CLASS lhc_maintenanceorder DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
     METHODS get_global_authorizations FOR GLOBAL AUTHORIZATION
@@ -5,6 +395,9 @@ CLASS lhc_maintenanceorder DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS setorderid FOR DETERMINE ON SAVE
       IMPORTING keys FOR MaintenanceOrder~setOrderId.
+
+    METHODS calculatecosts FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOrder~calculateCosts.
 ENDCLASS.
 
 CLASS lhc_maintenanceorder IMPLEMENTATION.
@@ -39,12 +432,22 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
                       ( %tky    = order-%tky
                         OrderId = max_order_id + idx ) ).
   ENDMETHOD.
+
+  METHOD calculatecosts.
+    lcl_cost_calculator=>recalculate( CORRESPONDING #( keys ) ).
+  ENDMETHOD.
 ENDCLASS.
 
 CLASS lhc_maintenanceoperation DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
     METHODS setoperationid FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOperation~setOperationId.
+
+    METHODS calculatecosts FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOperation~calculateCosts.
+
+    METHODS precheck_delete FOR PRECHECK
+      IMPORTING keys FOR DELETE MaintenanceOperation.
 ENDCLASS.
 
 CLASS lhc_maintenanceoperation IMPLEMENTATION.
@@ -98,6 +501,29 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
       ENTITY MaintenanceOperation
         UPDATE FIELDS ( OperationId ) WITH updates.
   ENDMETHOD.
+
+  METHOD calculatecosts.
+    " Deleted operations can't be read anymore - their orders were remembered in precheck_delete
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(operations).
+
+    lcl_cost_calculator=>recalculate( VALUE #( FOR operation IN operations
+                                               ( %is_draft = operation-%is_draft
+                                                 OrderUuid = operation-OrderUuid ) ) ).
+  ENDMETHOD.
+
+  METHOD precheck_delete.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(operations).
+
+    lcl_cost_calculator=>remember_orders( VALUE #( FOR operation IN operations
+                                                   ( %is_draft = operation-%is_draft
+                                                     OrderUuid = operation-OrderUuid ) ) ).
+  ENDMETHOD.
 ENDCLASS.
 
 CLASS lhc_maintenancecomponent DEFINITION INHERITING FROM cl_abap_behavior_handler.
@@ -110,6 +536,12 @@ CLASS lhc_maintenancecomponent DEFINITION INHERITING FROM cl_abap_behavior_handl
 
     METHODS setcomponentdata FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceComponent~setComponentData.
+
+    METHODS calculatecosts FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceComponent~calculateCosts.
+
+    METHODS precheck_delete FOR PRECHECK
+      IMPORTING keys FOR DELETE MaintenanceComponent.
 ENDCLASS.
 
 CLASS lhc_maintenancecomponent IMPLEMENTATION.
@@ -181,6 +613,29 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
                         ItemCategory = master-item_category
                         Uom          = master-uom ) ).
   ENDMETHOD.
+
+  METHOD calculatecosts.
+    " Through the parent operation - OrderUuid of a new component may not be set yet
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceComponent BY \_MaintenanceOperation
+        FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(operations).
+
+    lcl_cost_calculator=>recalculate( VALUE #( FOR operation IN operations
+                                               ( %is_draft = operation-%is_draft
+                                                 OrderUuid = operation-OrderUuid ) ) ).
+  ENDMETHOD.
+
+  METHOD precheck_delete.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceComponent BY \_MaintenanceOperation
+        FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(operations).
+
+    lcl_cost_calculator=>remember_orders( VALUE #( FOR operation IN operations
+                                                   ( %is_draft = operation-%is_draft
+                                                     OrderUuid = operation-OrderUuid ) ) ).
+  ENDMETHOD.
 ENDCLASS.
 
 CLASS lhc_maintenanceprt DEFINITION INHERITING FROM cl_abap_behavior_handler.
@@ -193,6 +648,12 @@ CLASS lhc_maintenanceprt DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS setprtdata FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenancePrt~setPrtData.
+
+    METHODS calculatecosts FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenancePrt~calculateCosts.
+
+    METHODS precheck_delete FOR PRECHECK
+      IMPORTING keys FOR DELETE MaintenancePrt.
 ENDCLASS.
 
 CLASS lhc_maintenanceprt IMPLEMENTATION.
@@ -261,6 +722,29 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
                       ( %tky        = prt-%tky
                         Description = master-prt_text
                         Uom         = master-uom ) ).
+  ENDMETHOD.
+
+  METHOD calculatecosts.
+    " Through the parent operation - OrderUuid of a new PRT may not be set yet
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenancePrt BY \_MaintenanceOperation
+        FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(operations).
+
+    lcl_cost_calculator=>recalculate( VALUE #( FOR operation IN operations
+                                               ( %is_draft = operation-%is_draft
+                                                 OrderUuid = operation-OrderUuid ) ) ).
+  ENDMETHOD.
+
+  METHOD precheck_delete.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenancePrt BY \_MaintenanceOperation
+        FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(operations).
+
+    lcl_cost_calculator=>remember_orders( VALUE #( FOR operation IN operations
+                                                   ( %is_draft = operation-%is_draft
+                                                     OrderUuid = operation-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
 

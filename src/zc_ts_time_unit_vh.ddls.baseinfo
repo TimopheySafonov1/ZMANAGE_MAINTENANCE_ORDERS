@@ -3,6 +3,7 @@
 {
 "FROM":
 [
+"I_UNITOFMEASURE",
 "ZI_TS_TIME_UNIT"
 ],
 "ASSOCIATED":

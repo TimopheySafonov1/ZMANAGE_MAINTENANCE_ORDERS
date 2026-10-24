@@ -59,7 +59,7 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS delete_revisions
       RETURNING VALUE(result) TYPE string.
 
-    "! Demo responsible persons (ZTS_RESP_PERSON) with Polish names and job titles.
+    "! Demo responsible persons (ZTS_RESP_PERSON) with Polish names, job titles and hourly rates in PLN.
     "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_responsible_persons
       RETURNING VALUE(result) TYPE string.
@@ -68,7 +68,8 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS delete_responsible_persons
       RETURNING VALUE(result) TYPE string.
 
-    "! Time units for work and duration (ZTS_TIME_UNIT) with Polish names.
+    "! Time units for work and duration (ZTS_TIME_UNIT) with Polish names and the factors used for costing:
+    "! hours of work per unit and working days per unit (a working day has 8 hours, a week 5 days, a month 21).
     "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_time_units
       RETURNING VALUE(result) TYPE string.
@@ -88,7 +89,8 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING VALUE(result) TYPE string.
 
     "! Components / spare parts (ZTS_COMPONENT, codes CZxxx = część zamienna) with their item category,
-    "! unit of measure and Polish names in ZTS_COMPONENT_T. Fill item categories and units of measure first.
+    "! unit of measure, price per unit in PLN and Polish names in ZTS_COMPONENT_T.
+    "! Fill item categories and units of measure first.
     "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_components
       RETURNING VALUE(result) TYPE string.
@@ -128,13 +130,32 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING VALUE(result) TYPE string.
 
     "! Production resources and tools (ZTS_PRT, codes PPxxx = pomoc produkcyjna) - maintenance tools and
-    "! personal protective equipment - with their unit of measure and Polish names in ZTS_PRT_T.
+    "! personal protective equipment - with their unit of measure, purchase price in PLN, useful life in hours
+    "! (together they give the wear cost per hour of use) and Polish names in ZTS_PRT_T.
     "! Fill units of measure first. Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_prts
       RETURNING VALUE(result) TYPE string.
 
     "! Deletes all production resources and tools and all their texts (every language)
     METHODS delete_prts
+      RETURNING VALUE(result) TYPE string.
+
+    "! Demo exchange rates (ZTS_EXCH_RATE): the value of one unit of a currency in PLN.
+    "! Costs are converted into the order currency with them. Existing entries are overwritten.
+    METHODS fill_exchange_rates
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all exchange rates
+    METHODS delete_exchange_rates
+      RETURNING VALUE(result) TYPE string.
+
+    "! Polish names of the cost categories of the generated cost items (ZTS_COST_CAT_T):
+    "! LA = labor, MA = material, PR = production resources/tools. Existing entries are overwritten.
+    METHODS fill_cost_categories
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all cost category names (every language)
+    METHODS delete_cost_categories
       RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
@@ -412,17 +433,19 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
   METHOD fill_responsible_persons.
     DATA persons TYPE STANDARD TABLE OF zts_resp_person WITH EMPTY KEY.
 
-    " Demo people only - names and job titles are in Polish, there is no translation
-    persons = VALUE #( ( person_resp = '1'  first_name = 'Jan'       last_name = 'Kowalski'     job_title = 'Kierownik utrzymania ruchu' )
-                       ( person_resp = '2'  first_name = 'Anna'      last_name = 'Nowak'        job_title = 'Planista utrzymania ruchu' )
-                       ( person_resp = '3'  first_name = 'Piotr'     last_name = 'Wiśniewski'   job_title = 'Mechanik' )
-                       ( person_resp = '4'  first_name = 'Katarzyna' last_name = 'Wójcik'       job_title = 'Inżynier niezawodności' )
-                       ( person_resp = '5'  first_name = 'Tomasz'    last_name = 'Kowalczyk'    job_title = 'Elektryk' )
-                       ( person_resp = '6'  first_name = 'Magdalena' last_name = 'Kamińska'     job_title = 'Automatyk' )
-                       ( person_resp = '7'  first_name = 'Marek'     last_name = 'Lewandowski'  job_title = 'Brygadzista' )
-                       ( person_resp = '8'  first_name = 'Agnieszka' last_name = 'Zielińska'    job_title = 'Technik HVAC' )
-                       ( person_resp = '9'  first_name = 'Krzysztof' last_name = 'Szymański'    job_title = 'Spawacz' )
-                       ( person_resp = '10' first_name = 'Ewa'       last_name = 'Dąbrowska'    job_title = 'Specjalista ds. BHP' ) ).
+    " Demo people only - names and job titles are in Polish, there is no translation.
+    " Hourly rates are gross labor costs per hour in PLN
+    persons = VALUE #( currency = 'PLN'
+                       ( person_resp = '1'  first_name = 'Jan'       last_name = 'Kowalski'     job_title = 'Kierownik utrzymania ruchu' hourly_rate = '150.00' )
+                       ( person_resp = '2'  first_name = 'Anna'      last_name = 'Nowak'        job_title = 'Planista utrzymania ruchu'  hourly_rate = '110.00' )
+                       ( person_resp = '3'  first_name = 'Piotr'     last_name = 'Wiśniewski'   job_title = 'Mechanik'                   hourly_rate = '95.00' )
+                       ( person_resp = '4'  first_name = 'Katarzyna' last_name = 'Wójcik'       job_title = 'Inżynier niezawodności'     hourly_rate = '130.00' )
+                       ( person_resp = '5'  first_name = 'Tomasz'    last_name = 'Kowalczyk'    job_title = 'Elektryk'                   hourly_rate = '100.00' )
+                       ( person_resp = '6'  first_name = 'Magdalena' last_name = 'Kamińska'     job_title = 'Automatyk'                  hourly_rate = '115.00' )
+                       ( person_resp = '7'  first_name = 'Marek'     last_name = 'Lewandowski'  job_title = 'Brygadzista'                hourly_rate = '105.00' )
+                       ( person_resp = '8'  first_name = 'Agnieszka' last_name = 'Zielińska'    job_title = 'Technik HVAC'               hourly_rate = '95.00' )
+                       ( person_resp = '9'  first_name = 'Krzysztof' last_name = 'Szymański'    job_title = 'Spawacz'                    hourly_rate = '100.00' )
+                       ( person_resp = '10' first_name = 'Ewa'       last_name = 'Dąbrowska'    job_title = 'Specjalista ds. BHP'        hourly_rate = '90.00' ) ).
 
     MODIFY zts_resp_person FROM TABLE @persons.
 
@@ -438,12 +461,13 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
   METHOD fill_time_units.
     DATA time_units TYPE STANDARD TABLE OF zts_time_unit WITH EMPTY KEY.
 
-    " SAP internal unit codes (T006); names are in Polish only, there is no translation
-    time_units = VALUE #( ( time_unit = 'MIN' unit_name = 'Minuta' )
-                          ( time_unit = 'H'   unit_name = 'Godzina' )
-                          ( time_unit = 'TAG' unit_name = 'Dzień' )
-                          ( time_unit = 'WCH' unit_name = 'Tydzień' )
-                          ( time_unit = 'MON' unit_name = 'Miesiąc' ) ).
+    " SAP internal unit codes (T006); names are in Polish only, there is no translation.
+    " work_hours: hours of work in one unit; working_days: working days in one unit (8 h day, 5 day week, 21 day month)
+    time_units = VALUE #( ( time_unit = 'MIN' unit_name = 'Minuta'  work_hours = '0.01667'   working_days = '0.00208' )
+                          ( time_unit = 'H'   unit_name = 'Godzina' work_hours = '1'         working_days = '0.125' )
+                          ( time_unit = 'TAG' unit_name = 'Dzień'   work_hours = '8'         working_days = '1' )
+                          ( time_unit = 'WCH' unit_name = 'Tydzień' work_hours = '40'        working_days = '5' )
+                          ( time_unit = 'MON' unit_name = 'Miesiąc' work_hours = '168'       working_days = '21' ) ).
 
     MODIFY zts_time_unit FROM TABLE @time_units.
 
@@ -490,6 +514,7 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     TYPES: BEGIN OF component_template,
              item_category TYPE zts_component-item_category,
              uom           TYPE zts_component-uom,
+             price         TYPE zts_component-price,
              name          TYPE zts_component_t-component_text,
            END OF component_template,
            component_templates TYPE STANDARD TABLE OF component_template WITH EMPTY KEY.
@@ -498,21 +523,23 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA texts      TYPE STANDARD TABLE OF zts_component_t WITH EMPTY KEY.
 
     " CZ = część zamienna (spare part); item category L = magazynowa, N = niemagazynowa;
-    " units are SAP internal codes from ZTS_UOM (ST = sztuka, L = litr, PAK = opakowanie)
-    DATA(templates) = VALUE component_templates( ( item_category = 'L' uom = 'ST'  name = 'Łożysko' )
-                                                 ( item_category = 'L' uom = 'ST'  name = 'Uszczelka' )
-                                                 ( item_category = 'L' uom = 'ST'  name = 'Pasek klinowy' )
-                                                 ( item_category = 'L' uom = 'ST'  name = 'Filtr oleju' )
-                                                 ( item_category = 'N' uom = 'L'   name = 'Olej hydrauliczny' )
-                                                 ( item_category = 'L' uom = 'PAK' name = 'Bezpiecznik' )
-                                                 ( item_category = 'N' uom = 'ST'  name = 'Stycznik' )
-                                                 ( item_category = 'N' uom = 'ST'  name = 'Czujnik ciśnienia' ) ).
+    " units are SAP internal codes from ZTS_UOM (ST = sztuka, L = litr, PAK = opakowanie); prices per unit in PLN
+    DATA(templates) = VALUE component_templates( ( item_category = 'L' uom = 'ST'  price = '85.00'  name = 'Łożysko' )
+                                                 ( item_category = 'L' uom = 'ST'  price = '12.50'  name = 'Uszczelka' )
+                                                 ( item_category = 'L' uom = 'ST'  price = '45.00'  name = 'Pasek klinowy' )
+                                                 ( item_category = 'L' uom = 'ST'  price = '60.00'  name = 'Filtr oleju' )
+                                                 ( item_category = 'N' uom = 'L'   price = '18.00'  name = 'Olej hydrauliczny' )
+                                                 ( item_category = 'L' uom = 'PAK' price = '25.00'  name = 'Bezpiecznik' )
+                                                 ( item_category = 'N' uom = 'ST'  price = '220.00' name = 'Stycznik' )
+                                                 ( item_category = 'N' uom = 'ST'  price = '480.00' name = 'Czujnik ciśnienia' ) ).
 
     LOOP AT templates INTO DATA(template).
       DATA(component) = CONV zts_component-component( |CZ{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
       APPEND VALUE #( component     = component
                       item_category = template-item_category
-                      uom           = template-uom ) TO components.
+                      uom           = template-uom
+                      price         = template-price
+                      currency      = 'PLN' ) TO components.
 
       " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
       APPEND VALUE #( language = 'E' component = component component_text = template-name ) TO texts.
@@ -705,8 +732,10 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
 
   METHOD fill_prts.
     TYPES: BEGIN OF prt_template,
-             uom  TYPE zts_prt-uom,
-             name TYPE zts_prt_t-prt_text,
+             uom               TYPE zts_prt-uom,
+             purchase_price    TYPE zts_prt-purchase_price,
+             useful_life_hours TYPE zts_prt-useful_life_hours,
+             name              TYPE zts_prt_t-prt_text,
            END OF prt_template,
            prt_templates TYPE STANDARD TABLE OF prt_template WITH EMPTY KEY.
 
@@ -714,29 +743,35 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA texts TYPE STANDARD TABLE OF zts_prt_t WITH EMPTY KEY.
 
     " PP = pomoc produkcyjna (production resource/tool): first the tools and equipment,
-    " then the personal protective equipment; units are SAP internal codes from ZTS_UOM (ST = sztuka, PAA = para)
-    DATA(templates) = VALUE prt_templates( ( uom = 'ST'  name = 'Klucz dynamometryczny' )
-                                           ( uom = 'ST'  name = 'Zestaw kluczy płaskich' )
-                                           ( uom = 'ST'  name = 'Wkrętarka akumulatorowa' )
-                                           ( uom = 'ST'  name = 'Ściągacz do łożysk' )
-                                           ( uom = 'ST'  name = 'Multimetr cyfrowy' )
-                                           ( uom = 'ST'  name = 'Kamera termowizyjna' )
-                                           ( uom = 'ST'  name = 'Analizator drgań' )
-                                           ( uom = 'ST'  name = 'Podnośnik hydrauliczny' )
-                                           ( uom = 'ST'  name = 'Wciągnik łańcuchowy' )
-                                           ( uom = 'ST'  name = 'Rusztowanie jezdne' )
-                                           ( uom = 'ST'  name = 'Kask ochronny' )
-                                           ( uom = 'ST'  name = 'Okulary ochronne' )
-                                           ( uom = 'PAA' name = 'Rękawice dielektryczne' )
-                                           ( uom = 'ST'  name = 'Szelki bezpieczeństwa' )
-                                           ( uom = 'ST'  name = 'Zestaw blokad LOTO' )
-                                           ( uom = 'ST'  name = 'Detektor wielogazowy' )
-                                           ( uom = 'ST'  name = 'Nauszniki przeciwhałasowe' )
-                                           ( uom = 'ST'  name = 'Półmaska z filtrem' ) ).
+    " then the personal protective equipment; units are SAP internal codes from ZTS_UOM (ST = sztuka, PAA = para).
+    " Purchase price in PLN / useful life in hours of use = wear cost per hour of use
+    DATA(templates) = VALUE prt_templates(
+        ( uom = 'ST'  purchase_price = '1200.00'  useful_life_hours = 4000  name = 'Klucz dynamometryczny' )
+        ( uom = 'ST'  purchase_price = '350.00'   useful_life_hours = 8000  name = 'Zestaw kluczy płaskich' )
+        ( uom = 'ST'  purchase_price = '900.00'   useful_life_hours = 2000  name = 'Wkrętarka akumulatorowa' )
+        ( uom = 'ST'  purchase_price = '600.00'   useful_life_hours = 5000  name = 'Ściągacz do łożysk' )
+        ( uom = 'ST'  purchase_price = '450.00'   useful_life_hours = 6000  name = 'Multimetr cyfrowy' )
+        ( uom = 'ST'  purchase_price = '12000.00' useful_life_hours = 5000  name = 'Kamera termowizyjna' )
+        ( uom = 'ST'  purchase_price = '25000.00' useful_life_hours = 6000  name = 'Analizator drgań' )
+        ( uom = 'ST'  purchase_price = '3500.00'  useful_life_hours = 10000 name = 'Podnośnik hydrauliczny' )
+        ( uom = 'ST'  purchase_price = '2800.00'  useful_life_hours = 8000  name = 'Wciągnik łańcuchowy' )
+        ( uom = 'ST'  purchase_price = '9000.00'  useful_life_hours = 15000 name = 'Rusztowanie jezdne' )
+        ( uom = 'ST'  purchase_price = '80.00'    useful_life_hours = 2000  name = 'Kask ochronny' )
+        ( uom = 'ST'  purchase_price = '40.00'    useful_life_hours = 500   name = 'Okulary ochronne' )
+        ( uom = 'PAA' purchase_price = '300.00'   useful_life_hours = 400   name = 'Rękawice dielektryczne' )
+        ( uom = 'ST'  purchase_price = '650.00'   useful_life_hours = 1500  name = 'Szelki bezpieczeństwa' )
+        ( uom = 'ST'  purchase_price = '1500.00'  useful_life_hours = 5000  name = 'Zestaw blokad LOTO' )
+        ( uom = 'ST'  purchase_price = '4200.00'  useful_life_hours = 8000  name = 'Detektor wielogazowy' )
+        ( uom = 'ST'  purchase_price = '120.00'   useful_life_hours = 2000  name = 'Nauszniki przeciwhałasowe' )
+        ( uom = 'ST'  purchase_price = '150.00'   useful_life_hours = 300   name = 'Półmaska z filtrem' ) ).
 
     LOOP AT templates INTO DATA(template).
       DATA(prt) = CONV zts_prt-prt( |PP{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
-      APPEND VALUE #( prt = prt uom = template-uom ) TO prts.
+      APPEND VALUE #( prt               = prt
+                      uom               = template-uom
+                      purchase_price    = template-purchase_price
+                      currency          = 'PLN'
+                      useful_life_hours = template-useful_life_hours ) TO prts.
 
       " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
       APPEND VALUE #( language = 'E' prt = prt prt_text = template-name ) TO texts.
@@ -757,6 +792,50 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA(deleted_prts) = sy-dbcnt.
 
     result = |Production resources/tools deleted: { deleted_prts } PRTs, { deleted_texts } texts|.
+  ENDMETHOD.
+
+  METHOD fill_exchange_rates.
+    DATA rates TYPE STANDARD TABLE OF zts_exch_rate WITH EMPTY KEY.
+
+    " Value of one unit of the currency in PLN - fixed demo rates, not market data
+    rates = VALUE #( ( currency = 'PLN' pln_rate = '1' )
+                     ( currency = 'EUR' pln_rate = '4.30' )
+                     ( currency = 'USD' pln_rate = '3.95' )
+                     ( currency = 'GBP' pln_rate = '5.10' )
+                     ( currency = 'CHF' pln_rate = '4.55' )
+                     ( currency = 'CZK' pln_rate = '0.17' ) ).
+
+    MODIFY zts_exch_rate FROM TABLE @rates.
+
+    result = |Exchange rates filled: { lines( rates ) } currencies|.
+  ENDMETHOD.
+
+  METHOD delete_exchange_rates.
+    DELETE FROM zts_exch_rate.
+
+    result = |Exchange rates deleted: { sy-dbcnt } currencies|.
+  ENDMETHOD.
+
+  METHOD fill_cost_categories.
+    DATA texts TYPE STANDARD TABLE OF zts_cost_cat_t WITH EMPTY KEY.
+
+    " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
+    texts = VALUE #( ( language = 'E' cost_category = 'LA' category_name = 'Robocizna' )
+                     ( language = 'L' cost_category = 'LA' category_name = 'Robocizna' )
+                     ( language = 'E' cost_category = 'MA' category_name = 'Materiały' )
+                     ( language = 'L' cost_category = 'MA' category_name = 'Materiały' )
+                     ( language = 'E' cost_category = 'PR' category_name = 'Pomoce produkcyjne' )
+                     ( language = 'L' cost_category = 'PR' category_name = 'Pomoce produkcyjne' ) ).
+
+    MODIFY zts_cost_cat_t FROM TABLE @texts.
+
+    result = |Cost categories filled: { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_cost_categories.
+    DELETE FROM zts_cost_cat_t.
+
+    result = |Cost categories deleted: { sy-dbcnt } texts|.
   ENDMETHOD.
 ENDCLASS.
 

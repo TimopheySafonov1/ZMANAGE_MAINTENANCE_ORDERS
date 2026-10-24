@@ -15,6 +15,9 @@ define view entity ZI_TS_COMPONENT
       item_category as ItemCategory,
       @ObjectModel.foreignKey.association: '_Uom'
       uom           as Uom,
+      @Semantics.amount.currencyCode: 'Currency'
+      price         as Price,
+      currency      as Currency,
 
       _Text,
       _ItemCategory,

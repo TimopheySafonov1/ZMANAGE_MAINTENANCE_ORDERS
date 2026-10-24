@@ -13,7 +13,8 @@ define view entity ZC_TS_UOM_VH
       @UI.lineItem: [{ position: 10 }]
       @UI.selectionField: [{ position: 10 }]
       @EndUserText.label: 'Jednostka miary'
-  key Uom,
+      // MSEHIUNIT, so OData returns the external unit (PL: SZT) the unit fields of the UI work with
+  key cast( Uom as msehiunit preserving type )                               as Uom,
       @Search: { defaultSearchElement: true, ranking: #HIGH, fuzzinessThreshold: 0.8 }
       @Semantics.text: true
       @UI.lineItem: [{ position: 20 }]

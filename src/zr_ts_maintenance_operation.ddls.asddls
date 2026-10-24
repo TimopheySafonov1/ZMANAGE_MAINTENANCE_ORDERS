@@ -13,10 +13,12 @@ define view entity ZR_TS_MAINTENANCE_OPERATION
       OperationId,
       Description,
       PersonResp,
-      PlannedWorkUnit,
-      PlannedDurationUnit,
-      ActualWorkUnit,
-      ActualDurationUnit,
+      // Typed like I_UnitOfMeasure (MSEHIUNIT with conversion exit), so OData converts the internal
+      // unit (TAG) to the external, language-dependent one (PL: DNI) the UI works with, and back
+      cast( PlannedWorkUnit as msehiunit preserving type )     as PlannedWorkUnit,
+      cast( PlannedDurationUnit as msehiunit preserving type ) as PlannedDurationUnit,
+      cast( ActualWorkUnit as msehiunit preserving type )      as ActualWorkUnit,
+      cast( ActualDurationUnit as msehiunit preserving type )  as ActualDurationUnit,
       @Semantics.quantity.unitOfMeasure: 'PlannedWorkUnit'
       PlannedWork,
       @Semantics.quantity.unitOfMeasure: 'PlannedDurationUnit'

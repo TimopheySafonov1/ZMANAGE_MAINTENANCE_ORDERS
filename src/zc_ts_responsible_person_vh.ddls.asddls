@@ -34,5 +34,12 @@ define view entity ZC_TS_RESPONSIBLE_PERSON_VH
       @UI.lineItem: [{ position: 50 }]
       @UI.selectionField: [{ position: 40 }]
       @EndUserText.label: 'Stanowisko'
-      JobTitle
+      JobTitle,
+      @Semantics.amount.currencyCode: 'Currency'
+      @UI.lineItem: [{ position: 60 }]
+      @EndUserText.label: 'Stawka godzinowa'
+      HourlyRate,
+      @UI.hidden: true
+      @EndUserText.label: 'Waluta'
+      Currency
 }

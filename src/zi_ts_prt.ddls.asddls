@@ -9,9 +9,13 @@ define view entity ZI_TS_PRT
   association [0..1] to ZI_TS_UOM   as _Uom  on $projection.Uom = _Uom.Uom
 {
       @ObjectModel.text.association: '_Text'
-  key prt as Prt,
+  key prt               as Prt,
       @ObjectModel.foreignKey.association: '_Uom'
-      uom as Uom,
+      uom               as Uom,
+      @Semantics.amount.currencyCode: 'Currency'
+      purchase_price    as PurchasePrice,
+      currency          as Currency,
+      useful_life_hours as UsefulLifeHours,
 
       _Text,
       _Uom

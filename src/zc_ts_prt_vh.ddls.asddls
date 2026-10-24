@@ -30,5 +30,15 @@ define view entity ZC_TS_PRT_VH
       @Semantics.text: true
       @UI.hidden: true
       @EndUserText.label: 'Nazwa jednostki'
-      _Uom._Text[1: Language = $session.system_language].UomText as UomText
+      _Uom._Text[1: Language = $session.system_language].UomText as UomText,
+      @Semantics.amount.currencyCode: 'Currency'
+      @UI.lineItem: [{ position: 40 }]
+      @EndUserText.label: 'Cena zakupu'
+      PurchasePrice,
+      @UI.lineItem: [{ position: 50 }]
+      @EndUserText.label: 'Okres użytkowania (h)'
+      UsefulLifeHours,
+      @UI.hidden: true
+      @EndUserText.label: 'Waluta'
+      Currency
 }

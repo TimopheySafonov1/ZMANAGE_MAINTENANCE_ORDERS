@@ -41,5 +41,12 @@ define view entity ZC_TS_COMPONENT_VH
       @Semantics.text: true
       @UI.hidden: true
       @EndUserText.label: 'Nazwa jednostki'
-      _Uom._Text[1: Language = $session.system_language].UomText                     as UomText
+      _Uom._Text[1: Language = $session.system_language].UomText                     as UomText,
+      @Semantics.amount.currencyCode: 'Currency'
+      @UI.lineItem: [{ position: 50 }]
+      @EndUserText.label: 'Cena jednostkowa'
+      Price,
+      @UI.hidden: true
+      @EndUserText.label: 'Waluta'
+      Currency
 }

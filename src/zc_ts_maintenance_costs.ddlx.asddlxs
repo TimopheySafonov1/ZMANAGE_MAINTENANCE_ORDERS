@@ -1,17 +1,21 @@
 @Metadata.layer: #CUSTOMER
 @UI: {
   headerInfo: {
-    typeName:       'Pozycja kosztowa',
-    typeNamePlural: 'Pozycje kosztowe',
-    title:          { type: #STANDARD, value: 'PlannedCosts' },
-    description:    { type: #STANDARD, value: 'ActualCosts' }
-  }
+    typeName:       'Koszty operacji',
+    typeNamePlural: 'Koszty operacji',
+    title:          { type: #STANDARD, value: 'OperationDescription' },
+    description:    { type: #STANDARD, value: 'OperationId' }
+  },
+  presentationVariant: [{ sortOrder: [{ by: 'OperationId', direction: #ASC }] }]
 }
 annotate entity ZC_TS_MAINTENANCE_COSTS with
 {
+  // Detail page: the split of the planned and the actual costs of the operation
   @UI.facet: [
-    { id: 'CostData', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
-      targetQualifier: 'CostData', label: 'Koszty', position: 10 }
+    { id: 'PlannedCosts', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'Planned', label: 'Koszty planowane', position: 10 },
+    { id: 'ActualCosts', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'Actual', label: 'Koszty rzeczywiste', position: 20 }
   ]
 
   @UI.hidden: true
@@ -23,17 +27,49 @@ annotate entity ZC_TS_MAINTENANCE_COSTS with
   @UI.hidden: true
   OperationUuid;
 
+  // Shown as "description (number)"
+  @EndUserText.label: 'Operacja'
+  @UI.lineItem: [{ position: 10, importance: #HIGH }]
+  OperationId;
+
+  @EndUserText.label: 'Opis operacji'
+  OperationDescription;
+
   @EndUserText.label: 'Waluta'
   @UI.hidden: true
   Currency;
 
   @EndUserText.label: 'Koszty planowane'
-  @UI: { lineItem:   [{ position: 10, importance: #HIGH }],
-         fieldGroup: [{ qualifier: 'CostData', position: 10 }] }
+  @UI: { lineItem:   [{ position: 20, importance: #HIGH }],
+         fieldGroup: [{ qualifier: 'Planned', position: 40, label: 'Razem' }] }
   PlannedCosts;
 
   @EndUserText.label: 'Koszty rzeczywiste'
-  @UI: { lineItem:   [{ position: 20, importance: #HIGH }],
-         fieldGroup: [{ qualifier: 'CostData', position: 20 }] }
+  @UI: { lineItem:   [{ position: 30, importance: #HIGH }],
+         fieldGroup: [{ qualifier: 'Actual', position: 40, label: 'Razem' }] }
   ActualCosts;
+
+  @EndUserText.label: 'Robocizna (plan)'
+  @UI.fieldGroup: [{ qualifier: 'Planned', position: 10, label: 'Robocizna' }]
+  LaborPlannedCosts;
+
+  @EndUserText.label: 'Robocizna (rzecz.)'
+  @UI.fieldGroup: [{ qualifier: 'Actual', position: 10, label: 'Robocizna' }]
+  LaborActualCosts;
+
+  @EndUserText.label: 'Komponenty (plan)'
+  @UI.fieldGroup: [{ qualifier: 'Planned', position: 20, label: 'Komponenty' }]
+  MaterialPlannedCosts;
+
+  @EndUserText.label: 'Komponenty (rzecz.)'
+  @UI.fieldGroup: [{ qualifier: 'Actual', position: 20, label: 'Komponenty' }]
+  MaterialActualCosts;
+
+  @EndUserText.label: 'Pomoce produkcyjne (plan)'
+  @UI.fieldGroup: [{ qualifier: 'Planned', position: 30, label: 'Pomoce produkcyjne' }]
+  PrtPlannedCosts;
+
+  @EndUserText.label: 'Pomoce produkcyjne (rzecz.)'
+  @UI.fieldGroup: [{ qualifier: 'Actual', position: 30, label: 'Pomoce produkcyjne' }]
+  PrtActualCosts;
 }

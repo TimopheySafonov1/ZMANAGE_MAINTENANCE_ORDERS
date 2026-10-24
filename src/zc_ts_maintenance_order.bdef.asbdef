@@ -17,7 +17,8 @@ use etag
   use action Prepare;
 
   use association _Operations { create; with draft; }
-  use association _Costs { create; with draft; }
+  // Cost items are generated - they can't be created by hand
+  use association _Costs { with draft; }
 }
 
 define behavior for ZC_TS_MAINTENANCE_OPERATION alias MaintenanceOperation
@@ -32,9 +33,6 @@ define behavior for ZC_TS_MAINTENANCE_OPERATION alias MaintenanceOperation
 
 define behavior for ZC_TS_MAINTENANCE_COSTS alias MaintenanceCosts
 {
-  use update;
-  use delete;
-
   use association _MaintenanceOrder { with draft; }
 }
 

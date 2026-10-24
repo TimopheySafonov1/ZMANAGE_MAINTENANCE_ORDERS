@@ -25,6 +25,8 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         storage_locations      TYPE abap_bool VALUE abap_true,
         component_stock        TYPE abap_bool VALUE abap_true,
         prts                   TYPE abap_bool VALUE abap_true,
+        exchange_rates         TYPE abap_bool VALUE abap_true,
+        cost_categories        TYPE abap_bool VALUE abap_true,
       END OF delete,
       BEGIN OF fill,
         maint_order_types      TYPE abap_bool VALUE abap_true,
@@ -41,6 +43,8 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         storage_locations      TYPE abap_bool VALUE abap_true,
         component_stock        TYPE abap_bool VALUE abap_true,
         prts                   TYPE abap_bool VALUE abap_true,
+        exchange_rates         TYPE abap_bool VALUE abap_true,
+        cost_categories        TYPE abap_bool VALUE abap_true,
       END OF fill.
     " ----------------------------------------------------------------------
 
@@ -103,6 +107,14 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->delete_prts( ) ).
     ENDIF.
 
+    IF delete-exchange_rates = abap_true.
+      out->write( customizing->delete_exchange_rates( ) ).
+    ENDIF.
+
+    IF delete-cost_categories = abap_true.
+      out->write( customizing->delete_cost_categories( ) ).
+    ENDIF.
+
     IF fill-maint_order_types = abap_true.
       out->write( customizing->fill_maint_order_types( ) ).
     ENDIF.
@@ -160,6 +172,15 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
     " PRTs refer to the units of measure, so they come after them
     IF fill-prts = abap_true.
       out->write( customizing->fill_prts( ) ).
+    ENDIF.
+
+    " Costing: exchange rates for the order currency and the names of the cost categories
+    IF fill-exchange_rates = abap_true.
+      out->write( customizing->fill_exchange_rates( ) ).
+    ENDIF.
+
+    IF fill-cost_categories = abap_true.
+      out->write( customizing->fill_cost_categories( ) ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.

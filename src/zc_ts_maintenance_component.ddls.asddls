@@ -21,9 +21,10 @@ define view entity ZC_TS_MAINTENANCE_COMPONENT
       ItemCategory,
       @UI.hidden: true
       _ItemCategory._Text[1: Language = $session.system_language].ItemCategoryName as ItemCategoryName,
-      // Only the units of ZTS_UOM are offered, not the whole SAP unit list
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_UOM_VH', element: 'Uom' },
-                                           useForValidation: true }]
+      // Only the units of ZTS_UOM are offered, not the whole SAP unit list.
+      // No useForValidation on units: the UI validates with the external unit code (PC, PAC),
+      // the value help holds the internal one (ST, PAK), so those units would be rejected
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_UOM_VH', element: 'Uom' } }]
       Uom,
       @Semantics.quantity.unitOfMeasure: 'Uom'
       ReqQuantity,
