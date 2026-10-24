@@ -185,11 +185,33 @@ ENDCLASS.
 
 CLASS lhc_maintenanceprt DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      IMPORTING keys REQUEST requested_features FOR MaintenancePrt RESULT result.
+
     METHODS setorderuuid FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenancePrt~setOrderUuid.
+
+    METHODS setprtdata FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenancePrt~setPrtData.
 ENDCLASS.
 
 CLASS lhc_maintenanceprt IMPLEMENTATION.
+  METHOD get_instance_features.
+    " Without a PRT description and unit are free input; with one they come from the PRT
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenancePrt
+        FIELDS ( PrtId ) WITH CORRESPONDING #( keys )
+        RESULT DATA(prts).
+
+    result = VALUE #( FOR prt IN prts
+                      LET field_control = COND #( WHEN prt-PrtId IS INITIAL
+                                                    THEN if_abap_behv=>fc-f-unrestricted
+                                                    ELSE if_abap_behv=>fc-f-read_only ) IN
+                      ( %tky               = prt-%tky
+                        %field-Description = field_control
+                        %field-Uom         = field_control ) ).
+  ENDMETHOD.
+
   METHOD setorderuuid.
     " OrderUuid is not stored on the PRT - take it from the parent operation
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
@@ -209,4 +231,36 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
       ENTITY MaintenancePrt
         UPDATE FIELDS ( OrderUuid ) WITH updates.
   ENDMETHOD.
+
+  METHOD setprtdata.
+    " Runs only when PrtId changes, so values typed without a PRT are never touched
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenancePrt
+        FIELDS ( PrtId ) WITH CORRESPONDING #( keys )
+        RESULT DATA(prts).
+
+    IF prts IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT FROM zts_prt AS prt
+      LEFT OUTER JOIN zts_prt_t AS text
+        ON  text~prt      = prt~prt
+        AND text~language = @sy-langu
+      FIELDS prt~prt, prt~uom, text~prt_text
+      FOR ALL ENTRIES IN @prts
+      WHERE prt~prt = @prts-PrtId
+      INTO TABLE @DATA(master_data).
+
+    " PRT removed or unknown - the old values are cleared, the fields become editable again
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenancePrt
+        UPDATE FIELDS ( Description Uom )
+        WITH VALUE #( FOR prt IN prts
+                      LET master = VALUE #( master_data[ prt = prt-PrtId ] OPTIONAL ) IN
+                      ( %tky        = prt-%tky
+                        Description = master-prt_text
+                        Uom         = master-uom ) ).
+  ENDMETHOD.
 ENDCLASS.
+

@@ -24,6 +24,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         units_of_measure       TYPE abap_bool VALUE abap_true,
         storage_locations      TYPE abap_bool VALUE abap_true,
         component_stock        TYPE abap_bool VALUE abap_true,
+        prts                   TYPE abap_bool VALUE abap_true,
       END OF delete,
       BEGIN OF fill,
         maint_order_types      TYPE abap_bool VALUE abap_true,
@@ -39,6 +40,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         units_of_measure       TYPE abap_bool VALUE abap_true,
         storage_locations      TYPE abap_bool VALUE abap_true,
         component_stock        TYPE abap_bool VALUE abap_true,
+        prts                   TYPE abap_bool VALUE abap_true,
       END OF fill.
     " ----------------------------------------------------------------------
 
@@ -97,6 +99,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->delete_component_stock( ) ).
     ENDIF.
 
+    IF delete-prts = abap_true.
+      out->write( customizing->delete_prts( ) ).
+    ENDIF.
+
     IF fill-maint_order_types = abap_true.
       out->write( customizing->fill_maint_order_types( ) ).
     ENDIF.
@@ -149,6 +155,11 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
 
     IF fill-component_stock = abap_true.
       out->write( customizing->fill_component_stock( ) ).
+    ENDIF.
+
+    " PRTs refer to the units of measure, so they come after them
+    IF fill-prts = abap_true.
+      out->write( customizing->fill_prts( ) ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.

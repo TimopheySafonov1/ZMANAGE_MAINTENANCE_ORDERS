@@ -126,6 +126,16 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     "! Deletes all component stock
     METHODS delete_component_stock
       RETURNING VALUE(result) TYPE string.
+
+    "! Production resources and tools (ZTS_PRT, codes PPxxx = pomoc produkcyjna) - maintenance tools and
+    "! personal protective equipment - with their unit of measure and Polish names in ZTS_PRT_T.
+    "! Fill units of measure first. Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_prts
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all production resources and tools and all their texts (every language)
+    METHODS delete_prts
+      RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS zcl_ts_maint_customizing IMPLEMENTATION.
@@ -691,6 +701,62 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DELETE FROM zts_comp_stock.
 
     result = |Component stock deleted: { sy-dbcnt } entries|.
+  ENDMETHOD.
+
+  METHOD fill_prts.
+    TYPES: BEGIN OF prt_template,
+             uom  TYPE zts_prt-uom,
+             name TYPE zts_prt_t-prt_text,
+           END OF prt_template,
+           prt_templates TYPE STANDARD TABLE OF prt_template WITH EMPTY KEY.
+
+    DATA prts  TYPE STANDARD TABLE OF zts_prt WITH EMPTY KEY.
+    DATA texts TYPE STANDARD TABLE OF zts_prt_t WITH EMPTY KEY.
+
+    " PP = pomoc produkcyjna (production resource/tool): first the tools and equipment,
+    " then the personal protective equipment; units are SAP internal codes from ZTS_UOM (ST = sztuka, PAA = para)
+    DATA(templates) = VALUE prt_templates( ( uom = 'ST'  name = 'Klucz dynamometryczny' )
+                                           ( uom = 'ST'  name = 'Zestaw kluczy płaskich' )
+                                           ( uom = 'ST'  name = 'Wkrętarka akumulatorowa' )
+                                           ( uom = 'ST'  name = 'Ściągacz do łożysk' )
+                                           ( uom = 'ST'  name = 'Multimetr cyfrowy' )
+                                           ( uom = 'ST'  name = 'Kamera termowizyjna' )
+                                           ( uom = 'ST'  name = 'Analizator drgań' )
+                                           ( uom = 'ST'  name = 'Podnośnik hydrauliczny' )
+                                           ( uom = 'ST'  name = 'Wciągnik łańcuchowy' )
+                                           ( uom = 'ST'  name = 'Rusztowanie jezdne' )
+                                           ( uom = 'ST'  name = 'Kask ochronny' )
+                                           ( uom = 'ST'  name = 'Okulary ochronne' )
+                                           ( uom = 'PAA' name = 'Rękawice dielektryczne' )
+                                           ( uom = 'ST'  name = 'Szelki bezpieczeństwa' )
+                                           ( uom = 'ST'  name = 'Zestaw blokad LOTO' )
+                                           ( uom = 'ST'  name = 'Detektor wielogazowy' )
+                                           ( uom = 'ST'  name = 'Nauszniki przeciwhałasowe' )
+                                           ( uom = 'ST'  name = 'Półmaska z filtrem' ) ).
+
+    LOOP AT templates INTO DATA(template).
+      DATA(prt) = CONV zts_prt-prt( |PP{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
+      APPEND VALUE #( prt = prt uom = template-uom ) TO prts.
+
+      " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
+      APPEND VALUE #( language = 'E' prt = prt prt_text = template-name ) TO texts.
+      APPEND VALUE #( language = 'L' prt = prt prt_text = template-name ) TO texts.
+    ENDLOOP.
+
+    MODIFY zts_prt FROM TABLE @prts.
+    MODIFY zts_prt_t FROM TABLE @texts.
+
+    result = |Production resources/tools filled: { lines( prts ) } PRTs, { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_prts.
+    DELETE FROM zts_prt_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_prt.
+    DATA(deleted_prts) = sy-dbcnt.
+
+    result = |Production resources/tools deleted: { deleted_prts } PRTs, { deleted_texts } texts|.
   ENDMETHOD.
 ENDCLASS.
 

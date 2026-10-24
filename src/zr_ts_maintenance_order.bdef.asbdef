@@ -169,8 +169,17 @@ authorization dependent by _MaintenanceOrder
 
   field ( numbering : managed, readonly ) PrtUuid;
   field ( readonly ) OperationUuid, OrderUuid;
+  // Free input without a PRT, read-only once a PRT is chosen (taken from the PRT)
+  field ( features : instance ) Description, Uom;
 
   determination setOrderUuid on modify { create; }
+  determination setPrtData on modify { field PrtId; }
+
+  side effects
+  {
+    field PrtId affects field Description, field Uom,
+                        permissions ( field Description, field Uom );
+  }
 
   mapping for zts_maint_prt
     {
