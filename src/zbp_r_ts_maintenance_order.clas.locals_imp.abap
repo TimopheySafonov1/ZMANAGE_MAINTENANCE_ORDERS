@@ -479,6 +479,9 @@ CLASS lhc_maintenanceorder DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS settechobjtype FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOrder~setTechObjType.
 
+    METHODS createfirstoperation FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOrder~createFirstOperation.
+
     METHODS validatetyperules FOR VALIDATE ON SAVE
       IMPORTING keys FOR MaintenanceOrder~validateTypeRules.
 ENDCLASS.
@@ -649,6 +652,18 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         UPDATE FIELDS ( MaintOrdFinalDueDateTime ) WITH updates.
   ENDMETHOD.
 
+  METHOD createfirstoperation.
+    " Only the operation is created here - its component and PRT come from createComponentAndPrt,
+    " its number from setOperationId
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        CREATE BY \_Operations
+        FROM VALUE #( FOR key IN keys INDEX INTO idx
+                      ( %tky    = key-%tky
+                        %target = VALUE #( ( %cid      = |FIRST_OPERATION_{ idx }|
+                                             %is_draft = key-%is_draft ) ) ) ).
+  ENDMETHOD.
+
   METHOD settechobjtype.
     " Runs only when TechObject changes - an unknown or removed object clears the type
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
@@ -816,6 +831,9 @@ CLASS lhc_maintenanceoperation DEFINITION INHERITING FROM cl_abap_behavior_handl
     METHODS setoperationid FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOperation~setOperationId.
 
+    METHODS createcomponentandprt FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOperation~createComponentAndPrt.
+
     METHODS calculatecosts FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOperation~calculateCosts.
 
@@ -824,6 +842,22 @@ CLASS lhc_maintenanceoperation DEFINITION INHERITING FROM cl_abap_behavior_handl
 ENDCLASS.
 
 CLASS lhc_maintenanceoperation IMPLEMENTATION.
+  METHOD createcomponentandprt.
+    " Empty rows to fill in the lists - deleteIfEmpty removes the ones still empty on save
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        CREATE BY \_Components
+        FROM VALUE #( FOR key IN keys INDEX INTO idx
+                      ( %tky    = key-%tky
+                        %target = VALUE #( ( %cid      = |COMPONENT_{ idx }|
+                                             %is_draft = key-%is_draft ) ) ) )
+        CREATE BY \_PRTs
+        FROM VALUE #( FOR key IN keys INDEX INTO idx
+                      ( %tky    = key-%tky
+                        %target = VALUE #( ( %cid      = |PRT_{ idx }|
+                                             %is_draft = key-%is_draft ) ) ) ).
+  ENDMETHOD.
+
   METHOD setoperationid.
     " Operations are numbered 1, 2, 3 ... per order right on create, so the number is visible in the draft
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
@@ -910,6 +944,9 @@ CLASS lhc_maintenancecomponent DEFINITION INHERITING FROM cl_abap_behavior_handl
     METHODS setcomponentdata FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceComponent~setComponentData.
 
+    METHODS deleteifempty FOR DETERMINE ON SAVE
+      IMPORTING keys FOR MaintenanceComponent~deleteIfEmpty.
+
     METHODS calculatecosts FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceComponent~calculateCosts.
 
@@ -953,6 +990,23 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
         UPDATE FIELDS ( OrderUuid ) WITH updates.
+  ENDMETHOD.
+
+  METHOD deleteifempty.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceComponent
+        FIELDS ( ComponentId Description ReqQuantity ) WITH CORRESPONDING #( keys )
+        RESULT DATA(components).
+
+    " Anything entered keeps the component
+    DELETE components WHERE ComponentId IS NOT INITIAL OR Description IS NOT INITIAL OR ReqQuantity IS NOT INITIAL.
+    IF components IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceComponent
+        DELETE FROM VALUE #( FOR component IN components ( %tky = component-%tky ) ).
   ENDMETHOD.
 
   METHOD setcomponentdata.
@@ -1022,6 +1076,9 @@ CLASS lhc_maintenanceprt DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS setprtdata FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenancePrt~setPrtData.
 
+    METHODS deleteifempty FOR DETERMINE ON SAVE
+      IMPORTING keys FOR MaintenancePrt~deleteIfEmpty.
+
     METHODS calculatecosts FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenancePrt~calculateCosts.
 
@@ -1064,6 +1121,24 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt
         UPDATE FIELDS ( OrderUuid ) WITH updates.
+  ENDMETHOD.
+
+  METHOD deleteifempty.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenancePrt
+        FIELDS ( PrtId Description ReqQuantity PlannedUsage ActualUsage ) WITH CORRESPONDING #( keys )
+        RESULT DATA(prts).
+
+    " Anything entered keeps the PRT
+    DELETE prts WHERE PrtId IS NOT INITIAL OR Description IS NOT INITIAL OR ReqQuantity IS NOT INITIAL
+                   OR PlannedUsage IS NOT INITIAL OR ActualUsage IS NOT INITIAL.
+    IF prts IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenancePrt
+        DELETE FROM VALUE #( FOR prt IN prts ( %tky = prt-%tky ) ).
   ENDMETHOD.
 
   METHOD setprtdata.

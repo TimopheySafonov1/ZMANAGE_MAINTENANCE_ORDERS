@@ -34,6 +34,8 @@ authorization master ( global )
   determination setDueDate on modify { field Priority, MaintOrdBasicStartDateTime; }
   // Equipment or functional location - copied from the chosen technical object (ZTS_TECH_OBJ)
   determination setTechObjType on modify { field TechObject; }
+  // A new order starts with operation 1, so it can be filled right in the operations list
+  determination createFirstOperation on modify { create; }
 
   validation validateTypeRules on save { create; field OrderType, TechObject, LongText,
                                          MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime,
@@ -99,6 +101,8 @@ authorization dependent by _MaintenanceOrder
   field ( readonly ) OrderUuid, OperationId;
 
   determination setOperationId on modify { create; }
+  // Every new operation gets an empty component and PRT to fill in the lists of the operation
+  determination createComponentAndPrt on modify { create; }
   // Description is copied to the cost item of the operation, so it triggers the calculation too
   determination calculateCosts on modify { create; delete; field Description, PersonResp, PlannedWork, PlannedWorkUnit,
                                            PlannedWorkDuration, PlannedDurationUnit, ActualWork, ActualWorkUnit,
@@ -198,6 +202,8 @@ authorization dependent by _MaintenanceOrder
   determination setOrderUuid on modify { create; }
   determination setComponentData on modify { field ComponentId; }
   determination calculateCosts on modify { create; delete; field ComponentId, ReqQuantity, Uom; }
+  // The component created with the operation is dropped on save when it was left empty
+  determination deleteIfEmpty on save { create; update; }
 
   side effects
   {
@@ -239,6 +245,8 @@ authorization dependent by _MaintenanceOrder
 
   determination setOrderUuid on modify { create; }
   determination setPrtData on modify { field PrtId; }
+  // The PRT created with the operation is dropped on save when it was left empty
+  determination deleteIfEmpty on save { create; update; }
   determination calculateCosts on modify { create; delete; field PrtId, ReqQuantity, PlannedUsage, PlannedUsageUnit,
                                            ActualUsage, ActualUsageUnit; }
 

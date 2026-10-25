@@ -24,19 +24,21 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
   @UI.hidden: true
   OrderUuid;
 
+  // Compact fixed column widths - without them the quantity column takes all free space, and a column drops
+  // into a second line of the row once the screen is narrower than the columns before it (here ~31rem)
   @EndUserText.label: 'Numer pomocy produkcyjnej'
-  @UI: { lineItem:       [{ position: 10, importance: #HIGH }],
+  @UI: { lineItem:       [{ position: 10, importance: #HIGH, cssDefault.width: '10rem' }],
          identification: [{ position: 10 }],
          fieldGroup:     [{ qualifier: 'PrtData', position: 10 }] }
   PrtId;
 
   @EndUserText.label: 'Opis'
-  @UI: { lineItem:   [{ position: 20, importance: #HIGH }],
+  @UI: { lineItem:   [{ position: 20, importance: #HIGH, cssDefault.width: '12rem' }],
          fieldGroup: [{ qualifier: 'PrtData', position: 20 }] }
   Description;
 
   @EndUserText.label: 'Ilość wymagana'
-  @UI: { lineItem:   [{ position: 30, importance: #HIGH }],
+  @UI: { lineItem:   [{ position: 30, importance: #HIGH, cssDefault.width: '9rem' }],
          fieldGroup: [{ qualifier: 'PrtData', position: 30 }] }
   ReqQuantity;
 
@@ -45,13 +47,13 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
   Uom;
 
   @EndUserText.label: 'Skład'
-  @UI: { lineItem:   [{ position: 40, importance: #MEDIUM }],
+  @UI: { lineItem:   [{ position: 40, importance: #HIGH, cssDefault.width: '8rem' }],
          fieldGroup: [{ qualifier: 'PrtData', position: 40 }] }
   StorageLoc;
 
+  // The usage times are only on the PRT page - everything else can be filled in the list
   @EndUserText.label: 'Planowany czas użycia (puste = cała operacja)'
-  @UI: { lineItem:   [{ position: 50, importance: #MEDIUM }],
-         fieldGroup: [{ qualifier: 'PrtData', position: 50 }] }
+  @UI: { fieldGroup: [{ qualifier: 'PrtData', position: 50 }] }
   PlannedUsage;
 
   @EndUserText.label: 'Jednostka czasu (plan)'
@@ -59,8 +61,7 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
   PlannedUsageUnit;
 
   @EndUserText.label: 'Rzeczywisty czas użycia'
-  @UI: { lineItem:   [{ position: 60, importance: #MEDIUM }],
-         fieldGroup: [{ qualifier: 'PrtData', position: 60 }] }
+  @UI: { fieldGroup: [{ qualifier: 'PrtData', position: 60 }] }
   ActualUsage;
 
   @EndUserText.label: 'Jednostka czasu (rzeczywista)'
