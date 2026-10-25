@@ -157,6 +157,18 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     "! Deletes all cost category names (every language)
     METHODS delete_cost_categories
       RETURNING VALUE(result) TYPE string.
+
+    "! Technical object types (ZTS_TOBJ_TYPE: FL = functional location, EQ = equipment) and demo technical
+    "! objects (ZTS_TECH_OBJ) of the Warsaw and Krakow plants - a functional location structure and the
+    "! equipment installed in it (superior_object builds the hierarchy), some of them inactive or marked for
+    "! deletion - with Polish names in the text tables. Fill the plants first.
+    "! Existing entries are kept or overwritten, so it can be re-run safely.
+    METHODS fill_tech_objects
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all technical objects, all technical object types and all their texts (every language)
+    METHODS delete_tech_objects
+      RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS zcl_ts_maint_customizing IMPLEMENTATION.
@@ -846,6 +858,148 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DELETE FROM zts_cost_cat_t.
 
     result = |Cost categories deleted: { sy-dbcnt } texts|.
+  ENDMETHOD.
+
+  METHOD fill_tech_objects.
+    TYPES: BEGIN OF tech_object_template,
+             tech_object     TYPE zts_tech_obj-tech_object,
+             tech_obj_type   TYPE zts_tech_obj-tech_obj_type,
+             superior_object TYPE zts_tech_obj-superior_object,
+             planning_plant  TYPE zts_tech_obj-planning_plant,
+             sort_field      TYPE zts_tech_obj-sort_field,
+             object_type     TYPE zts_tech_obj-object_type,
+             material        TYPE zts_tech_obj-material,
+             serial_number   TYPE zts_tech_obj-serial_number,
+             ident_number    TYPE zts_tech_obj-ident_number,
+             location        TYPE zts_tech_obj-location,
+             marked_for_del  TYPE zts_tech_obj-marked_for_del,
+             inactive        TYPE zts_tech_obj-inactive,
+             name            TYPE zts_tech_obj_t-tech_object_text,
+           END OF tech_object_template,
+           tech_object_templates TYPE STANDARD TABLE OF tech_object_template WITH EMPTY KEY.
+
+    DATA types        TYPE STANDARD TABLE OF zts_tobj_type WITH EMPTY KEY.
+    DATA type_texts   TYPE STANDARD TABLE OF zts_tobj_type_t WITH EMPTY KEY.
+    DATA tech_objects TYPE STANDARD TABLE OF zts_tech_obj WITH EMPTY KEY.
+    DATA texts        TYPE STANDARD TABLE OF zts_tech_obj_t WITH EMPTY KEY.
+
+    types = VALUE #( ( tech_obj_type = 'FL' )
+                     ( tech_obj_type = 'EQ' ) ).
+
+    " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
+    type_texts = VALUE #( ( language = 'E' tech_obj_type = 'FL' type_text = 'Miejsce funkcjonowania' )
+                          ( language = 'L' tech_obj_type = 'FL' type_text = 'Miejsce funkcjonowania' )
+                          ( language = 'E' tech_obj_type = 'EQ' type_text = 'Urządzenie' )
+                          ( language = 'L' tech_obj_type = 'EQ' type_text = 'Urządzenie' ) ).
+
+    " Functional locations (FL) are the places in the plant structure, equipment (EQ, numbers 100000xx) are the
+    " machines installed there. superior_object is the functional location above (for equipment: the one it is
+    " installed at) - objects without one are the roots of the hierarchy, like the forklift that moves around.
+    " Object type = class of the object, material = the manufacturer part number the equipment was bought as,
+    " serial number and ident number (inventory number) identify the single machine.
+    DATA(templates) = VALUE tech_object_templates(
+        " Warsaw plant 0001
+        ( tech_object = 'PL01-WAW'           tech_obj_type = 'FL' planning_plant = '0001'
+          sort_field = 'ZAKLAD'    object_type = 'ZAKLAD'     location = 'WAW'
+          name = 'Zakład Warszawa' )
+        ( tech_object = 'PL01-WAW-PROD'      tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW'
+          sort_field = 'PRODUKCJA' object_type = 'HALA'       location = 'HALA-A'
+          name = 'Hala produkcyjna A' )
+        ( tech_object = 'PL01-WAW-PROD-L01'  tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-PROD'
+          sort_field = 'LINIE'     object_type = 'LINIA'      location = 'HALA-A'
+          name = 'Linia rozlewnicza 1' )
+        ( tech_object = 'PL01-WAW-PROD-L02'  tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-PROD'
+          sort_field = 'LINIE'     object_type = 'LINIA'      location = 'HALA-A'
+          name = 'Linia pakująca 2' )
+        ( tech_object = 'PL01-WAW-UTIL'      tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW'
+          sort_field = 'MEDIA'     object_type = 'BUDYNEK'    location = 'BUD-TECH'
+          name = 'Budynek techniczny - media' )
+        ( tech_object = 'PL01-WAW-UTIL-SPR'  tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
+          sort_field = 'MEDIA'     object_type = 'STACJA'     location = 'BUD-TECH'
+          name = 'Stacja sprężarek' )
+        ( tech_object = 'PL01-WAW-UTIL-HVAC' tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
+          sort_field = 'MEDIA'     object_type = 'INSTALACJA' location = 'DACH'
+          name = 'Instalacja wentylacji i klimatyzacji' )
+        ( tech_object = 'PL01-WAW-MAG-OLD'   tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW'
+          sort_field = 'MAGAZYN'   object_type = 'BUDYNEK'    location = 'MAG-STARY' marked_for_del = abap_true
+          name = 'Stary magazyn wyrobów gotowych' )
+        ( tech_object = '10000001' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L01'
+          sort_field = 'POMPY'      object_type = 'POMPA'      material = 'GRU-CR32-4'     serial_number = 'A965123P11945'
+          ident_number = 'P-2019-0451'  location = 'HALA-A'    name = 'Pompa odśrodkowa P-101' )
+        ( tech_object = '10000002' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L02'
+          sort_field = 'POMPY'      object_type = 'POMPA'      material = 'PRO-DDE-6-10'   serial_number = 'DDE20200112'
+          ident_number = 'P-2020-0112'  location = 'HALA-A'    name = 'Pompa dozująca P-102' )
+        ( tech_object = '10000003' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L01'
+          sort_field = 'SILNIKI'    object_type = 'SILNIK'     material = 'ABB-M3BP-160'   serial_number = '3GBP1614-77812'
+          ident_number = 'S-ABB-77812'  location = 'HALA-A'    name = 'Silnik napędu przenośnika M-201' )
+        ( tech_object = '10000004' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L01'
+          sort_field = 'PRZENOSNIK' object_type = 'PRZENOSNIK' material = 'INT-PT-600'     serial_number = 'PT600-18-033'
+          ident_number = 'PT-2018-033'  location = 'HALA-A'    name = 'Przenośnik taśmowy PT-01' )
+        ( tech_object = '10000005' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL-SPR'
+          sort_field = 'SPREZARKI'  object_type = 'SPREZARKA'  material = 'AC-GA37VSD'     serial_number = 'API625521'
+          ident_number = 'AC-GA37-5521' location = 'BUD-TECH'  name = 'Sprężarka śrubowa K-301' )
+        ( tech_object = '10000006' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL-SPR'
+          sort_field = 'SPREZARKI'  object_type = 'OSUSZACZ'   material = 'AC-FD95'        serial_number = 'ITJ21118'
+          ident_number = 'OS-2021-118'  location = 'BUD-TECH'  name = 'Osuszacz powietrza OS-01' )
+        ( tech_object = '10000007' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL-HVAC'
+          sort_field = 'HVAC'       object_type = 'CENTRALA'   material = 'KLI-CV-25'      serial_number = 'CV25-17-904'
+          ident_number = 'CW-2017-904'  location = 'DACH'      name = 'Centrala wentylacyjna CW-1' )
+        ( tech_object = '10000008' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
+          sort_field = 'ELEKTRYKA'  object_type = 'ROZDZIELN'  material = 'SCH-PRISMA-G'   serial_number = 'PRG15001'
+          ident_number = 'RG-2015-001'  location = 'BUD-TECH'  name = 'Rozdzielnica główna RG 0,4 kV' )
+        ( tech_object = '10000009' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-MAG-OLD'
+          sort_field = 'POMPY'      object_type = 'POMPA'      material = 'GRU-SEG-40'     serial_number = 'SEG12007'
+          ident_number = 'P-2012-0007'  location = 'MAG-STARY' inactive = abap_true
+          name = 'Pompa zatapialna (wycofana)' )
+        ( tech_object = '10000010' tech_obj_type = 'EQ' planning_plant = '0001'
+          sort_field = 'WOZKI'      object_type = 'WOZEK'      material = 'LIN-H25'        serial_number = 'H2X391T16552'
+          ident_number = 'WW-2016-552'  location = 'HALA-B'    marked_for_del = abap_true
+          name = 'Wózek widłowy WW-03' )
+        " Krakow plant 0002
+        ( tech_object = 'PL02-KRK'           tech_obj_type = 'FL' planning_plant = '0002'
+          sort_field = 'ZAKLAD'    object_type = 'ZAKLAD'     location = 'KRK'
+          name = 'Zakład Kraków' )
+        ( tech_object = 'PL02-KRK-TLOCZ'     tech_obj_type = 'FL' planning_plant = '0002' superior_object = 'PL02-KRK'
+          sort_field = 'PRODUKCJA' object_type = 'HALA'       location = 'HALA-1'
+          name = 'Tłocznia' )
+        ( tech_object = '10000011' tech_obj_type = 'EQ' planning_plant = '0002' superior_object = 'PL02-KRK-TLOCZ'
+          sort_field = 'PRASY'      object_type = 'PRASA'      material = 'SCHU-HPX-400'   serial_number = 'HPX400-22-118'
+          ident_number = 'PR-2022-118'  location = 'HALA-1'    name = 'Prasa hydrauliczna PH-400' )
+        ( tech_object = '10000012' tech_obj_type = 'EQ' planning_plant = '0002' superior_object = 'PL02-KRK-TLOCZ'
+          sort_field = 'SILNIKI'    object_type = 'SILNIK'     material = 'SIE-1LE1-180'   serial_number = 'UD2203-0381'
+          ident_number = 'S-SIE-0381'   location = 'HALA-1'    name = 'Silnik pompy hydrauliki M-401' ) ).
+
+    LOOP AT templates INTO DATA(template).
+      APPEND CORRESPONDING #( template ) TO tech_objects.
+
+      APPEND VALUE #( language = 'E' tech_object = template-tech_object tech_object_text = template-name ) TO texts.
+      APPEND VALUE #( language = 'L' tech_object = template-tech_object tech_object_text = template-name ) TO texts.
+    ENDLOOP.
+
+    " The type table has only key fields, so it can't be MODIFYed - insert and skip existing ones
+    INSERT zts_tobj_type FROM TABLE @types ACCEPTING DUPLICATE KEYS.
+    MODIFY zts_tobj_type_t FROM TABLE @type_texts.
+    MODIFY zts_tech_obj FROM TABLE @tech_objects.
+    MODIFY zts_tech_obj_t FROM TABLE @texts.
+
+    result = |Technical objects filled: { lines( tech_objects ) } objects of { lines( types ) } types, | &&
+             |{ lines( texts ) + lines( type_texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_tech_objects.
+    DELETE FROM zts_tech_obj_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_tech_obj.
+    DATA(deleted_objects) = sy-dbcnt.
+
+    DELETE FROM zts_tobj_type_t.
+    deleted_texts += sy-dbcnt.
+
+    DELETE FROM zts_tobj_type.
+    DATA(deleted_types) = sy-dbcnt.
+
+    result = |Technical objects deleted: { deleted_objects } objects, { deleted_types } types, { deleted_texts } texts|.
   ENDMETHOD.
 ENDCLASS.
 

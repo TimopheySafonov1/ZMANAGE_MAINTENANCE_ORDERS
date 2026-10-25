@@ -27,6 +27,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         prts                   TYPE abap_bool VALUE abap_true,
         exchange_rates         TYPE abap_bool VALUE abap_true,
         cost_categories        TYPE abap_bool VALUE abap_true,
+        tech_objects           TYPE abap_bool VALUE abap_true,
       END OF delete,
       BEGIN OF fill,
         maint_order_types      TYPE abap_bool VALUE abap_true,
@@ -45,6 +46,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         prts                   TYPE abap_bool VALUE abap_true,
         exchange_rates         TYPE abap_bool VALUE abap_true,
         cost_categories        TYPE abap_bool VALUE abap_true,
+        tech_objects           TYPE abap_bool VALUE abap_true,
       END OF fill.
     " ----------------------------------------------------------------------
 
@@ -115,6 +117,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->delete_cost_categories( ) ).
     ENDIF.
 
+    IF delete-tech_objects = abap_true.
+      out->write( customizing->delete_tech_objects( ) ).
+    ENDIF.
+
     IF fill-maint_order_types = abap_true.
       out->write( customizing->fill_maint_order_types( ) ).
     ENDIF.
@@ -181,6 +187,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
 
     IF fill-cost_categories = abap_true.
       out->write( customizing->fill_cost_categories( ) ).
+    ENDIF.
+
+    IF fill-tech_objects = abap_true.
+      out->write( customizing->fill_tech_objects( ) ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.

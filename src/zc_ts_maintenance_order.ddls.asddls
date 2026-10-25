@@ -13,8 +13,25 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       _OrderType.MaintenanceOrderTypeName as OrderTypeName,
       Description,
       LongText,
+      @ObjectModel.text.element: [ 'TechObjectText' ]
+      @UI.textArrangement: #TEXT_LAST
+      // Collective value help like in SAP: a flat search by the object data and a search in the plant
+      // structure (tree). Picking one fills the type through setTechObjType
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TECH_OBJ_VH', element: 'TechObject' },
+                                           label: 'Wyszukiwanie wg danych obiektu',
+                                           useForValidation: true },
+                                         { qualifier: 'Hierarchy',
+                                           entity: { name: 'ZC_TS_TECH_OBJ_HIER_VH', element: 'TechObject' },
+                                           presentationVariantQualifier: 'Hierarchy',
+                                           label: 'Wyszukiwanie wg hierarchii' }]
       TechObject,
+      @UI.hidden: true
+      _TechObject.TechObjectText          as TechObjectText,
+      @ObjectModel.text.element: [ 'TechObjTypeText' ]
+      @UI.textArrangement: #TEXT_ONLY
       TechObjType,
+      @UI.hidden: true
+      _TechObject.TechObjectTypeText      as TechObjTypeText,
       @ObjectModel.text.element: [ 'PlanningPlantName' ]
       @UI.textArrangement: #TEXT_FIRST
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PLANT_VH', element: 'Plant' },

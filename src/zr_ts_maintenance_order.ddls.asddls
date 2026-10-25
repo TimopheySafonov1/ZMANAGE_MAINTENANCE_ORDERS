@@ -6,6 +6,7 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
   composition [0..*] of ZR_TS_MAINTENANCE_OPERATION as _Operations
   composition [0..*] of ZR_TS_MAINTENANCE_COSTS     as _Costs
   association [0..1] to ZC_TS_MAINT_ORDER_TYPE_VH   as _OrderType     on $projection.OrderType = _OrderType.MaintenanceOrderType
+  association [0..1] to ZC_TS_TECH_OBJ_VH           as _TechObject    on $projection.TechObject = _TechObject.TechObject
   association [0..1] to ZC_TS_PLANT_VH              as _PlanningPlant on $projection.PlanningPlant = _PlanningPlant.Plant
   association [0..1] to ZC_TS_WORK_CENTER_VH        as _WorkCenter    on  $projection.PlanningPlant = _WorkCenter.Plant
                                                                       and $projection.WorkCenter    = _WorkCenter.WorkCenter
@@ -43,6 +44,7 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       _Operations,
       _Costs,
       _OrderType,
+      _TechObject,
       _PlanningPlant,
       _WorkCenter,
       _Priority,

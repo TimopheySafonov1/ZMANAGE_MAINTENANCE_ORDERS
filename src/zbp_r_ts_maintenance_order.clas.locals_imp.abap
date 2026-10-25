@@ -454,6 +454,9 @@ CLASS lhc_maintenanceorder DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS setduedate FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOrder~setDueDate.
 
+    METHODS settechobjtype FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOrder~setTechObjType.
+
     METHODS validatetyperules FOR VALIDATE ON SAVE
       IMPORTING keys FOR MaintenanceOrder~validateTypeRules.
 ENDCLASS.
@@ -624,6 +627,32 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         UPDATE FIELDS ( MaintOrdFinalDueDateTime ) WITH updates.
   ENDMETHOD.
 
+  METHOD settechobjtype.
+    " Runs only when TechObject changes - an unknown or removed object clears the type
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        FIELDS ( TechObject ) WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+
+    IF orders IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT FROM zts_tech_obj
+      FIELDS tech_object, tech_obj_type
+      FOR ALL ENTRIES IN @orders
+      WHERE tech_object = @orders-TechObject
+      INTO TABLE @DATA(tech_objects).
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FIELDS ( TechObjType )
+        WITH VALUE #( FOR order IN orders
+                      ( %tky        = order-%tky
+                        TechObjType = VALUE #( tech_objects[ tech_object = order-TechObject ]-tech_obj_type
+                                               OPTIONAL ) ) ).
+  ENDMETHOD.
+
   METHOD validatetyperules.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
@@ -681,7 +710,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky              = order-%tky
                         %state_area       = 'TYPE_RULES'
                         %msg              = new_message_with_text(
-                                                text = 'Opisz usterkę w tekście długim.' )
+                                                text = 'Opisz usterkД™ w tekЕ›cie dЕ‚ugim.' )
                         %element-LongText = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
@@ -690,7 +719,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky                                = order-%tky
                         %state_area                         = 'TYPE_RULES'
                         %msg                                = new_message_with_text(
-                                                                  text = 'Podaj podstawową datę rozpoczęcia.' )
+                                                                  text = 'Podaj podstawowД… datД™ rozpoczД™cia.' )
                         %element-MaintOrdBasicStartDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
@@ -699,7 +728,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky                                 = order-%tky
                         %state_area                          = 'TYPE_RULES'
                         %msg                                 = new_message_with_text(
-                                                                   text = 'Podaj podstawową datę zakończenia.' )
+                                                                   text = 'Podaj podstawowД… datД™ zakoЕ„czenia.' )
                         %element-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
@@ -710,7 +739,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky                                 = order-%tky
                         %state_area                          = 'TYPE_RULES'
                         %msg                                 = new_message_with_text(
-                            text = 'Data zakończenia nie może być wcześniejsza niż data rozpoczęcia.' )
+                            text = 'Data zakoЕ„czenia nie moЕјe byД‡ wczeЕ›niejsza niЕј data rozpoczД™cia.' )
                         %element-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
@@ -725,7 +754,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
           APPEND VALUE #( %tky                                = order-%tky
                           %state_area                         = 'TYPE_RULES'
                           %msg                                = new_message_with_text(
-                                                                    text = 'Data rozpoczęcia nie może być w przeszłości.' )
+                                                                    text = 'Data rozpoczД™cia nie moЕјe byД‡ w przeszЕ‚oЕ›ci.' )
                           %element-MaintOrdBasicStartDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
         ENDIF.
       ENDIF.

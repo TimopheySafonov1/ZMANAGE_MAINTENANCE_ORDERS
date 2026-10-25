@@ -18,7 +18,8 @@ authorization master ( global )
   association _Costs { create; with draft; }
 
   field ( numbering : managed, readonly ) OrderUuid;
-  field ( readonly ) OrderId, LocalLastChangedAt, LastChangedAt, TotalPlannedCosts, TotalActualCosts;
+  // TechObjType is taken from the technical object (setTechObjType)
+  field ( readonly ) OrderId, TechObjType, LocalLastChangedAt, LastChangedAt, TotalPlannedCosts, TotalActualCosts;
   // Rules of the order type (ZTS_ORD_TYPE): the type is fixed once the order is saved, the revision is
   // only open for types that allow it, and the fields the type requires are marked as mandatory
   field ( features : instance ) OrderType, MaintRevision, TechObject, LongText,
@@ -31,6 +32,8 @@ authorization master ( global )
   determination setTypeDefaults on modify { field OrderType; }
   // Orders that start immediately (corrective) get their final due date from the priority
   determination setDueDate on modify { field Priority, MaintOrdBasicStartDateTime; }
+  // Equipment or functional location - copied from the chosen technical object (ZTS_TECH_OBJ)
+  determination setTechObjType on modify { field TechObject; }
 
   validation validateTypeRules on save { create; field OrderType, TechObject, LongText,
                                          MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime; }
@@ -44,6 +47,7 @@ authorization master ( global )
                                           field MaintOrdBasicStartDateTime, field MaintOrdBasicFinishDateTime );
     field Priority affects field MaintOrdFinalDueDateTime;
     field MaintOrdBasicStartDateTime affects field MaintOrdFinalDueDateTime;
+    field TechObject affects field TechObjType;
   }
 
   draft action Activate optimized;

@@ -13,4 +13,7 @@ define service ZUI_TS_MAINTENANCE_ORDER {
   expose ZC_TS_REVISION_VH           as MaintenanceRevisionVH;
   expose ZC_TS_RESPONSIBLE_PERSON_VH as ResponsiblePersonVH;
   expose ZC_TS_TIME_UNIT_VH          as TimeUnitVH;
+  expose ZC_TS_TECH_OBJ_VH           as TechObjectVH;
+  expose ZC_TS_TECH_OBJ_HIER_VH      as TechObjectHierarchyVH;
+  expose ZC_TS_TECH_OBJ_TYPE_VH      as TechObjectTypeVH;
 }
