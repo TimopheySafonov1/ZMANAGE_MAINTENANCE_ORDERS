@@ -19,21 +19,38 @@ authorization master ( global )
 
   field ( numbering : managed, readonly ) OrderUuid;
   field ( readonly ) OrderId, LocalLastChangedAt, LastChangedAt, TotalPlannedCosts, TotalActualCosts;
+  // Rules of the order type (ZTS_ORD_TYPE): the type is fixed once the order is saved, the revision is
+  // only open for types that allow it, and the fields the type requires are marked as mandatory
+  field ( features : instance ) OrderType, MaintRevision, TechObject, LongText,
+                                MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime;
 
   determination setOrderId on save { create; }
   // Defaults the currency and converts all costs when the order currency changes
   determination calculateCosts on modify { create; field Currency; }
+  // Default priority and start of the order type, revision cleared where the type doesn't allow it
+  determination setTypeDefaults on modify { field OrderType; }
+  // Orders that start immediately (corrective) get their final due date from the priority
+  determination setDueDate on modify { field Priority, MaintOrdBasicStartDateTime; }
+
+  validation validateTypeRules on save { create; field OrderType, TechObject, LongText,
+                                         MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime; }
 
   side effects
   {
     field Currency affects field TotalPlannedCosts, field TotalActualCosts, entity _Costs;
+    field OrderType affects field Priority, field MaintOrdBasicStartDateTime, field MaintOrdFinalDueDateTime,
+                            field MaintRevision,
+                            permissions ( field MaintRevision, field TechObject, field LongText,
+                                          field MaintOrdBasicStartDateTime, field MaintOrdBasicFinishDateTime );
+    field Priority affects field MaintOrdFinalDueDateTime;
+    field MaintOrdBasicStartDateTime affects field MaintOrdFinalDueDateTime;
   }
 
   draft action Activate optimized;
   draft action Discard;
   draft action Edit;
   draft action Resume;
-  draft determine action Prepare;
+  draft determine action Prepare { validation validateTypeRules; }
 
   mapping for zts_maint_order
     {

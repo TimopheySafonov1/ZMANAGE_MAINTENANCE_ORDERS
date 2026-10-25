@@ -164,8 +164,19 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA order_types TYPE STANDARD TABLE OF zts_ord_type WITH EMPTY KEY.
     DATA texts       TYPE STANDARD TABLE OF zts_ord_type_t WITH EMPTY KEY.
 
-    order_types = VALUE #( ( order_type = 'PM01' )
-                           ( order_type = 'PM02' ) ).
+    " Rules of the order type, used by the order BO:
+    " PM01 corrective - high priority, starts now with a due date from the priority,
+    "                  technical object and damage description (long text) required
+    " PM02 preventive  - planned: start and finish dates required, revision allowed
+    order_types = VALUE #( ( order_type       = 'PM01'
+                             default_priority = '2'
+                             immediate_start  = abap_true
+                             tech_obj_req     = abap_true
+                             long_text_req    = abap_true )
+                           ( order_type       = 'PM02'
+                             default_priority = '3'
+                             dates_req        = abap_true
+                             revision_allowed = abap_true ) ).
 
     " Language keys: E = English, L = Polish
     texts = VALUE #( ( language = 'E' order_type = 'PM01' description = 'Corrective Maintenance' )
@@ -173,8 +184,7 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
                      ( language = 'E' order_type = 'PM02' description = 'Preventive Maintenance' )
                      ( language = 'L' order_type = 'PM02' description = 'Konserwacja zapobiegawcza' ) ).
 
-    " The type table has only key fields, so it can't be MODIFYed - insert and skip existing ones
-    INSERT zts_ord_type FROM TABLE @order_types ACCEPTING DUPLICATE KEYS.
+    MODIFY zts_ord_type FROM TABLE @order_types.
     MODIFY zts_ord_type_t FROM TABLE @texts.
 
     result = |Order types filled: { lines( order_types ) } types, { lines( texts ) } texts|.
@@ -324,10 +334,11 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA priorities TYPE STANDARD TABLE OF zts_priority WITH EMPTY KEY.
     DATA texts      TYPE STANDARD TABLE OF zts_priority_t WITH EMPTY KEY.
 
-    priorities = VALUE #( ( priority = '1' )
-                          ( priority = '2' )
-                          ( priority = '3' )
-                          ( priority = '4' ) ).
+    " Hours from the start until the final due date (used for orders that start immediately)
+    priorities = VALUE #( ( priority = '1' due_hours = 8 )
+                          ( priority = '2' due_hours = 24 )
+                          ( priority = '3' due_hours = 72 )
+                          ( priority = '4' due_hours = 168 ) ).
 
     " Language keys: E = English, L = Polish
     texts = VALUE #( ( language = 'E' priority = '1' priority_name = 'Very High' )
@@ -339,8 +350,7 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
                      ( language = 'E' priority = '4' priority_name = 'Low' )
                      ( language = 'L' priority = '4' priority_name = 'Niski' ) ).
 
-    " The priority table has only key fields, so it can't be MODIFYed - insert and skip existing ones
-    INSERT zts_priority FROM TABLE @priorities ACCEPTING DUPLICATE KEYS.
+    MODIFY zts_priority FROM TABLE @priorities.
     MODIFY zts_priority_t FROM TABLE @texts.
 
     result = |Priorities filled: { lines( priorities ) } priorities, { lines( texts ) } texts|.

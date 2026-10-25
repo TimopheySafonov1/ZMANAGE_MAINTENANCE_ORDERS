@@ -388,16 +388,74 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
   ENDMETHOD.
 ENDCLASS.
 
+"! Rules of the order type from ZTS_ORD_TYPE, shared by the determinations, validation and features
+CLASS lcl_order_type_rules DEFINITION.
+  PUBLIC SECTION.
+    TYPES order_types     TYPE HASHED TABLE OF zts_ord_type WITH UNIQUE KEY order_type.
+    TYPES order_type_keys TYPE STANDARD TABLE OF zts_ord_type-order_type WITH EMPTY KEY.
+
+    "! Rules of the given order types (types without customizing are missing)
+    CLASS-METHODS read_types
+      IMPORTING order_types   TYPE order_type_keys
+      RETURNING VALUE(result) TYPE order_types.
+
+    "! Start + due hours of the priority; initial when the start or the hours are missing
+    CLASS-METHODS due_date
+      IMPORTING !start        TYPE utclong
+                priority      TYPE zts_priority-priority
+      RETURNING VALUE(result) TYPE utclong.
+ENDCLASS.
+
+CLASS lcl_order_type_rules IMPLEMENTATION.
+  METHOD read_types.
+    IF order_types IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT * FROM zts_ord_type
+      FOR ALL ENTRIES IN @order_types
+      WHERE order_type = @order_types-table_line
+      INTO TABLE @result.
+  ENDMETHOD.
+
+  METHOD due_date.
+    IF start IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT SINGLE FROM zts_priority
+      FIELDS due_hours
+      WHERE priority = @priority
+      INTO @DATA(due_hours).
+
+    IF due_hours > 0.
+      result = utclong_add( val = start hours = due_hours ).
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.
+
 CLASS lhc_maintenanceorder DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
     METHODS get_global_authorizations FOR GLOBAL AUTHORIZATION
       IMPORTING REQUEST requested_authorizations FOR MaintenanceOrder RESULT result.
+
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      IMPORTING keys REQUEST requested_features FOR MaintenanceOrder RESULT result.
 
     METHODS setorderid FOR DETERMINE ON SAVE
       IMPORTING keys FOR MaintenanceOrder~setOrderId.
 
     METHODS calculatecosts FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOrder~calculateCosts.
+
+    METHODS settypedefaults FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOrder~setTypeDefaults.
+
+    METHODS setduedate FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOrder~setDueDate.
+
+    METHODS validatetyperules FOR VALIDATE ON SAVE
+      IMPORTING keys FOR MaintenanceOrder~validateTypeRules.
 ENDCLASS.
 
 CLASS lhc_maintenanceorder IMPLEMENTATION.
@@ -407,6 +465,51 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
                       %update      = if_abap_behv=>auth-allowed
                       %delete      = if_abap_behv=>auth-allowed
                       %action-Edit = if_abap_behv=>auth-allowed ).
+  ENDMETHOD.
+
+  METHOD get_instance_features.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        FIELDS ( OrderType ) WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+
+    IF orders IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DATA(types) = lcl_order_type_rules=>read_types( VALUE #( FOR o IN orders ( o-OrderType ) ) ).
+
+    " Orders that are already saved keep their type
+    SELECT FROM zts_maint_order
+      FIELDS order_uuid
+      FOR ALL ENTRIES IN @orders
+      WHERE order_uuid = @orders-OrderUuid
+      INTO TABLE @DATA(saved_orders).
+
+    LOOP AT orders INTO DATA(order).
+      DATA(rules) = VALUE #( types[ order_type = order-OrderType ] OPTIONAL ).
+
+      APPEND VALUE #(
+          %tky                               = order-%tky
+          %field-OrderType                   = COND #( WHEN line_exists( saved_orders[ order_uuid = order-OrderUuid ] )
+                                                       THEN if_abap_behv=>fc-f-read_only
+                                                       ELSE if_abap_behv=>fc-f-mandatory )
+          %field-MaintRevision               = COND #( WHEN rules-revision_allowed = abap_true
+                                                       THEN if_abap_behv=>fc-f-unrestricted
+                                                       ELSE if_abap_behv=>fc-f-read_only )
+          %field-TechObject                  = COND #( WHEN rules-tech_obj_req = abap_true
+                                                       THEN if_abap_behv=>fc-f-mandatory
+                                                       ELSE if_abap_behv=>fc-f-unrestricted )
+          %field-LongText                    = COND #( WHEN rules-long_text_req = abap_true
+                                                       THEN if_abap_behv=>fc-f-mandatory
+                                                       ELSE if_abap_behv=>fc-f-unrestricted )
+          %field-MaintOrdBasicStartDateTime  = COND #( WHEN rules-dates_req = abap_true
+                                                       THEN if_abap_behv=>fc-f-mandatory
+                                                       ELSE if_abap_behv=>fc-f-unrestricted )
+          %field-MaintOrdBasicFinishDateTime = COND #( WHEN rules-dates_req = abap_true
+                                                       THEN if_abap_behv=>fc-f-mandatory
+                                                       ELSE if_abap_behv=>fc-f-unrestricted ) ) TO result.
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD setorderid.
@@ -435,6 +538,198 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
 
   METHOD calculatecosts.
     lcl_cost_calculator=>recalculate( CORRESPONDING #( keys ) ).
+  ENDMETHOD.
+
+  METHOD settypedefaults.
+    " Runs when the order type is chosen or changed: the type's defaults replace the previous values
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        FIELDS ( OrderType Priority MaintOrdBasicStartDateTime MaintOrdFinalDueDateTime MaintRevision )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+
+    DATA(types) = lcl_order_type_rules=>read_types( VALUE #( FOR o IN orders ( o-OrderType ) ) ).
+
+    DATA updates TYPE TABLE FOR UPDATE zr_ts_maintenance_order\\MaintenanceOrder.
+    DATA update  LIKE LINE OF updates.
+    LOOP AT orders INTO DATA(order).
+      DATA(rules) = VALUE #( types[ order_type = order-OrderType ] OPTIONAL ).
+      IF rules IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      update = VALUE #( %tky                       = order-%tky
+                        Priority                   = order-Priority
+                        MaintOrdBasicStartDateTime = order-MaintOrdBasicStartDateTime
+                        MaintOrdFinalDueDateTime   = order-MaintOrdFinalDueDateTime
+                        MaintRevision              = order-MaintRevision
+                        %control                   = VALUE #( Priority                   = if_abap_behv=>mk-on
+                                                              MaintOrdBasicStartDateTime = if_abap_behv=>mk-on
+                                                              MaintOrdFinalDueDateTime   = if_abap_behv=>mk-on
+                                                              MaintRevision              = if_abap_behv=>mk-on ) ).
+      IF rules-default_priority IS NOT INITIAL.
+        update-Priority = rules-default_priority.
+      ENDIF.
+
+      " Corrective work starts now, the due date follows from the priority
+      IF rules-immediate_start = abap_true.
+        IF update-MaintOrdBasicStartDateTime IS INITIAL.
+          update-MaintOrdBasicStartDateTime = utclong_current( ).
+        ENDIF.
+        DATA(due_date) = lcl_order_type_rules=>due_date( start    = update-MaintOrdBasicStartDateTime
+                                                         priority = update-Priority ).
+        IF due_date IS NOT INITIAL.
+          update-MaintOrdFinalDueDateTime = due_date.
+        ENDIF.
+      ENDIF.
+
+      IF rules-revision_allowed = abap_false.
+        CLEAR update-MaintRevision.
+      ENDIF.
+
+      APPEND update TO updates.
+    ENDLOOP.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FROM updates.
+  ENDMETHOD.
+
+  METHOD setduedate.
+    " Only for types that start immediately - planned orders keep the due date entered by hand
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        FIELDS ( OrderType Priority MaintOrdBasicStartDateTime MaintOrdFinalDueDateTime )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+
+    DATA(types) = lcl_order_type_rules=>read_types( VALUE #( FOR o IN orders ( o-OrderType ) ) ).
+
+    DATA updates TYPE TABLE FOR UPDATE zr_ts_maintenance_order\\MaintenanceOrder.
+    LOOP AT orders INTO DATA(order).
+      IF VALUE abap_boolean( types[ order_type = order-OrderType ]-immediate_start OPTIONAL ) = abap_false.
+        CONTINUE.
+      ENDIF.
+
+      DATA(due_date) = lcl_order_type_rules=>due_date( start    = order-MaintOrdBasicStartDateTime
+                                                       priority = order-Priority ).
+      IF due_date IS NOT INITIAL AND due_date <> order-MaintOrdFinalDueDateTime.
+        APPEND VALUE #( %tky                     = order-%tky
+                        MaintOrdFinalDueDateTime = due_date ) TO updates.
+      ENDIF.
+    ENDLOOP.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FIELDS ( MaintOrdFinalDueDateTime ) WITH updates.
+  ENDMETHOD.
+
+  METHOD validatetyperules.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        FIELDS ( OrderType TechObject LongText MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+
+    IF orders IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DATA(types) = lcl_order_type_rules=>read_types( VALUE #( FOR o IN orders ( o-OrderType ) ) ).
+
+    " The start may lie in the past once it is saved - only a new or changed start is checked
+    SELECT FROM zts_maint_order
+      FIELDS order_uuid, basic_start_datetime
+      FOR ALL ENTRIES IN @orders
+      WHERE order_uuid = @orders-OrderUuid
+      INTO TABLE @DATA(saved_orders).
+
+    DATA(today) = cl_abap_context_info=>get_system_date( ).
+    DATA time_zone TYPE timezone.
+    TRY.
+        time_zone = cl_abap_context_info=>get_user_time_zone( ).
+      CATCH cx_abap_context_info_error.
+        time_zone = 'UTC'.
+    ENDTRY.
+
+    LOOP AT orders INTO DATA(order).
+      " Clears the messages of the previous check
+      APPEND VALUE #( %tky = order-%tky %state_area = 'TYPE_RULES' ) TO reported-maintenanceorder.
+
+      IF order-OrderType IS INITIAL.
+        APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+        APPEND VALUE #( %tky               = order-%tky
+                        %state_area        = 'TYPE_RULES'
+                        %msg               = new_message_with_text( text = 'Podaj rodzaj zlecenia.' )
+                        %element-OrderType = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
+        CONTINUE.
+      ENDIF.
+
+      DATA(rules) = VALUE #( types[ order_type = order-OrderType ] OPTIONAL ).
+
+      IF rules-tech_obj_req = abap_true AND order-TechObject IS INITIAL.
+        APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+        APPEND VALUE #( %tky                = order-%tky
+                        %state_area         = 'TYPE_RULES'
+                        %msg                = new_message_with_text(
+                                                  text = 'Zlecenie naprawcze wymaga obiektu technicznego.' )
+                        %element-TechObject = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
+      ENDIF.
+
+      IF rules-long_text_req = abap_true AND order-LongText IS INITIAL.
+        APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+        APPEND VALUE #( %tky              = order-%tky
+                        %state_area       = 'TYPE_RULES'
+                        %msg              = new_message_with_text(
+                                                text = 'Opisz usterkę w tekście długim.' )
+                        %element-LongText = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
+      ENDIF.
+
+      IF rules-dates_req = abap_true AND order-MaintOrdBasicStartDateTime IS INITIAL.
+        APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+        APPEND VALUE #( %tky                                = order-%tky
+                        %state_area                         = 'TYPE_RULES'
+                        %msg                                = new_message_with_text(
+                                                                  text = 'Podaj podstawową datę rozpoczęcia.' )
+                        %element-MaintOrdBasicStartDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
+      ENDIF.
+
+      IF rules-dates_req = abap_true AND order-MaintOrdBasicFinishDateTime IS INITIAL.
+        APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+        APPEND VALUE #( %tky                                 = order-%tky
+                        %state_area                          = 'TYPE_RULES'
+                        %msg                                 = new_message_with_text(
+                                                                   text = 'Podaj podstawową datę zakończenia.' )
+                        %element-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
+      ENDIF.
+
+      IF     order-MaintOrdBasicStartDateTime  IS NOT INITIAL
+         AND order-MaintOrdBasicFinishDateTime IS NOT INITIAL
+         AND order-MaintOrdBasicFinishDateTime < order-MaintOrdBasicStartDateTime.
+        APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+        APPEND VALUE #( %tky                                 = order-%tky
+                        %state_area                          = 'TYPE_RULES'
+                        %msg                                 = new_message_with_text(
+                            text = 'Data zakończenia nie może być wcześniejsza niż data rozpoczęcia.' )
+                        %element-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
+      ENDIF.
+
+      " Planned work can't start in the past
+      IF     rules-dates_req = abap_true
+         AND order-MaintOrdBasicStartDateTime IS NOT INITIAL
+         AND order-MaintOrdBasicStartDateTime <> VALUE utclong( saved_orders[ order_uuid = order-OrderUuid ]-basic_start_datetime
+                                                                OPTIONAL ).
+        CONVERT UTCLONG order-MaintOrdBasicStartDateTime TIME ZONE time_zone INTO DATE DATA(start_date).
+        IF start_date < today.
+          APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+          APPEND VALUE #( %tky                                = order-%tky
+                          %state_area                         = 'TYPE_RULES'
+                          %msg                                = new_message_with_text(
+                                                                    text = 'Data rozpoczęcia nie może być w przeszłości.' )
+                          %element-MaintOrdBasicStartDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
 
