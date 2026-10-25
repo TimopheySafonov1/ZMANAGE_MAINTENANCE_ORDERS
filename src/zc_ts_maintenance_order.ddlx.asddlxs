@@ -11,6 +11,10 @@
 annotate entity ZC_TS_MAINTENANCE_ORDER with
 {
   @UI.facet: [
+    /* Nagłówek */
+    { id: 'HeaderStatus', purpose: #HEADER, type: #DATAPOINT_REFERENCE,
+      targetQualifier: 'OrderStatus', position: 10 },
+
     /* Szczegóły zlecenia */
     { id: 'OrderDetails',     purpose: #STANDARD, type: #COLLECTION,
       label: 'Szczegóły zlecenia', position: 10 },
@@ -56,6 +60,25 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
 
   @UI.hidden: true
   OrderTypeName;
+
+  // Release and complete are offered only in the right status (instance features of the BO)
+  @EndUserText.label: 'Status'
+  @UI: { lineItem:       [{ position: 15, importance: #HIGH,
+                            criticality: 'OrderStatusCriticality', criticalityRepresentation: #WITHOUT_ICON },
+                          { type: #FOR_ACTION, dataAction: 'releaseOrder',  label: 'Zwolnij' },
+                          { type: #FOR_ACTION, dataAction: 'completeOrder', label: 'Zakończ' }],
+         identification: [{ type: #FOR_ACTION, dataAction: 'releaseOrder',  label: 'Zwolnij', position: 10 },
+                          { type: #FOR_ACTION, dataAction: 'completeOrder', label: 'Zakończ', position: 20 }],
+         dataPoint:      { title: 'Status', criticality: 'OrderStatusCriticality',
+                           criticalityRepresentation: #WITHOUT_ICON },
+         selectionField: [{ position: 15 }] }
+  OrderStatus;
+
+  @UI.hidden: true
+  OrderStatusText;
+
+  @UI.hidden: true
+  OrderStatusCriticality;
 
   @EndUserText.label: 'Opis zlecenia'
   @UI: { lineItem:   [{ position: 30, importance: #HIGH }],

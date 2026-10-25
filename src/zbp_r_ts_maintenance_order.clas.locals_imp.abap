@@ -389,6 +389,14 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
 ENDCLASS.
 
 "! Rules of the order type from ZTS_ORD_TYPE, shared by the determinations, validation and features
+"! Status of an order: created -> released -> completed. A completed order is read-only.
+"! The texts are in ZTS_MAINT_STAT_T, every status the order got is kept in ZTS_MAINT_ORD_ST.
+INTERFACE lif_order_status.
+  CONSTANTS created   TYPE zts_maint_order-order_status VALUE 'CRTD'.
+  CONSTANTS released  TYPE zts_maint_order-order_status VALUE 'REL'.
+  CONSTANTS completed TYPE zts_maint_order-order_status VALUE 'TECO'.
+ENDINTERFACE.
+
 CLASS lcl_order_type_rules DEFINITION.
   PUBLIC SECTION.
     TYPES order_types     TYPE HASHED TABLE OF zts_ord_type WITH UNIQUE KEY order_type.
@@ -482,6 +490,15 @@ CLASS lhc_maintenanceorder DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS createfirstoperation FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOrder~createFirstOperation.
 
+    METHODS setinitialstatus FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOrder~setInitialStatus.
+
+    METHODS releaseorder FOR MODIFY
+      IMPORTING keys FOR ACTION MaintenanceOrder~releaseOrder RESULT result.
+
+    METHODS completeorder FOR MODIFY
+      IMPORTING keys FOR ACTION MaintenanceOrder~completeOrder RESULT result.
+
     METHODS validatetyperules FOR VALIDATE ON SAVE
       IMPORTING keys FOR MaintenanceOrder~validateTypeRules.
 ENDCLASS.
@@ -489,16 +506,18 @@ ENDCLASS.
 CLASS lhc_maintenanceorder IMPLEMENTATION.
   METHOD get_global_authorizations.
     " No authorization object yet - everything is allowed
-    result = VALUE #( %create      = if_abap_behv=>auth-allowed
-                      %update      = if_abap_behv=>auth-allowed
-                      %delete      = if_abap_behv=>auth-allowed
-                      %action-Edit = if_abap_behv=>auth-allowed ).
+    result = VALUE #( %create               = if_abap_behv=>auth-allowed
+                      %update               = if_abap_behv=>auth-allowed
+                      %delete               = if_abap_behv=>auth-allowed
+                      %action-Edit          = if_abap_behv=>auth-allowed
+                      %action-releaseOrder  = if_abap_behv=>auth-allowed
+                      %action-completeOrder = if_abap_behv=>auth-allowed ).
   ENDMETHOD.
 
   METHOD get_instance_features.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( OrderType ) WITH CORRESPONDING #( keys )
+        FIELDS ( OrderType OrderStatus ) WITH CORRESPONDING #( keys )
         RESULT DATA(orders).
 
     IF orders IS INITIAL.
@@ -517,8 +536,31 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
     LOOP AT orders INTO DATA(order).
       DATA(rules) = VALUE #( types[ order_type = order-OrderType ] OPTIONAL ).
 
+      " The status changes on the saved order only, a completed order is read-only
+      DATA(is_active) = xsdbool( order-%is_draft = if_abap_behv=>mk-off ).
+      DATA(is_completed) = xsdbool( order-OrderStatus = lif_order_status=>completed ).
+
       APPEND VALUE #(
           %tky                               = order-%tky
+          %update                            = COND #( WHEN is_completed = abap_true
+                                                       THEN if_abap_behv=>fc-o-disabled
+                                                       ELSE if_abap_behv=>fc-o-enabled )
+          %delete                            = COND #( WHEN is_completed = abap_true
+                                                       THEN if_abap_behv=>fc-o-disabled
+                                                       ELSE if_abap_behv=>fc-o-enabled )
+          %action-Edit                       = COND #( WHEN is_completed = abap_true
+                                                       THEN if_abap_behv=>fc-o-disabled
+                                                       ELSE if_abap_behv=>fc-o-enabled )
+          " Orders saved before the status existed have none - they count as created
+          %action-releaseOrder               = COND #( WHEN     is_active = abap_true
+                                                            AND (    order-OrderStatus = lif_order_status=>created
+                                                                  OR order-OrderStatus IS INITIAL )
+                                                       THEN if_abap_behv=>fc-o-enabled
+                                                       ELSE if_abap_behv=>fc-o-disabled )
+          %action-completeOrder              = COND #( WHEN     is_active = abap_true
+                                                            AND order-OrderStatus = lif_order_status=>released
+                                                       THEN if_abap_behv=>fc-o-enabled
+                                                       ELSE if_abap_behv=>fc-o-disabled )
           %field-OrderType                   = COND #( WHEN line_exists( saved_orders[ order_uuid = order-OrderUuid ] )
                                                        THEN if_abap_behv=>fc-f-read_only
                                                        ELSE if_abap_behv=>fc-f-mandatory )
@@ -652,6 +694,43 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         UPDATE FIELDS ( MaintOrdFinalDueDateTime ) WITH updates.
   ENDMETHOD.
 
+  METHOD setinitialstatus.
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FIELDS ( OrderStatus )
+        WITH VALUE #( FOR key IN keys ( %tky = key-%tky OrderStatus = lif_order_status=>created ) ).
+  ENDMETHOD.
+
+  METHOD releaseorder.
+    " Only offered for created orders (get_instance_features)
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FIELDS ( OrderStatus )
+        WITH VALUE #( FOR key IN keys ( %tky = key-%tky OrderStatus = lif_order_status=>released ) ).
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        ALL FIELDS WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+
+    result = VALUE #( FOR order IN orders ( %tky = order-%tky %param = order ) ).
+  ENDMETHOD.
+
+  METHOD completeorder.
+    " Only offered for released orders (get_instance_features); afterwards the order is read-only
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FIELDS ( OrderStatus )
+        WITH VALUE #( FOR key IN keys ( %tky = key-%tky OrderStatus = lif_order_status=>completed ) ).
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        ALL FIELDS WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+
+    result = VALUE #( FOR order IN orders ( %tky = order-%tky %param = order ) ).
+  ENDMETHOD.
+
   METHOD createfirstoperation.
     " Only the operation is created here - its component and PRT come from createComponentAndPrt,
     " its number from setOperationId
@@ -694,7 +773,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         FIELDS ( OrderType TechObject LongText MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime
-                 MaintOrdFinalDueDateTime )
+                 MaintOrdFinalDueDateTime PlanningPlant WorkCenter )
         WITH CORRESPONDING #( keys )
         RESULT DATA(orders).
 
@@ -722,6 +801,23 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
     LOOP AT orders INTO DATA(order).
       " Clears the messages of the previous check
       APPEND VALUE #( %tky = order-%tky %state_area = 'TYPE_RULES' ) TO reported-maintenanceorder.
+
+      " Required for every order type
+      IF order-PlanningPlant IS INITIAL.
+        APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+        APPEND VALUE #( %tky                   = order-%tky
+                        %state_area            = 'TYPE_RULES'
+                        %msg                   = new_message_with_text( text = 'Podaj zakład planowania.' )
+                        %element-PlanningPlant = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
+      ENDIF.
+
+      IF order-WorkCenter IS INITIAL.
+        APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+        APPEND VALUE #( %tky                = order-%tky
+                        %state_area         = 'TYPE_RULES'
+                        %msg                = new_message_with_text( text = 'Podaj główne stanowisko robocze.' )
+                        %element-WorkCenter = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
+      ENDIF.
 
       IF order-OrderType IS INITIAL.
         APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
@@ -1401,6 +1497,53 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
     lcl_cost_calculator=>remember_orders( VALUE #( FOR operation IN operations
                                                    ( %is_draft = operation-%is_draft
                                                      OrderUuid = operation-OrderUuid ) ) ).
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lsc_zr_ts_maintenance_order DEFINITION INHERITING FROM cl_abap_behavior_saver.
+  PROTECTED SECTION.
+    METHODS save_modified REDEFINITION.
+ENDCLASS.
+
+CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
+  METHOD save_modified.
+    " Status history (section Status of the order): one row for every status the order got
+    DATA history TYPE STANDARD TABLE OF zts_maint_ord_st WITH EMPTY KEY.
+
+    DATA(now) = utclong_current( ).
+
+    LOOP AT create-maintenanceorder INTO DATA(created_order) WHERE OrderStatus IS NOT INITIAL.
+      APPEND VALUE #( order_uuid = created_order-OrderUuid
+                      status     = created_order-OrderStatus
+                      changed_at = now ) TO history.
+    ENDLOOP.
+
+    LOOP AT update-maintenanceorder INTO DATA(updated_order)
+         WHERE %control-OrderStatus = if_abap_behv=>mk-on AND OrderStatus IS NOT INITIAL.
+      APPEND VALUE #( order_uuid = updated_order-OrderUuid
+                      status     = updated_order-OrderStatus
+                      changed_at = now ) TO history.
+    ENDLOOP.
+
+    IF history IS NOT INITIAL.
+      " Saving an edited order passes the unchanged status too - it keeps the time it was first set
+      SELECT FROM zts_maint_ord_st
+        FIELDS order_uuid, status
+        FOR ALL ENTRIES IN @history
+        WHERE order_uuid = @history-order_uuid
+        INTO TABLE @DATA(existing).
+
+      LOOP AT existing INTO DATA(existing_status).
+        DELETE history WHERE order_uuid = existing_status-order_uuid AND status = existing_status-status.
+      ENDLOOP.
+
+      INSERT zts_maint_ord_st FROM TABLE @history.
+    ENDIF.
+
+    " A deleted order takes its history with it
+    LOOP AT delete-maintenanceorder INTO DATA(deleted_order).
+      DELETE FROM zts_maint_ord_st WHERE order_uuid = @deleted_order-OrderUuid.
+    ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
 

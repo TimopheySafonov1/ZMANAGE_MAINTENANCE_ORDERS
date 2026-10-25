@@ -10,6 +10,7 @@ define root view entity ZI_TS_MAINTENANCE_ORDER
   key order_uuid            as OrderUuid,
       order_id              as OrderId,
       order_type            as OrderType,
+      order_status          as OrderStatus,
       description           as Description,
       long_text             as LongText,
       tech_object           as TechObject,

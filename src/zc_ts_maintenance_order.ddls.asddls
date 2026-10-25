@@ -11,6 +11,14 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       @ObjectModel.text.element: [ 'OrderTypeName' ]
       OrderType,
       _OrderType.MaintenanceOrderTypeName as OrderTypeName,
+      @ObjectModel.text.element: [ 'OrderStatusText' ]
+      @UI.textArrangement: #TEXT_ONLY
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_ORDER_STATUS_VH', element: 'Status' } }]
+      OrderStatus,
+      @UI.hidden: true
+      _OrderStatus.StatusDescription      as OrderStatusText,
+      @UI.hidden: true
+      OrderStatusCriticality,
       Description,
       LongText,
       @ObjectModel.text.element: [ 'TechObjectText' ]

@@ -14,10 +14,19 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
   association [0..1] to ZC_TS_REVISION_VH           as _MaintRevision on  $projection.PlanningPlant = _MaintRevision.Plant
                                                                       and $projection.MaintRevision = _MaintRevision.MaintenanceRevision
   association [0..*] to ZC_TS_MAINT_ORDER_STATUS    as _Status        on $projection.OrderUuid = _Status.OrderUuid
+  association [0..1] to ZC_TS_ORDER_STATUS_VH       as _OrderStatus   on $projection.OrderStatus = _OrderStatus.Status
 {
   key OrderUuid,
       OrderId,
       OrderType,
+      // CRTD created -> REL released -> TECO completed (actions releaseOrder, completeOrder)
+      OrderStatus,
+      // Colour of the status: neutral, blue (information), green (positive)
+      case OrderStatus
+        when 'REL'  then cast( 5 as abap.int1 )
+        when 'TECO' then cast( 3 as abap.int1 )
+        else cast( 0 as abap.int1 )
+      end as OrderStatusCriticality,
       Description,
       LongText,
       TechObject,
@@ -49,5 +58,6 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       _WorkCenter,
       _Priority,
       _MaintRevision,
-      _Status
+      _Status,
+      _OrderStatus
 }

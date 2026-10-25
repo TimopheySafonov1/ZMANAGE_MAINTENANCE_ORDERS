@@ -180,6 +180,15 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS delete_holidays
       RETURNING VALUE(result) TYPE string.
 
+    "! Texts of the order statuses (ZTS_MAINT_STAT_T) in EN and PL: CRTD = created, REL = released,
+    "! TECO = completed. Existing entries are overwritten, so it can be re-run safely.
+    METHODS fill_order_statuses
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all order status texts (every language) - the status history of the orders is kept
+    METHODS delete_order_statuses
+      RETURNING VALUE(result) TYPE string.
+
   PRIVATE SECTION.
     "! Easter Sunday of the given year (Gregorian calendar, anonymous Gregorian algorithm)
     METHODS easter_sunday
@@ -1059,6 +1068,28 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DELETE FROM zts_holiday.
 
     result = |Public holidays deleted: { sy-dbcnt } holidays|.
+  ENDMETHOD.
+
+  METHOD fill_order_statuses.
+    DATA texts TYPE STANDARD TABLE OF zts_maint_stat_t WITH EMPTY KEY.
+
+    " Language keys: E = English, L = Polish
+    texts = VALUE #( ( language = 'E' status = 'CRTD' description = 'Created' )
+                     ( language = 'L' status = 'CRTD' description = 'Utworzone' )
+                     ( language = 'E' status = 'REL'  description = 'Released' )
+                     ( language = 'L' status = 'REL'  description = 'Zwolnione' )
+                     ( language = 'E' status = 'TECO' description = 'Completed' )
+                     ( language = 'L' status = 'TECO' description = 'Zakończone' ) ).
+
+    MODIFY zts_maint_stat_t FROM TABLE @texts.
+
+    result = |Order statuses filled: { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_order_statuses.
+    DELETE FROM zts_maint_stat_t.
+
+    result = |Order statuses deleted: { sy-dbcnt } texts|.
   ENDMETHOD.
 
   METHOD easter_sunday.
