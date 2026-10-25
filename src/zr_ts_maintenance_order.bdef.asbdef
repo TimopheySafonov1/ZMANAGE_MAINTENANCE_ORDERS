@@ -116,6 +116,8 @@ authorization dependent by _MaintenanceOrder
 
   field ( numbering : managed, readonly ) OperationUuid;
   field ( readonly ) OrderUuid, OperationId;
+  field ( features : instance ) ActualWork, ActualWorkUnit, ActualWorkDuration, ActualDurationUnit,
+                                ActualStart, ActualFinish;
 
   determination setOperationId on modify { create; }
   // Every new operation gets an empty component and PRT to fill in the lists of the operation
@@ -267,7 +269,7 @@ authorization dependent by _MaintenanceOrder
   field ( numbering : managed, readonly ) PrtUuid;
   field ( readonly ) OperationUuid, OrderUuid;
   // Free input without a PRT, read-only once a PRT is chosen (taken from the PRT)
-  field ( features : instance ) Description, Uom;
+  field ( features : instance ) Description, Uom, ActualUsage, ActualUsageUnit;
 
   determination setOrderUuid on modify { create; }
   determination setPrtData on modify { field PrtId; }

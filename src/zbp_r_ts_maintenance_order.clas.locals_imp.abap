@@ -924,6 +924,9 @@ ENDCLASS.
 
 CLASS lhc_maintenanceoperation DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      IMPORTING keys REQUEST requested_features FOR MaintenanceOperation RESULT result.
+
     METHODS setoperationid FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOperation~setOperationId.
 
@@ -944,6 +947,31 @@ CLASS lhc_maintenanceoperation DEFINITION INHERITING FROM cl_abap_behavior_handl
 ENDCLASS.
 
 CLASS lhc_maintenanceoperation IMPLEMENTATION.
+  METHOD get_instance_features.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_MaintenanceOrder
+        FIELDS ( OrderStatus ) WITH CORRESPONDING #( keys )
+        RESULT DATA(orders)
+        LINK DATA(links).
+
+    LOOP AT keys INTO DATA(key).
+      DATA(field_control) = if_abap_behv=>fc-f-read_only.
+      LOOP AT links INTO DATA(link) WHERE source-%tky = key-%tky.
+        IF line_exists( orders[ %tky = link-target-%tky OrderStatus = lif_order_status=>released ] ).
+          field_control = if_abap_behv=>fc-f-unrestricted.
+        ENDIF.
+      ENDLOOP.
+
+      APPEND VALUE #( %tky                      = key-%tky
+                      %field-ActualWork         = field_control
+                      %field-ActualWorkUnit     = field_control
+                      %field-ActualWorkDuration = field_control
+                      %field-ActualDurationUnit = field_control
+                      %field-ActualStart        = field_control
+                      %field-ActualFinish       = field_control ) TO result.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD createcomponentandprt.
     " Empty rows to fill in the lists - deleteIfEmpty removes the ones still empty on save
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
@@ -1354,15 +1382,30 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt
         FIELDS ( PrtId ) WITH CORRESPONDING #( keys )
-        RESULT DATA(prts).
+        RESULT DATA(prts)
+      ENTITY MaintenancePrt BY \_MaintenanceOrder
+        FIELDS ( OrderStatus ) WITH CORRESPONDING #( keys )
+        RESULT DATA(orders)
+        LINK DATA(links).
 
-    result = VALUE #( FOR prt IN prts
-                      LET field_control = COND #( WHEN prt-PrtId IS INITIAL
-                                                    THEN if_abap_behv=>fc-f-unrestricted
-                                                    ELSE if_abap_behv=>fc-f-read_only ) IN
-                      ( %tky               = prt-%tky
-                        %field-Description = field_control
-                        %field-Uom         = field_control ) ).
+    LOOP AT prts INTO DATA(prt).
+      DATA(field_control) = COND #( WHEN prt-PrtId IS INITIAL
+                                    THEN if_abap_behv=>fc-f-unrestricted
+                                    ELSE if_abap_behv=>fc-f-read_only ).
+
+      DATA(actual_control) = if_abap_behv=>fc-f-read_only.
+      LOOP AT links INTO DATA(link) WHERE source-%tky = prt-%tky.
+        IF line_exists( orders[ %tky = link-target-%tky OrderStatus = lif_order_status=>released ] ).
+          actual_control = if_abap_behv=>fc-f-unrestricted.
+        ENDIF.
+      ENDLOOP.
+
+      APPEND VALUE #( %tky                   = prt-%tky
+                      %field-Description     = field_control
+                      %field-Uom             = field_control
+                      %field-ActualUsage     = actual_control
+                      %field-ActualUsageUnit = actual_control ) TO result.
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD setorderuuid.
