@@ -404,6 +404,12 @@ CLASS lcl_order_type_rules DEFINITION.
       IMPORTING !start        TYPE utclong
                 priority      TYPE zts_priority-priority
       RETURNING VALUE(result) TYPE utclong.
+
+    "! Why the date is not a working day - 'weekend' or 'święto: ' + name of the Polish public holiday
+    "! (ZTS_HOLIDAY); initial for a working day
+    CLASS-METHODS non_working_day
+      IMPORTING check_date    TYPE d
+      RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS lcl_order_type_rules IMPLEMENTATION.
@@ -430,6 +436,22 @@ CLASS lcl_order_type_rules IMPLEMENTATION.
 
     IF due_hours > 0.
       result = utclong_add( val = start hours = due_hours ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD non_working_day.
+    " 1900-01-01 was a Monday, so 5 is a Saturday and 6 a Sunday
+    IF ( check_date - CONV d( '19000101' ) ) MOD 7 >= 5.
+      result = 'weekend'.
+      RETURN.
+    ENDIF.
+
+    SELECT SINGLE FROM zts_holiday
+      FIELDS holiday_name
+      WHERE holiday_date = @check_date
+      INTO @DATA(holiday_name).
+    IF sy-subrc = 0.
+      result = |święto: { holiday_name }|.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
@@ -656,7 +678,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   METHOD validatetyperules.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( OrderType TechObject LongText MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime )
+        FIELDS ( OrderType TechObject LongText MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime
+                 MaintOrdFinalDueDateTime )
         WITH CORRESPONDING #( keys )
         RESULT DATA(orders).
 
@@ -743,9 +766,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
                         %element-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
-      " Planned work can't start in the past
-      IF     rules-dates_req = abap_true
-         AND order-MaintOrdBasicStartDateTime IS NOT INITIAL
+      " No order can start in the past (corrective orders start now, so they pass)
+      IF     order-MaintOrdBasicStartDateTime IS NOT INITIAL
          AND order-MaintOrdBasicStartDateTime <> VALUE utclong( saved_orders[ order_uuid = order-OrderUuid ]-basic_start_datetime
                                                                 OPTIONAL ).
         CONVERT UTCLONG order-MaintOrdBasicStartDateTime TIME ZONE time_zone INTO DATE DATA(start_date).
@@ -756,6 +778,33 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
                           %msg                                = new_message_with_text(
                                                                     text = 'Data rozpoczęcia nie może być w przeszłości.' )
                           %element-MaintOrdBasicStartDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
+        ENDIF.
+      ENDIF.
+
+      " Planned orders (e.g. PM02) are finished and due on working days only - no weekend, no public holiday
+      IF rules-working_days_only = abap_true AND order-MaintOrdBasicFinishDateTime IS NOT INITIAL.
+        CONVERT UTCLONG order-MaintOrdBasicFinishDateTime TIME ZONE time_zone INTO DATE DATA(finish_date).
+        DATA(finish_reason) = lcl_order_type_rules=>non_working_day( finish_date ).
+        IF finish_reason IS NOT INITIAL.
+          APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+          APPEND VALUE #( %tky                                 = order-%tky
+                          %state_area                          = 'TYPE_RULES'
+                          %msg                                 = new_message_with_text(
+                              text = |Podstawowa data zakończenia przypada na { finish_reason }.| )
+                          %element-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
+        ENDIF.
+      ENDIF.
+
+      IF rules-working_days_only = abap_true AND order-MaintOrdFinalDueDateTime IS NOT INITIAL.
+        CONVERT UTCLONG order-MaintOrdFinalDueDateTime TIME ZONE time_zone INTO DATE DATA(due_date).
+        DATA(due_reason) = lcl_order_type_rules=>non_working_day( due_date ).
+        IF due_reason IS NOT INITIAL.
+          APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+          APPEND VALUE #( %tky                              = order-%tky
+                          %state_area                       = 'TYPE_RULES'
+                          %msg                              = new_message_with_text(
+                              text = |Termin ostateczny przypada na { due_reason }.| )
+                          %element-MaintOrdFinalDueDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
         ENDIF.
       ENDIF.
     ENDLOOP.

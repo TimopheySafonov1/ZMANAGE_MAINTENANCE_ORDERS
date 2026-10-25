@@ -28,6 +28,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         exchange_rates         TYPE abap_bool VALUE abap_true,
         cost_categories        TYPE abap_bool VALUE abap_true,
         tech_objects           TYPE abap_bool VALUE abap_true,
+        holidays               TYPE abap_bool VALUE abap_true,
       END OF delete,
       BEGIN OF fill,
         maint_order_types      TYPE abap_bool VALUE abap_true,
@@ -47,6 +48,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         exchange_rates         TYPE abap_bool VALUE abap_true,
         cost_categories        TYPE abap_bool VALUE abap_true,
         tech_objects           TYPE abap_bool VALUE abap_true,
+        holidays               TYPE abap_bool VALUE abap_true,
       END OF fill.
     " ----------------------------------------------------------------------
 
@@ -121,6 +123,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->delete_tech_objects( ) ).
     ENDIF.
 
+    IF delete-holidays = abap_true.
+      out->write( customizing->delete_holidays( ) ).
+    ENDIF.
+
     IF fill-maint_order_types = abap_true.
       out->write( customizing->fill_maint_order_types( ) ).
     ENDIF.
@@ -191,6 +197,11 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
 
     IF fill-tech_objects = abap_true.
       out->write( customizing->fill_tech_objects( ) ).
+    ENDIF.
+
+    " Polish calendar for the working-day rules of the order types
+    IF fill-holidays = abap_true.
+      out->write( customizing->fill_holidays( ) ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.

@@ -36,7 +36,8 @@ authorization master ( global )
   determination setTechObjType on modify { field TechObject; }
 
   validation validateTypeRules on save { create; field OrderType, TechObject, LongText,
-                                         MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime; }
+                                         MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime,
+                                         MaintOrdFinalDueDateTime; }
 
   side effects
   {

@@ -169,6 +169,22 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     "! Deletes all technical objects, all technical object types and all their texts (every language)
     METHODS delete_tech_objects
       RETURNING VALUE(result) TYPE string.
+
+    "! Polish public holidays (ZTS_HOLIDAY) from last year until five years ahead - the fixed ones and the
+    "! movable ones that depend on Easter. Order types with working_days_only don't allow them as dates.
+    "! Existing entries are overwritten, so it can be re-run safely.
+    METHODS fill_holidays
+      RETURNING VALUE(result) TYPE string.
+
+    "! Deletes all public holidays
+    METHODS delete_holidays
+      RETURNING VALUE(result) TYPE string.
+
+  PRIVATE SECTION.
+    "! Easter Sunday of the given year (Gregorian calendar, anonymous Gregorian algorithm)
+    METHODS easter_sunday
+      IMPORTING holiday_year  TYPE i
+      RETURNING VALUE(result) TYPE d.
 ENDCLASS.
 
 CLASS zcl_ts_maint_customizing IMPLEMENTATION.
@@ -179,16 +195,18 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     " Rules of the order type, used by the order BO:
     " PM01 corrective - high priority, starts now with a due date from the priority,
     "                  technical object and damage description (long text) required
-    " PM02 preventive  - planned: start and finish dates required, revision allowed
-    order_types = VALUE #( ( order_type       = 'PM01'
-                             default_priority = '2'
-                             immediate_start  = abap_true
-                             tech_obj_req     = abap_true
-                             long_text_req    = abap_true )
-                           ( order_type       = 'PM02'
-                             default_priority = '3'
-                             dates_req        = abap_true
-                             revision_allowed = abap_true ) ).
+    " PM02 preventive  - planned: start and finish dates required, revision allowed, finish date and final
+    "                  due date only on working days (no weekend, no Polish public holiday of ZTS_HOLIDAY)
+    order_types = VALUE #( ( order_type        = 'PM01'
+                             default_priority  = '2'
+                             immediate_start   = abap_true
+                             tech_obj_req      = abap_true
+                             long_text_req     = abap_true )
+                           ( order_type        = 'PM02'
+                             default_priority  = '3'
+                             dates_req         = abap_true
+                             revision_allowed  = abap_true
+                             working_days_only = abap_true ) ).
 
     " Language keys: E = English, L = Polish
     texts = VALUE #( ( language = 'E' order_type = 'PM01' description = 'Corrective Maintenance' )
@@ -1000,6 +1018,67 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA(deleted_types) = sy-dbcnt.
 
     result = |Technical objects deleted: { deleted_objects } objects, { deleted_types } types, { deleted_texts } texts|.
+  ENDMETHOD.
+
+  METHOD fill_holidays.
+    DATA holidays TYPE STANDARD TABLE OF zts_holiday WITH EMPTY KEY.
+
+    DATA(today) = cl_abap_context_info=>get_system_date( ).
+    DATA(this_year) = CONV i( today(4) ).
+
+    " Non-working days by Polish law (ustawa o dniach wolnych od pracy)
+    DO 7 TIMES.
+      DATA(holiday_year) = this_year - 2 + sy-index.
+      DATA(easter) = easter_sunday( holiday_year ).
+
+      APPEND VALUE #( holiday_date = |{ holiday_year }0101| holiday_name = 'Nowy Rok' ) TO holidays.
+      APPEND VALUE #( holiday_date = |{ holiday_year }0106| holiday_name = 'Święto Trzech Króli' ) TO holidays.
+      APPEND VALUE #( holiday_date = easter                 holiday_name = 'Wielkanoc' ) TO holidays.
+      APPEND VALUE #( holiday_date = easter + 1             holiday_name = 'Poniedziałek Wielkanocny' ) TO holidays.
+      APPEND VALUE #( holiday_date = |{ holiday_year }0501| holiday_name = 'Święto Pracy' ) TO holidays.
+      APPEND VALUE #( holiday_date = |{ holiday_year }0503| holiday_name = 'Święto Konstytucji 3 Maja' ) TO holidays.
+      APPEND VALUE #( holiday_date = easter + 49            holiday_name = 'Zielone Świątki' ) TO holidays.
+      APPEND VALUE #( holiday_date = easter + 60            holiday_name = 'Boże Ciało' ) TO holidays.
+      APPEND VALUE #( holiday_date = |{ holiday_year }0815| holiday_name = 'Wniebowzięcie NMP' ) TO holidays.
+      APPEND VALUE #( holiday_date = |{ holiday_year }1101| holiday_name = 'Wszystkich Świętych' ) TO holidays.
+      APPEND VALUE #( holiday_date = |{ holiday_year }1111| holiday_name = 'Narodowe Święto Niepodległości' ) TO holidays.
+      " Christmas Eve is a public holiday since 2025
+      IF holiday_year >= 2025.
+        APPEND VALUE #( holiday_date = |{ holiday_year }1224| holiday_name = 'Wigilia Bożego Narodzenia' ) TO holidays.
+      ENDIF.
+      APPEND VALUE #( holiday_date = |{ holiday_year }1225| holiday_name = 'Boże Narodzenie' ) TO holidays.
+      APPEND VALUE #( holiday_date = |{ holiday_year }1226| holiday_name = 'Drugi dzień Bożego Narodzenia' ) TO holidays.
+    ENDDO.
+
+    MODIFY zts_holiday FROM TABLE @holidays.
+
+    result = |Public holidays filled: { lines( holidays ) } holidays for the years { this_year - 1 }-{ this_year + 5 }|.
+  ENDMETHOD.
+
+  METHOD delete_holidays.
+    DELETE FROM zts_holiday.
+
+    result = |Public holidays deleted: { sy-dbcnt } holidays|.
+  ENDMETHOD.
+
+  METHOD easter_sunday.
+    " Variable names follow the steps of the algorithm (a, b, c, ... in the literature)
+    DATA(golden) = holiday_year MOD 19.
+    DATA(century) = holiday_year DIV 100.
+    DATA(year_of_century) = holiday_year MOD 100.
+    DATA(century_leap) = century DIV 4.
+    DATA(century_rest) = century MOD 4.
+    DATA(correction) = ( century + 8 ) DIV 25.
+    DATA(moon_correction) = ( century - correction + 1 ) DIV 3.
+    DATA(epact) = ( 19 * golden + century - century_leap - moon_correction + 15 ) MOD 30.
+    DATA(year_leap) = year_of_century DIV 4.
+    DATA(year_rest) = year_of_century MOD 4.
+    DATA(weekday) = ( 32 + 2 * century_rest + 2 * year_leap - epact - year_rest ) MOD 7.
+    DATA(shift) = ( golden + 11 * epact + 22 * weekday ) DIV 451.
+    DATA(month) = ( epact + weekday - 7 * shift + 114 ) DIV 31.
+    DATA(day) = ( epact + weekday - 7 * shift + 114 ) MOD 31 + 1.
+
+    result = |{ holiday_year }{ month WIDTH = 2 ALIGN = RIGHT PAD = '0' }{ day WIDTH = 2 ALIGN = RIGHT PAD = '0' }|.
   ENDMETHOD.
 ENDCLASS.
 
