@@ -834,6 +834,12 @@ CLASS lhc_maintenanceoperation DEFINITION INHERITING FROM cl_abap_behavior_handl
     METHODS createcomponentandprt FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOperation~createComponentAndPrt.
 
+    METHODS addemptyoperation FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOperation~addEmptyOperation.
+
+    METHODS deleteifempty FOR DETERMINE ON SAVE
+      IMPORTING keys FOR MaintenanceOperation~deleteIfEmpty.
+
     METHODS calculatecosts FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOperation~calculateCosts.
 
@@ -856,6 +862,119 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
                       ( %tky    = key-%tky
                         %target = VALUE #( ( %cid      = |PRT_{ idx }|
                                              %is_draft = key-%is_draft ) ) ) ).
+  ENDMETHOD.
+
+  METHOD addemptyoperation.
+    " Only drafts get the empty row - it is what the user fills next in the list
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_MaintenanceOrder
+        FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+
+    DELETE orders WHERE %is_draft = if_abap_behv=>mk-off.
+    SORT orders BY %is_draft OrderUuid.
+    DELETE ADJACENT DUPLICATES FROM orders COMPARING %is_draft OrderUuid.
+    IF orders IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder BY \_Operations
+        FIELDS ( OrderUuid Description PersonResp PlannedWork PlannedWorkDuration ActualWork ActualWorkDuration
+                 PlannedStart PlannedFinish ActualStart ActualFinish )
+        WITH CORRESPONDING #( orders )
+        RESULT DATA(operations).
+
+    DATA creates TYPE TABLE FOR CREATE zr_ts_maintenance_order\\MaintenanceOrder\_Operations.
+    LOOP AT orders INTO DATA(order).
+      " An empty operation is still there - nothing to add
+      LOOP AT operations TRANSPORTING NO FIELDS
+           WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid
+             AND Description IS INITIAL AND PersonResp IS INITIAL
+             AND PlannedWork IS INITIAL AND PlannedWorkDuration IS INITIAL
+             AND ActualWork IS INITIAL AND ActualWorkDuration IS INITIAL
+             AND PlannedStart IS INITIAL AND PlannedFinish IS INITIAL
+             AND ActualStart IS INITIAL AND ActualFinish IS INITIAL.
+        EXIT.
+      ENDLOOP.
+      IF sy-subrc = 0.
+        CONTINUE.
+      ENDIF.
+
+      APPEND VALUE #( %tky    = order-%tky
+                      %target = VALUE #( ( %cid      = |EMPTY_OPERATION_{ lines( creates ) + 1 }|
+                                           %is_draft = order-%is_draft ) ) ) TO creates.
+    ENDLOOP.
+
+    " Number, component and PRT of the new operation come from its own create determinations
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        CREATE BY \_Operations FROM creates.
+  ENDMETHOD.
+
+  METHOD deleteifempty.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        FIELDS ( OrderUuid Description PersonResp PlannedWork PlannedWorkDuration ActualWork ActualWorkDuration
+                 PlannedStart PlannedFinish ActualStart ActualFinish )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(operations).
+
+    " Anything entered on the operation keeps it
+    DELETE operations WHERE Description IS NOT INITIAL OR PersonResp IS NOT INITIAL
+                         OR PlannedWork IS NOT INITIAL OR PlannedWorkDuration IS NOT INITIAL
+                         OR ActualWork IS NOT INITIAL OR ActualWorkDuration IS NOT INITIAL
+                         OR PlannedStart IS NOT INITIAL OR PlannedFinish IS NOT INITIAL
+                         OR ActualStart IS NOT INITIAL OR ActualFinish IS NOT INITIAL.
+    IF operations IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " ... and so does a component or PRT with data
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_Components
+        FIELDS ( OperationUuid ComponentId Description ReqQuantity ) WITH CORRESPONDING #( operations )
+        RESULT DATA(components)
+      ENTITY MaintenanceOperation BY \_PRTs
+        FIELDS ( OperationUuid PrtId Description ReqQuantity PlannedUsage ActualUsage ) WITH CORRESPONDING #( operations )
+        RESULT DATA(prts).
+
+    LOOP AT components INTO DATA(component)
+         WHERE ComponentId IS NOT INITIAL OR Description IS NOT INITIAL OR ReqQuantity IS NOT INITIAL.
+      DELETE operations WHERE OperationUuid = component-OperationUuid.
+    ENDLOOP.
+    LOOP AT prts INTO DATA(prt)
+         WHERE PrtId IS NOT INITIAL OR Description IS NOT INITIAL OR ReqQuantity IS NOT INITIAL
+            OR PlannedUsage IS NOT INITIAL OR ActualUsage IS NOT INITIAL.
+      DELETE operations WHERE OperationUuid = prt-OperationUuid.
+    ENDLOOP.
+    IF operations IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    " The cost item generated for the operation goes with it (its components and PRTs go by composition)
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_MaintenanceOrder
+        FIELDS ( OrderUuid ) WITH CORRESPONDING #( operations )
+        RESULT DATA(orders).
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder BY \_Costs
+        FIELDS ( OperationUuid ) WITH CORRESPONDING #( orders )
+        RESULT DATA(cost_items).
+
+    DATA cost_deletes TYPE TABLE FOR DELETE zr_ts_maintenance_order\\MaintenanceCosts.
+    LOOP AT cost_items INTO DATA(cost_item).
+      IF line_exists( operations[ OperationUuid = cost_item-OperationUuid ] ).
+        APPEND VALUE #( %tky = cost_item-%tky ) TO cost_deletes.
+      ENDIF.
+    ENDLOOP.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceCosts
+        DELETE FROM cost_deletes
+      ENTITY MaintenanceOperation
+        DELETE FROM VALUE #( FOR operation IN operations ( %tky = operation-%tky ) ).
   ENDMETHOD.
 
   METHOD setoperationid.
@@ -947,6 +1066,9 @@ CLASS lhc_maintenancecomponent DEFINITION INHERITING FROM cl_abap_behavior_handl
     METHODS deleteifempty FOR DETERMINE ON SAVE
       IMPORTING keys FOR MaintenanceComponent~deleteIfEmpty.
 
+    METHODS addemptycomponent FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceComponent~addEmptyComponent.
+
     METHODS calculatecosts FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceComponent~calculateCosts.
 
@@ -1007,6 +1129,47 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
         DELETE FROM VALUE #( FOR component IN components ( %tky = component-%tky ) ).
+  ENDMETHOD.
+
+  METHOD addemptycomponent.
+    " Only drafts get the empty row - it is what the user fills next in the list
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceComponent BY \_MaintenanceOperation
+        FIELDS ( OperationUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(operations).
+
+    DELETE operations WHERE %is_draft = if_abap_behv=>mk-off.
+    SORT operations BY %is_draft OperationUuid.
+    DELETE ADJACENT DUPLICATES FROM operations COMPARING %is_draft OperationUuid.
+    IF operations IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_Components
+        FIELDS ( OperationUuid ComponentId Description ReqQuantity ) WITH CORRESPONDING #( operations )
+        RESULT DATA(components).
+
+    DATA creates TYPE TABLE FOR CREATE zr_ts_maintenance_order\\MaintenanceOperation\_Components.
+    LOOP AT operations INTO DATA(operation).
+      " An empty component is still there - nothing to add
+      LOOP AT components TRANSPORTING NO FIELDS
+           WHERE %is_draft = operation-%is_draft AND OperationUuid = operation-OperationUuid
+             AND ComponentId IS INITIAL AND Description IS INITIAL AND ReqQuantity IS INITIAL.
+        EXIT.
+      ENDLOOP.
+      IF sy-subrc = 0.
+        CONTINUE.
+      ENDIF.
+
+      APPEND VALUE #( %tky    = operation-%tky
+                      %target = VALUE #( ( %cid      = |EMPTY_COMPONENT_{ lines( creates ) + 1 }|
+                                           %is_draft = operation-%is_draft ) ) ) TO creates.
+    ENDLOOP.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        CREATE BY \_Components FROM creates.
   ENDMETHOD.
 
   METHOD setcomponentdata.
@@ -1079,6 +1242,9 @@ CLASS lhc_maintenanceprt DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS deleteifempty FOR DETERMINE ON SAVE
       IMPORTING keys FOR MaintenancePrt~deleteIfEmpty.
 
+    METHODS addemptyprt FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenancePrt~addEmptyPrt.
+
     METHODS calculatecosts FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenancePrt~calculateCosts.
 
@@ -1139,6 +1305,48 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt
         DELETE FROM VALUE #( FOR prt IN prts ( %tky = prt-%tky ) ).
+  ENDMETHOD.
+
+  METHOD addemptyprt.
+    " Only drafts get the empty row - it is what the user fills next in the list
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenancePrt BY \_MaintenanceOperation
+        FIELDS ( OperationUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(operations).
+
+    DELETE operations WHERE %is_draft = if_abap_behv=>mk-off.
+    SORT operations BY %is_draft OperationUuid.
+    DELETE ADJACENT DUPLICATES FROM operations COMPARING %is_draft OperationUuid.
+    IF operations IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_PRTs
+        FIELDS ( OperationUuid PrtId Description ReqQuantity PlannedUsage ActualUsage ) WITH CORRESPONDING #( operations )
+        RESULT DATA(prts).
+
+    DATA creates TYPE TABLE FOR CREATE zr_ts_maintenance_order\\MaintenanceOperation\_PRTs.
+    LOOP AT operations INTO DATA(operation).
+      " An empty PRT is still there - nothing to add
+      LOOP AT prts TRANSPORTING NO FIELDS
+           WHERE %is_draft = operation-%is_draft AND OperationUuid = operation-OperationUuid
+             AND PrtId IS INITIAL AND Description IS INITIAL AND ReqQuantity IS INITIAL
+             AND PlannedUsage IS INITIAL AND ActualUsage IS INITIAL.
+        EXIT.
+      ENDLOOP.
+      IF sy-subrc = 0.
+        CONTINUE.
+      ENDIF.
+
+      APPEND VALUE #( %tky    = operation-%tky
+                      %target = VALUE #( ( %cid      = |EMPTY_PRT_{ lines( creates ) + 1 }|
+                                           %is_draft = operation-%is_draft ) ) ) TO creates.
+    ENDLOOP.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        CREATE BY \_PRTs FROM creates.
   ENDMETHOD.
 
   METHOD setprtdata.

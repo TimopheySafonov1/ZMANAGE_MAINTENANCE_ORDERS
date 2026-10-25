@@ -51,6 +51,8 @@ authorization master ( global )
     field Priority affects field MaintOrdFinalDueDateTime;
     field MaintOrdBasicStartDateTime affects field MaintOrdFinalDueDateTime;
     field TechObject affects field TechObjType;
+    // A filled operation adds an empty one (addEmptyOperation) - the list has to show it
+    entity _Operations affects entity _Operations;
   }
 
   draft action Activate optimized;
@@ -103,6 +105,12 @@ authorization dependent by _MaintenanceOrder
   determination setOperationId on modify { create; }
   // Every new operation gets an empty component and PRT to fill in the lists of the operation
   determination createComponentAndPrt on modify { create; }
+  // Keeps one empty operation at the end of the list, so the next one can be entered right in the list
+  determination addEmptyOperation on modify { field Description, PersonResp, PlannedWork, PlannedWorkDuration,
+                                              ActualWork, ActualWorkDuration, PlannedStart, PlannedFinish,
+                                              ActualStart, ActualFinish; }
+  // The empty operation (and one left without any data) is dropped on save, with its cost item
+  determination deleteIfEmpty on save { create; update; }
   // Description is copied to the cost item of the operation, so it triggers the calculation too
   determination calculateCosts on modify { create; delete; field Description, PersonResp, PlannedWork, PlannedWorkUnit,
                                            PlannedWorkDuration, PlannedDurationUnit, ActualWork, ActualWorkUnit,
@@ -120,8 +128,9 @@ authorization dependent by _MaintenanceOrder
     field ActualWorkUnit affects entity _MaintenanceOrder;
     field ActualWorkDuration affects entity _MaintenanceOrder;
     field ActualDurationUnit affects entity _MaintenanceOrder;
-    entity _Components affects entity _MaintenanceOrder;
-    entity _PRTs affects entity _MaintenanceOrder;
+    // Costs of the order, and the lists themselves - a filled row adds an empty one (addEmptyComponent/-Prt)
+    entity _Components affects entity _MaintenanceOrder, entity _Components;
+    entity _PRTs affects entity _MaintenanceOrder, entity _PRTs;
   }
 
   mapping for zts_maint_operat
@@ -202,7 +211,9 @@ authorization dependent by _MaintenanceOrder
   determination setOrderUuid on modify { create; }
   determination setComponentData on modify { field ComponentId; }
   determination calculateCosts on modify { create; delete; field ComponentId, ReqQuantity, Uom; }
-  // The component created with the operation is dropped on save when it was left empty
+  // Keeps one empty component at the end of the list, so the next one can be entered right in the list
+  determination addEmptyComponent on modify { field ComponentId, Description, ReqQuantity; }
+  // The empty component is dropped on save
   determination deleteIfEmpty on save { create; update; }
 
   side effects
@@ -245,7 +256,9 @@ authorization dependent by _MaintenanceOrder
 
   determination setOrderUuid on modify { create; }
   determination setPrtData on modify { field PrtId; }
-  // The PRT created with the operation is dropped on save when it was left empty
+  // Keeps one empty PRT at the end of the list, so the next one can be entered right in the list
+  determination addEmptyPrt on modify { field PrtId, Description, ReqQuantity, PlannedUsage, ActualUsage; }
+  // The empty PRT is dropped on save
   determination deleteIfEmpty on save { create; update; }
   determination calculateCosts on modify { create; delete; field PrtId, ReqQuantity, PlannedUsage, PlannedUsageUnit,
                                            ActualUsage, ActualUsageUnit; }
