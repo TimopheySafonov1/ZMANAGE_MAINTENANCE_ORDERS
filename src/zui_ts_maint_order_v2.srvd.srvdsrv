@@ -1,0 +1,18 @@
+@EndUserText.label: 'Maintenance Order - UI Service Defeniion V2'
+define service ZUI_TS_MAINT_ORDER_V2 {
+  expose ZC_TS_MAINTENANCE_ORDER     as MaintenanceOrder;
+  expose ZC_TS_MAINTENANCE_OPERATION as MaintenanceOperation;
+  expose ZC_TS_MAINTENANCE_COSTS     as MaintenanceCosts;
+  expose ZC_TS_MAINTENANCE_COMPONENT as MaintenanceComponent;
+  expose ZC_TS_MAINTENANCE_PRT       as MaintenancePrt;
+  expose ZC_TS_MAINT_ORDER_STATUS    as MaintenanceOrderStatus;
+  expose ZC_TS_MAINT_ORDER_TYPE_VH   as MaintenanceOrderTypeVH;
+  expose ZC_TS_PLANT_VH              as PlantVH;
+  expose ZC_TS_WORK_CENTER_VH        as WorkCenterVH;
+  expose ZC_TS_PRIORITY_VH           as PriorityVH;
+  expose ZC_TS_REVISION_VH           as MaintenanceRevisionVH;
+  expose ZC_TS_RESPONSIBLE_PERSON_VH as ResponsiblePersonVH;
+  expose ZC_TS_TIME_UNIT_VH          as TimeUnitVH;
+  expose ZC_TS_TECH_OBJ_VH           as TechObjectVH;
+  expose ZC_TS_TECH_OBJ_TYPE_VH      as TechObjectTypeVH;
+}
