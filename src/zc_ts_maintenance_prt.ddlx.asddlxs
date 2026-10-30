@@ -25,6 +25,8 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
   OrderUuid;
 
   @EndUserText.label: 'Numer pomocy produkcyjnej'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PRT_VH', element: 'Prt' },
+                                       useForValidation: true }]
   @UI: { lineItem:       [{ position: 10, importance: #HIGH, cssDefault.width: '10rem' }],
          identification: [{ position: 10 }],
          fieldGroup:     [{ qualifier: 'PrtData', position: 10 }] }
@@ -41,10 +43,15 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
   ReqQuantity;
 
   @EndUserText.label: 'Jednostka miary'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_UOM_VH', element: 'Uom' } }]
   @UI.hidden: true
   Uom;
 
   @EndUserText.label: 'Skład'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_STOR_LOC_VH', element: 'StorageLoc' },
+                                       additionalBinding: [{ element: 'Component',
+                                                             localConstant: '',
+                                                             usage: #FILTER }] }]
   @UI: { lineItem:   [{ position: 40, importance: #HIGH, cssDefault.width: '8rem' }],
          fieldGroup: [{ qualifier: 'PrtData', position: 40 }] }
   StorageLoc;
@@ -54,6 +61,7 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
   PlannedUsage;
 
   @EndUserText.label: 'Jednostka czasu (plan)'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TIME_UNIT_VH', element: 'TimeUnit' } }]
   @UI.hidden: true
   PlannedUsageUnit;
 
@@ -62,6 +70,7 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
   ActualUsage;
 
   @EndUserText.label: 'Jednostka czasu (rzeczywista)'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TIME_UNIT_VH', element: 'TimeUnit' } }]
   @UI.hidden: true
   ActualUsageUnit;
 }

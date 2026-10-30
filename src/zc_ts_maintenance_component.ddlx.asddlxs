@@ -25,6 +25,8 @@ annotate entity ZC_TS_MAINTENANCE_COMPONENT with
   OrderUuid;
 
   @EndUserText.label: 'Komponent'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_COMPONENT_VH', element: 'Component' },
+                                       useForValidation: true }]
   @UI: { lineItem:       [{ position: 10, importance: #HIGH }],
          identification: [{ position: 10 }],
          fieldGroup:     [{ qualifier: 'ComponentData', position: 10 }] }
@@ -36,6 +38,8 @@ annotate entity ZC_TS_MAINTENANCE_COMPONENT with
   Description;
 
   @EndUserText.label: 'Typ pozycji'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_ITEM_CATEGORY_VH', element: 'ItemCategory' },
+                                       useForValidation: true }]
   @UI: { lineItem:   [{ position: 30, importance: #MEDIUM }],
          fieldGroup: [{ qualifier: 'ComponentData', position: 30 }] }
   ItemCategory;
@@ -46,10 +50,15 @@ annotate entity ZC_TS_MAINTENANCE_COMPONENT with
   ReqQuantity;
 
   @EndUserText.label: 'Jednostka miary'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_UOM_VH', element: 'Uom' } }]
   @UI.hidden: true
   Uom;
 
   @EndUserText.label: 'Skład'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_STOR_LOC_VH', element: 'StorageLoc' },
+                                       additionalBinding: [{ localElement: 'ComponentId',
+                                                             element: 'Component',
+                                                             usage: #FILTER }] }]
   @UI: { lineItem:   [{ position: 50, importance: #MEDIUM }],
          fieldGroup: [{ qualifier: 'ComponentData', position: 50 }] }
   StorageLoc;

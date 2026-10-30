@@ -13,7 +13,6 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       _OrderType.MaintenanceOrderTypeName    as OrderTypeName,
       @ObjectModel.text.element: [ 'OrderStatusText' ]
       @UI.textArrangement: #TEXT_ONLY
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_ORDER_STATUS_VH', element: 'Status' } }]
       OrderStatus,
       @UI.hidden: true
       _OrderStatus.StatusDescription         as OrderStatusText,
@@ -23,14 +22,6 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       LongText,
       @ObjectModel.text.element: [ 'TechObjectText' ]
       @UI.textArrangement: #TEXT_LAST
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TECH_OBJ_VH', element: 'TechObject' },
-                                     label: 'Wyszukiwanie wg danych obiektu',
-                                     useForValidation: true },
-                                   { qualifier: 'Hierarchy',
-                                     entity: { name: 'ZC_TS_TECH_OBJ_HIER_VH', element: 'TechObject' },
-                                     presentationVariantQualifier: 'Hierarchy',
-                                     label: 'Wyszukiwanie wg hierarchii' }]
-
       TechObject,
       @UI.hidden: true
       _TechObject.TechObjectText             as TechObjectText,
@@ -41,35 +32,21 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       _TechObject.TechObjectTypeText         as TechObjTypeText,
       @ObjectModel.text.element: [ 'PlanningPlantName' ]
       @UI.textArrangement: #TEXT_FIRST
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PLANT_VH', element: 'Plant' },
-                                           useForValidation: true }]
       PlanningPlant,
       @UI.hidden: true
       _PlanningPlant.PlantName               as PlanningPlantName,
       @ObjectModel.text.element: [ 'WorkCenterText' ]
       @UI.textArrangement: #TEXT_FIRST
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_WORK_CENTER_VH', element: 'WorkCenter' },
-                                           additionalBinding: [{ localElement: 'PlanningPlant',
-                                                                 element: 'Plant',
-                                                                 usage: #FILTER_AND_RESULT }],
-                                           useForValidation: true }]
       WorkCenter,
       @UI.hidden: true
       _WorkCenter.WorkCenterText             as WorkCenterText,
       @ObjectModel.text.element: [ 'PriorityName' ]
       @UI.textArrangement: #TEXT_FIRST
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PRIORITY_VH', element: 'Priority' },
-                                           useForValidation: true }]
       Priority,
       @UI.hidden: true
       _Priority.PriorityName                 as PriorityName,
       @ObjectModel.text.element: [ 'MaintRevisionText' ]
       @UI.textArrangement: #TEXT_FIRST
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_REVISION_VH', element: 'MaintenanceRevision' },
-                                           additionalBinding: [{ localElement: 'PlanningPlant',
-                                                                 element: 'Plant',
-                                                                 usage: #FILTER_AND_RESULT }],
-                                           useForValidation: true }]
       MaintRevision,
       @UI.hidden: true
       _MaintRevision.MaintenanceRevisionText as MaintRevisionText,

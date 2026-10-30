@@ -43,6 +43,8 @@ annotate entity ZC_TS_MAINTENANCE_OPERATION with
   Description;
 
   @EndUserText.label: 'Osoba odpowiedzialna'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_RESPONSIBLE_PERSON_VH', element: 'PersonResp' },
+                                       useForValidation: true }]
   @UI: { lineItem:   [{ position: 30, importance: #MEDIUM }],
          fieldGroup: [{ qualifier: 'BasicData', position: 30 }] }
   PersonResp;
@@ -53,6 +55,7 @@ annotate entity ZC_TS_MAINTENANCE_OPERATION with
   PlannedWork;
 
   @EndUserText.label: 'Jednostka pracy planowanej'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TIME_UNIT_VH', element: 'TimeUnit' } }]
   @UI.hidden: true
   PlannedWorkUnit;
 
@@ -62,6 +65,7 @@ annotate entity ZC_TS_MAINTENANCE_OPERATION with
   PlannedWorkDuration;
 
   @EndUserText.label: 'Jednostka planowanego czasu trwania'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TIME_UNIT_VH', element: 'TimeUnit' } }]
   @UI.hidden: true
   PlannedDurationUnit;
 
@@ -71,6 +75,7 @@ annotate entity ZC_TS_MAINTENANCE_OPERATION with
   ActualWork;
 
   @EndUserText.label: 'Jednostka pracy rzeczywistej'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TIME_UNIT_VH', element: 'TimeUnit' } }]
   @UI.hidden: true
   ActualWorkUnit;
 
@@ -80,6 +85,7 @@ annotate entity ZC_TS_MAINTENANCE_OPERATION with
   ActualWorkDuration;
 
   @EndUserText.label: 'Jednostka rzeczywistego czasu trwania'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TIME_UNIT_VH', element: 'TimeUnit' } }]
   @UI.hidden: true
   ActualDurationUnit;
 

@@ -59,6 +59,7 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   OrderTypeName;
 
   @EndUserText.label: 'Status'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_ORDER_STATUS_VH', element: 'Status' } }]
   @UI: { lineItem:       [{ position: 15, importance: #HIGH,
                             criticality: 'OrderStatusCriticality', criticalityRepresentation: #WITHOUT_ICON },
                           { type: #FOR_ACTION, dataAction: 'releaseOrder',  label: 'Zwolnij' },
@@ -87,6 +88,13 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   LongText;
 
   @EndUserText.label: 'Obiekt techniczny'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TECH_OBJ_VH', element: 'TechObject' },
+                                       label: 'Wyszukiwanie wg danych obiektu',
+                                       useForValidation: true },
+                                     { qualifier: 'Hierarchy',
+                                       entity: { name: 'ZC_TS_TECH_OBJ_HIER_VH', element: 'TechObject' },
+                                       presentationVariantQualifier: 'Hierarchy',
+                                       label: 'Wyszukiwanie wg hierarchii' }]
   @UI: { lineItem:       [{ position: 40, importance: #MEDIUM }],
          fieldGroup:     [{ qualifier: 'ReferenceObject', position: 10 }],
          selectionField: [{ position: 30 }] }
@@ -97,23 +105,37 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   TechObjType;
 
   @EndUserText.label: 'Zakład planowania'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PLANT_VH', element: 'Plant' },
+                                       useForValidation: true }]
   @UI: { lineItem:       [{ position: 50, importance: #LOW }],
          fieldGroup:     [{ qualifier: 'Responsibilities', position: 20 }],
          selectionField: [{ position: 40 }] }
   PlanningPlant;
 
   @EndUserText.label: 'Główne stanowisko robocze'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_WORK_CENTER_VH', element: 'WorkCenter' },
+                                       additionalBinding: [{ localElement: 'PlanningPlant',
+                                                             element: 'Plant',
+                                                             usage: #FILTER_AND_RESULT }],
+                                       useForValidation: true }]
   @UI: { lineItem:   [{ position: 60, importance: #LOW }],
          fieldGroup: [{ qualifier: 'Responsibilities', position: 10 }] }
   WorkCenter;
 
   @EndUserText.label: 'Priorytet'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PRIORITY_VH', element: 'Priority' },
+                                       useForValidation: true }]
   @UI: { lineItem:       [{ position: 70, importance: #HIGH }],
          fieldGroup:     [{ qualifier: 'Scheduling', position: 10 }],
          selectionField: [{ position: 50 }] }
   Priority;
 
   @EndUserText.label: 'Rewizja'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_REVISION_VH', element: 'MaintenanceRevision' },
+                                       additionalBinding: [{ localElement: 'PlanningPlant',
+                                                             element: 'Plant',
+                                                             usage: #FILTER_AND_RESULT }],
+                                       useForValidation: true }]
   @UI.fieldGroup: [{ qualifier: 'Scheduling', position: 20 }]
   MaintRevision;
 
