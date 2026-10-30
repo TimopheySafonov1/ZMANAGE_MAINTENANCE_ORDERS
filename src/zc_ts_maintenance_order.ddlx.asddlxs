@@ -11,11 +11,9 @@
 annotate entity ZC_TS_MAINTENANCE_ORDER with
 {
   @UI.facet: [
-    /* Nagłówek */
     { id: 'HeaderStatus', purpose: #HEADER, type: #DATAPOINT_REFERENCE,
       targetQualifier: 'OrderStatus', position: 10 },
 
-    /* Szczegóły zlecenia */
     { id: 'OrderDetails',     purpose: #STANDARD, type: #COLLECTION,
       label: 'Szczegóły zlecenia', position: 10 },
     { id: 'OrderInformation', parentId: 'OrderDetails', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
@@ -25,7 +23,6 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
     { id: 'Responsibilities', parentId: 'OrderDetails', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
       targetQualifier: 'Responsibilities', label: 'Odpowiedzialności',     position: 30 },
 
-    /* Terminy i koszty */
     { id: 'DatesAndCosts', purpose: #STANDARD, type: #COLLECTION,
       label: 'Terminy i koszty', position: 30 },
     { id: 'Scheduling',    parentId: 'DatesAndCosts', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
@@ -61,7 +58,6 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @UI.hidden: true
   OrderTypeName;
 
-  // Release and complete are offered only in the right status (instance features of the BO)
   @EndUserText.label: 'Status'
   @UI: { lineItem:       [{ position: 15, importance: #HIGH,
                             criticality: 'OrderStatusCriticality', criticalityRepresentation: #WITHOUT_ICON },

@@ -24,8 +24,6 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
   @UI.hidden: true
   OrderUuid;
 
-  // Compact fixed column widths - without them the quantity column takes all free space, and a column drops
-  // into a second line of the row once the screen is narrower than the columns before it (here ~31rem)
   @EndUserText.label: 'Numer pomocy produkcyjnej'
   @UI: { lineItem:       [{ position: 10, importance: #HIGH, cssDefault.width: '10rem' }],
          identification: [{ position: 10 }],
@@ -51,7 +49,6 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
          fieldGroup: [{ qualifier: 'PrtData', position: 40 }] }
   StorageLoc;
 
-  // The usage times are only on the PRT page - everything else can be filled in the list
   @EndUserText.label: 'Planowany czas użycia (puste = cała operacja)'
   @UI: { fieldGroup: [{ qualifier: 'PrtData', position: 50 }] }
   PlannedUsage;
