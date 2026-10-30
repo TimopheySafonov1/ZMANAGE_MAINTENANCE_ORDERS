@@ -13,8 +13,6 @@ define view entity ZR_TS_MAINTENANCE_COMPONENT
       ComponentId,
       Description,
       ItemCategory,
-      // Typed like I_UnitOfMeasure (MSEHIUNIT with conversion exit), so OData converts the internal
-      // unit (ST) to the external, language-dependent one (PL: SZT) the UI works with, and back
       cast( Uom as msehiunit preserving type ) as Uom,
       @Semantics.quantity.unitOfMeasure: 'Uom'
       ReqQuantity,

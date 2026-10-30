@@ -3,7 +3,6 @@
 @ObjectModel.representativeKey: 'ItemCategory'
 @ObjectModel.dataCategory: #VALUE_HELP
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #S, dataClass: #CUSTOMIZING }
-// Only a few values - Fiori shows a dropdown instead of a value help dialog
 @ObjectModel.resultSet.sizeCategory: #XS
 @VDM.viewType: #CONSUMPTION
 define view entity ZC_TS_ITEM_CATEGORY_VH

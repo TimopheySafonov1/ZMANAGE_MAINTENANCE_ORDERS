@@ -5,8 +5,6 @@
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #M, dataClass: #MASTER }
 @VDM.viewType: #CONSUMPTION
 @Search.searchable: true
-// Shown as a tree: the plant structure of ZI_TS_TECH_OBJ_HIER. The value help dialog draws a tree table only
-// through a presentation variant with the hierarchy qualifier (used by ZC_TS_MAINTENANCE_ORDER-TechObject)
 @OData.hierarchy.recursiveHierarchy: [{ entity.name: 'ZI_TS_TECH_OBJ_HIER' }]
 @UI.presentationVariant: [{ qualifier: 'Hierarchy',
                             recursiveHierarchyQualifier: 'ZI_TS_TECH_OBJ_HIER',
@@ -14,12 +12,10 @@
                             visualizations: [{ type: #AS_LINEITEM }] }]
 define view entity ZC_TS_TECH_OBJ_HIER_VH
   as select from ZI_TS_TECH_OBJ
-  // Parent of the tree - the association named in ZI_TS_TECH_OBJ_HIER
   association [0..1] to ZC_TS_TECH_OBJ_HIER_VH as _Superior       on $projection.SuperiorObject = _Superior.TechObject
   association [0..1] to ZI_TS_TECH_OBJ         as _SuperiorObject on $projection.SuperiorObject = _SuperiorObject.TechObject
   association [0..1] to ZC_TS_PLANT_VH         as _PlanningPlant  on $projection.PlanningPlant = _PlanningPlant.Plant
 {
-      // No @Search here - the hierarchy node key must not be search enabled (SADL_EXPOSURE/151)
       @ObjectModel.text.element: [ 'TechObjectText' ]
       @UI.textArrangement: #TEXT_LAST
       @UI.lineItem: [{ position: 10 }]
@@ -41,7 +37,6 @@ define view entity ZC_TS_TECH_OBJ_HIER_VH
       @UI.hidden: true
       @EndUserText.label: 'Nazwa typu obiektu technicznego'
       _TechObjectType._Text[1: Language = $session.system_language].TechObjectTypeText as TechObjectTypeText,
-      // The functional location itself, or the one the equipment is installed at
       @UI.lineItem: [{ position: 30 }]
       @UI.selectionField: [{ position: 20 }]
       @EndUserText.label: 'Miejsce funkcjonowania'

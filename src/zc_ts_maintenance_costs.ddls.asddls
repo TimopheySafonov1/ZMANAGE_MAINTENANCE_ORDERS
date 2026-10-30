@@ -8,7 +8,6 @@ define view entity ZC_TS_MAINTENANCE_COSTS
   key CostItemUuid,
       OrderUuid,
       OperationUuid,
-      // One cost item per operation, shown as "description (number)"
       @ObjectModel.text.element: [ 'OperationDescription' ]
       @UI.textArrangement: #TEXT_FIRST
       OperationId,
@@ -30,7 +29,6 @@ define view entity ZC_TS_MAINTENANCE_COSTS
       PrtPlannedCosts,
       @Semantics.amount.currencyCode: 'Currency'
       PrtActualCosts,
-      /* Associations */
       _MaintenanceOrder     : redirected to parent ZC_TS_MAINTENANCE_ORDER,
       _MaintenanceOperation : redirected to ZC_TS_MAINTENANCE_OPERATION
 }

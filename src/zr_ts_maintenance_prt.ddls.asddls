@@ -11,13 +11,10 @@ define view entity ZR_TS_MAINTENANCE_PRT
       OrderUuid,
       PrtId,
       Description,
-      // MSEHIUNIT for the unit conversion, like the usage units below
       cast( Uom as msehiunit preserving type ) as Uom,
       @Semantics.quantity.unitOfMeasure: 'Uom'
       ReqQuantity,
       StorageLoc,
-      // Typed like I_UnitOfMeasure (MSEHIUNIT with conversion exit), so OData converts the internal
-      // unit (TAG) to the external, language-dependent one (PL: DNI) the UI works with, and back
       cast( PlannedUsageUnit as msehiunit preserving type ) as PlannedUsageUnit,
       @Semantics.quantity.unitOfMeasure: 'PlannedUsageUnit'
       PlannedUsage,

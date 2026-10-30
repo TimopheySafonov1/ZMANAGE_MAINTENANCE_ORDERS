@@ -23,7 +23,6 @@ define view entity ZC_TS_REVISION_VH
       @UI.selectionField: [{ position: 30 }]
       @EndUserText.label: 'Typ rewizji'
       RevisionType,
-      // Polish text first; the logon language is only a fallback for revisions without a Polish text
       @Search: { defaultSearchElement: true, ranking: #HIGH, fuzzinessThreshold: 0.8 }
       @Semantics.text: true
       @UI.lineItem: [{ position: 40 }]

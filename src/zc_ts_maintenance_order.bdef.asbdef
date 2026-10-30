@@ -20,7 +20,6 @@ use etag
   use action completeOrder;
 
   use association _Operations { create; with draft; }
-  // Cost items are generated - they can't be created by hand
   use association _Costs { with draft; }
 }
 

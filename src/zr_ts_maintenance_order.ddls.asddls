@@ -19,9 +19,7 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
   key OrderUuid,
       OrderId,
       OrderType,
-      // CRTD created -> REL released -> TECO completed (actions releaseOrder, completeOrder)
       OrderStatus,
-      // Colour of the status: neutral, blue (information), green (positive)
       case OrderStatus
         when 'REL'  then cast( 5 as abap.int1 )
         when 'TECO' then cast( 3 as abap.int1 )

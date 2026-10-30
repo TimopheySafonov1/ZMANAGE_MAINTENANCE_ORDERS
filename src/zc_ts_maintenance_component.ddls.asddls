@@ -8,12 +8,10 @@ define view entity ZC_TS_MAINTENANCE_COMPONENT
   key ComponentUuid,
       OperationUuid,
       OrderUuid,
-      // Description and ItemCategory come from the chosen component (setComponentData, side effect refreshes them)
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_COMPONENT_VH', element: 'Component' },
                                            useForValidation: true }]
       ComponentId,
       Description,
-      // Dropdown (Magazynowa / Niemagazynowa) - editable only when no component is chosen
       @ObjectModel.text.element: [ 'ItemCategoryName' ]
       @UI.textArrangement: #TEXT_ONLY
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_ITEM_CATEGORY_VH', element: 'ItemCategory' },
@@ -21,20 +19,15 @@ define view entity ZC_TS_MAINTENANCE_COMPONENT
       ItemCategory,
       @UI.hidden: true
       _ItemCategory._Text[1: Language = $session.system_language].ItemCategoryName as ItemCategoryName,
-      // Only the units of ZTS_UOM are offered, not the whole SAP unit list.
-      // No useForValidation on units: the UI validates with the external unit code (PC, PAC),
-      // the value help holds the internal one (ST, PAK), so those units would be rejected
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_UOM_VH', element: 'Uom' } }]
       Uom,
       @Semantics.quantity.unitOfMeasure: 'Uom'
       ReqQuantity,
-      // Storage locations with the stock of the chosen component (all storage locations without a component)
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_STOR_LOC_VH', element: 'StorageLoc' },
                                            additionalBinding: [{ localElement: 'ComponentId',
                                                                  element: 'Component',
                                                                  usage: #FILTER }] }]
       StorageLoc,
-      /* Associations */
       _MaintenanceOperation : redirected to parent ZC_TS_MAINTENANCE_OPERATION,
       _MaintenanceOrder     : redirected to ZC_TS_MAINTENANCE_ORDER
 }

@@ -5,7 +5,6 @@
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #M, dataClass: #MASTER }
 @VDM.viewType: #CONSUMPTION
 @Search.searchable: true
-// Equipment and functional locations in one list, like the SAP technical object value help
 define view entity ZC_TS_TECH_OBJ_VH
   as select from ZI_TS_TECH_OBJ
 {

@@ -5,8 +5,6 @@
 @ObjectModel.dataCategory: #VALUE_HELP
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #M, dataClass: #MIXED }
 @VDM.viewType: #CONSUMPTION
-// Stock of every component in every storage location, plus each storage location once without a component
-// (zero stock), so the value help is not empty on a component row where no component is chosen yet
 define view entity ZC_TS_STOR_LOC_VH
   as select from ZI_TS_COMP_STOCK
 {

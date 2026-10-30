@@ -1,6 +1,3 @@
-"! Runs ZCL_TS_MAINT_CUSTOMIZING with F9.
-"! Set the flags in MAIN to choose which tables to delete and which to fill.
-"! Deletes run before fills, so setting both for a table replaces its content.
 CLASS zcl_ts_maint_customizing_run DEFINITION PUBLIC FINAL CREATE PUBLIC.
   PUBLIC SECTION.
     INTERFACES if_oo_adt_classrun.
@@ -8,7 +5,6 @@ ENDCLASS.
 
 CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
   METHOD if_oo_adt_classrun~main.
-    " ---- Choose what to run ----------------------------------------------
     CONSTANTS:
       BEGIN OF delete,
         maint_order_types      TYPE abap_bool VALUE abap_true,
@@ -52,11 +48,9 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         holidays               TYPE abap_bool VALUE abap_true,
         order_statuses         TYPE abap_bool VALUE abap_true,
       END OF fill.
-    " ----------------------------------------------------------------------
 
     DATA(customizing) = NEW zcl_ts_maint_customizing( ).
 
-    " Deletes first, so a table that is both deleted and filled ends up with fresh content
     IF delete-maint_order_types = abap_true.
       out->write( customizing->delete_maint_order_types( ) ).
     ENDIF.
@@ -165,7 +159,6 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->fill_time_units( ) ).
     ENDIF.
 
-    " Item categories and units before components - components refer to them
     IF fill-item_categories = abap_true.
       out->write( customizing->fill_item_categories( ) ).
     ENDIF.
@@ -178,7 +171,6 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->fill_components( ) ).
     ENDIF.
 
-    " Stock last - it is built from the components and the storage locations of every plant
     IF fill-storage_locations = abap_true.
       out->write( customizing->fill_storage_locations( ) ).
     ENDIF.
@@ -187,12 +179,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->fill_component_stock( ) ).
     ENDIF.
 
-    " PRTs refer to the units of measure, so they come after them
     IF fill-prts = abap_true.
       out->write( customizing->fill_prts( ) ).
     ENDIF.
 
-    " Costing: exchange rates for the order currency and the names of the cost categories
     IF fill-exchange_rates = abap_true.
       out->write( customizing->fill_exchange_rates( ) ).
     ENDIF.
@@ -205,12 +195,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->fill_tech_objects( ) ).
     ENDIF.
 
-    " Polish calendar for the working-day rules of the order types
     IF fill-holidays = abap_true.
       out->write( customizing->fill_holidays( ) ).
     ENDIF.
 
-    " Names of the order statuses (created, released, completed)
     IF fill-order_statuses = abap_true.
       out->write( customizing->fill_order_statuses( ) ).
     ENDIF.

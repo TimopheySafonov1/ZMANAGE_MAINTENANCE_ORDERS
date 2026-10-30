@@ -1,196 +1,120 @@
-"! Fills and clears the customizing tables of the Maintenance Orders app with hard-coded values.
-"! Every table has a fill_* and a delete_* method. Run them through ZCL_TS_MAINT_CUSTOMIZING_RUN (F9).
-"! Each method returns a message describing what it did.
 CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
   PUBLIC SECTION.
-    "! Maintenance order types (ZTS_ORD_TYPE) and their texts (ZTS_ORD_TYPE_T) in EN and PL.
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_maint_order_types
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all maintenance order types and all their texts (every language)
     METHODS delete_maint_order_types
       RETURNING VALUE(result) TYPE string.
 
-    "! Plants (ZTS_PLANT) and their names (ZTS_PLANT_T) in EN and PL.
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_plants
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all plants and all their names (every language)
     METHODS delete_plants
       RETURNING VALUE(result) TYPE string.
 
-    "! Work center categories (ZTS_WC_CAT) and their names (ZTS_WC_CAT_T) in EN and PL.
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_work_center_categories
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all work center categories and all their names (every language)
     METHODS delete_work_center_categories
       RETURNING VALUE(result) TYPE string.
 
-    "! Work centers (ZTS_WORKCEN) and their texts (ZTS_WORKCEN_T) in EN and PL.
-    "! The same set of work centers is created in every plant of ZTS_PLANT, so fill the plants first.
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_work_centers
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all work centers and all their texts (every language)
     METHODS delete_work_centers
       RETURNING VALUE(result) TYPE string.
 
-    "! Maintenance order priorities (ZTS_PRIORITY) and their texts (ZTS_PRIORITY_T) in EN and PL.
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_priorities
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all priorities and all their texts (every language)
     METHODS delete_priorities
       RETURNING VALUE(result) TYPE string.
 
-    "! Maintenance revisions (ZTS_REVISION) and their texts (ZTS_REVISION_T) in EN and PL.
-    "! The same set of revisions is created in every plant of ZTS_PLANT, so fill the plants first.
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_revisions
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all maintenance revisions and all their texts (every language)
     METHODS delete_revisions
       RETURNING VALUE(result) TYPE string.
 
-    "! Demo responsible persons (ZTS_RESP_PERSON) with Polish names, job titles and hourly rates in PLN.
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_responsible_persons
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all responsible persons
     METHODS delete_responsible_persons
       RETURNING VALUE(result) TYPE string.
 
-    "! Time units for work and duration (ZTS_TIME_UNIT) with Polish names and the factors used for costing:
-    "! hours of work per unit and working days per unit (a working day has 8 hours, a week 5 days, a month 21).
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_time_units
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all time units
     METHODS delete_time_units
       RETURNING VALUE(result) TYPE string.
 
-    "! Component item categories (ZTS_ITEM_CAT) with Polish names in ZTS_ITEM_CAT_T:
-    "! L = stock item, N = non-stock item (the SAP PM item category codes).
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_item_categories
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all item categories and all their texts (every language)
     METHODS delete_item_categories
       RETURNING VALUE(result) TYPE string.
 
-    "! Components / spare parts (ZTS_COMPONENT, codes CZxxx = część zamienna) with their item category,
-    "! unit of measure, price per unit in PLN and Polish names in ZTS_COMPONENT_T.
-    "! Fill item categories and units of measure first.
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_components
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all components and all their texts (every language)
     METHODS delete_components
       RETURNING VALUE(result) TYPE string.
 
-    "! Units of measure for components (ZTS_UOM, ZTS_UOM_T) and their dimensions (ZTS_UOM_DIM, ZTS_UOM_DIM_T)
-    "! with Polish names. Unit codes are SAP internal codes (T006), dimensions the SAP dimension keys (T006D).
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_units_of_measure
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all units of measure, all dimensions and all their texts (every language)
     METHODS delete_units_of_measure
       RETURNING VALUE(result) TYPE string.
 
-    "! Storage locations (ZTS_STOR_LOC) with Polish names (ZTS_STOR_LOC_T).
-    "! The same set of storage locations is created in every plant of ZTS_PLANT, so fill the plants first.
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_storage_locations
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all storage locations and all their names (every language)
     METHODS delete_storage_locations
       RETURNING VALUE(result) TYPE string.
 
-    "! Demo stock (ZTS_COMP_STOCK) of every component in every storage location, in the component's unit.
-    "! Non-stock components (item category N) get zero stock. Fill components and storage locations first.
-    "! Existing entries are overwritten, so it can be re-run safely.
     METHODS fill_component_stock
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all component stock
     METHODS delete_component_stock
       RETURNING VALUE(result) TYPE string.
 
-    "! Production resources and tools (ZTS_PRT, codes PPxxx = pomoc produkcyjna) - maintenance tools and
-    "! personal protective equipment - with their unit of measure, purchase price in PLN, useful life in hours
-    "! (together they give the wear cost per hour of use) and Polish names in ZTS_PRT_T.
-    "! Fill units of measure first. Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_prts
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all production resources and tools and all their texts (every language)
     METHODS delete_prts
       RETURNING VALUE(result) TYPE string.
 
-    "! Demo exchange rates (ZTS_EXCH_RATE): the value of one unit of a currency in PLN.
-    "! Costs are converted into the order currency with them. Existing entries are overwritten.
     METHODS fill_exchange_rates
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all exchange rates
     METHODS delete_exchange_rates
       RETURNING VALUE(result) TYPE string.
 
-    "! Polish names of the cost categories of the generated cost items (ZTS_COST_CAT_T):
-    "! LA = labor, MA = material, PR = production resources/tools. Existing entries are overwritten.
     METHODS fill_cost_categories
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all cost category names (every language)
     METHODS delete_cost_categories
       RETURNING VALUE(result) TYPE string.
 
-    "! Technical object types (ZTS_TOBJ_TYPE: FL = functional location, EQ = equipment) and demo technical
-    "! objects (ZTS_TECH_OBJ) of the Warsaw and Krakow plants - a functional location structure and the
-    "! equipment installed in it (superior_object builds the hierarchy), some of them inactive or marked for
-    "! deletion - with Polish names in the text tables. Fill the plants first.
-    "! Existing entries are kept or overwritten, so it can be re-run safely.
     METHODS fill_tech_objects
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all technical objects, all technical object types and all their texts (every language)
     METHODS delete_tech_objects
       RETURNING VALUE(result) TYPE string.
 
-    "! Polish public holidays (ZTS_HOLIDAY) from last year until five years ahead - the fixed ones and the
-    "! movable ones that depend on Easter. Order types with working_days_only don't allow them as dates.
-    "! Existing entries are overwritten, so it can be re-run safely.
     METHODS fill_holidays
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all public holidays
     METHODS delete_holidays
       RETURNING VALUE(result) TYPE string.
 
-    "! Texts of the order statuses (ZTS_MAINT_STAT_T) in EN and PL: CRTD = created, REL = released,
-    "! TECO = completed. Existing entries are overwritten, so it can be re-run safely.
     METHODS fill_order_statuses
       RETURNING VALUE(result) TYPE string.
 
-    "! Deletes all order status texts (every language) - the status history of the orders is kept
     METHODS delete_order_statuses
       RETURNING VALUE(result) TYPE string.
 
   PRIVATE SECTION.
-    "! Easter Sunday of the given year (Gregorian calendar, anonymous Gregorian algorithm)
     METHODS easter_sunday
       IMPORTING holiday_year  TYPE i
       RETURNING VALUE(result) TYPE d.
@@ -201,11 +125,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA order_types TYPE STANDARD TABLE OF zts_ord_type WITH EMPTY KEY.
     DATA texts       TYPE STANDARD TABLE OF zts_ord_type_t WITH EMPTY KEY.
 
-    " Rules of the order type, used by the order BO:
-    " PM01 corrective - high priority, starts now with a due date from the priority,
-    "                  technical object and damage description (long text) required
-    " PM02 preventive  - planned: start and finish dates required, revision allowed, finish date and final
-    "                  due date only on working days (no weekend, no Polish public holiday of ZTS_HOLIDAY)
     order_types = VALUE #( ( order_type        = 'PM01'
                              default_priority  = '2'
                              immediate_start   = abap_true
@@ -217,7 +136,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
                              revision_allowed  = abap_true
                              working_days_only = abap_true ) ).
 
-    " Language keys: E = English, L = Polish
     texts = VALUE #( ( language = 'E' order_type = 'PM01' description = 'Corrective Maintenance' )
                      ( language = 'L' order_type = 'PM01' description = 'Konserwacja naprawcza' )
                      ( language = 'E' order_type = 'PM02' description = 'Preventive Maintenance' )
@@ -250,7 +168,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
                       ( plant = '0005' )
                       ( plant = '0006' ) ).
 
-    " Language keys: E = English, L = Polish
     texts = VALUE #( ( language = 'E' plant = '0001' plant_name = 'Warsaw Plant' )
                      ( language = 'L' plant = '0001' plant_name = 'Zakład Warszawski' )
                      ( language = 'E' plant = '0002' plant_name = 'Krakow Plant' )
@@ -264,7 +181,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
                      ( language = 'E' plant = '0006' plant_name = 'Lodz Plant' )
                      ( language = 'L' plant = '0006' plant_name = 'Zakład Łódzki' ) ).
 
-    " The plant table has only key fields, so it can't be MODIFYed - insert and skip existing ones
     INSERT zts_plant FROM TABLE @plants ACCEPTING DUPLICATE KEYS.
     MODIFY zts_plant_t FROM TABLE @texts.
 
@@ -288,13 +204,11 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     categories = VALUE #( ( category = '0001' )
                           ( category = '0005' ) ).
 
-    " Language keys: E = English, L = Polish
     texts = VALUE #( ( language = 'E' category = '0001' category_name = 'Production' )
                      ( language = 'L' category = '0001' category_name = 'Produkcja' )
                      ( language = 'E' category = '0005' category_name = 'Plant Maintenance' )
                      ( language = 'L' category = '0005' category_name = 'Utrzymanie ruchu' ) ).
 
-    " The category table has only key fields, so it can't be MODIFYed - insert and skip existing ones
     INSERT zts_wc_cat FROM TABLE @categories ACCEPTING DUPLICATE KEYS.
     MODIFY zts_wc_cat_t FROM TABLE @texts.
 
@@ -317,7 +231,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA work_centers         TYPE STANDARD TABLE OF zts_workcen WITH EMPTY KEY.
     DATA texts                TYPE STANDARD TABLE OF zts_workcen_t WITH EMPTY KEY.
 
-    " Templates without a plant - they are copied into every plant below
     work_center_template = VALUE #( ( work_center = 'MECH'     category = '0005' )
                                     ( work_center = 'ELEC'     category = '0005' )
                                     ( work_center = 'INST'     category = '0005' )
@@ -325,7 +238,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
                                     ( work_center = 'ASSEMBLY' category = '0001' )
                                     ( work_center = 'WELDING'  category = '0001' ) ).
 
-    " Language keys: E = English, L = Polish
     text_template = VALUE #( ( language = 'E' work_center = 'MECH'     work_center_text = 'Mechanics' )
                              ( language = 'L' work_center = 'MECH'     work_center_text = 'Mechanika' )
                              ( language = 'E' work_center = 'ELEC'     work_center_text = 'Electric' )
@@ -373,13 +285,11 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA priorities TYPE STANDARD TABLE OF zts_priority WITH EMPTY KEY.
     DATA texts      TYPE STANDARD TABLE OF zts_priority_t WITH EMPTY KEY.
 
-    " Hours from the start until the final due date (used for orders that start immediately)
     priorities = VALUE #( ( priority = '1' due_hours = 8 )
                           ( priority = '2' due_hours = 24 )
                           ( priority = '3' due_hours = 72 )
                           ( priority = '4' due_hours = 168 ) ).
 
-    " Language keys: E = English, L = Polish
     texts = VALUE #( ( language = 'E' priority = '1' priority_name = 'Very High' )
                      ( language = 'L' priority = '1' priority_name = 'Bardzo wysoki' )
                      ( language = 'E' priority = '2' priority_name = 'High' )
@@ -423,8 +333,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA revision_start TYPE utclong.
     DATA revision_end   TYPE utclong.
 
-    " Templates without a plant - they are copied into every plant below
-    " Revision types: SD = Shutdown, IN = Inspection, OH = Overhaul
     DATA(templates) = VALUE revision_templates(
         ( revision = '00000001' revision_type = 'SD'
           start_date = '20260302' start_time = '060000' end_date = '20260309' end_time = '180000'
@@ -457,7 +365,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
                         revision_start = revision_start
                         revision_end   = revision_end ) TO revisions.
 
-        " Language keys: E = English, L = Polish
         APPEND VALUE #( language = 'E' plant = plant-plant revision = template-revision revision_text = template-text_en ) TO texts.
         APPEND VALUE #( language = 'L' plant = plant-plant revision = template-revision revision_text = template-text_pl ) TO texts.
       ENDLOOP.
@@ -482,8 +389,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
   METHOD fill_responsible_persons.
     DATA persons TYPE STANDARD TABLE OF zts_resp_person WITH EMPTY KEY.
 
-    " Demo people only - names and job titles are in Polish, there is no translation.
-    " Hourly rates are gross labor costs per hour in PLN
     persons = VALUE #( currency = 'PLN'
                        ( person_resp = '1'  first_name = 'Jan'       last_name = 'Kowalski'     job_title = 'Kierownik utrzymania ruchu' hourly_rate = '150.00' )
                        ( person_resp = '2'  first_name = 'Anna'      last_name = 'Nowak'        job_title = 'Planista utrzymania ruchu'  hourly_rate = '110.00' )
@@ -510,8 +415,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
   METHOD fill_time_units.
     DATA time_units TYPE STANDARD TABLE OF zts_time_unit WITH EMPTY KEY.
 
-    " SAP internal unit codes (T006); names are in Polish only, there is no translation.
-    " work_hours: hours of work in one unit; working_days: working days in one unit (8 h day, 5 day week, 21 day month)
     time_units = VALUE #( ( time_unit = 'MIN' unit_name = 'Minuta'  work_hours = '0.01667'   working_days = '0.00208' )
                           ( time_unit = 'H'   unit_name = 'Godzina' work_hours = '1'         working_days = '0.125' )
                           ( time_unit = 'TAG' unit_name = 'Dzień'   work_hours = '8'         working_days = '1' )
@@ -536,13 +439,11 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     item_categories = VALUE #( ( item_category = 'L' )
                                ( item_category = 'N' ) ).
 
-    " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
     texts = VALUE #( ( language = 'E' item_category = 'L' item_category_name = 'Magazynowa' )
                      ( language = 'L' item_category = 'L' item_category_name = 'Magazynowa' )
                      ( language = 'E' item_category = 'N' item_category_name = 'Niemagazynowa' )
                      ( language = 'L' item_category = 'N' item_category_name = 'Niemagazynowa' ) ).
 
-    " The item category table has only key fields, so it can't be MODIFYed - insert and skip existing ones
     INSERT zts_item_cat FROM TABLE @item_categories ACCEPTING DUPLICATE KEYS.
     MODIFY zts_item_cat_t FROM TABLE @texts.
 
@@ -571,8 +472,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA components TYPE STANDARD TABLE OF zts_component WITH EMPTY KEY.
     DATA texts      TYPE STANDARD TABLE OF zts_component_t WITH EMPTY KEY.
 
-    " CZ = część zamienna (spare part); item category L = magazynowa, N = niemagazynowa;
-    " units are SAP internal codes from ZTS_UOM (ST = sztuka, L = litr, PAK = opakowanie); prices per unit in PLN
     DATA(templates) = VALUE component_templates( ( item_category = 'L' uom = 'ST'  price = '85.00'  name = 'Łożysko' )
                                                  ( item_category = 'L' uom = 'ST'  price = '12.50'  name = 'Uszczelka' )
                                                  ( item_category = 'L' uom = 'ST'  price = '45.00'  name = 'Pasek klinowy' )
@@ -590,7 +489,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
                       price         = template-price
                       currency      = 'PLN' ) TO components.
 
-      " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
       APPEND VALUE #( language = 'E' component = component component_text = template-name ) TO texts.
       APPEND VALUE #( language = 'L' component = component component_text = template-name ) TO texts.
     ENDLOOP.
@@ -629,14 +527,12 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA units           TYPE STANDARD TABLE OF zts_uom WITH EMPTY KEY.
     DATA unit_texts      TYPE STANDARD TABLE OF zts_uom_t WITH EMPTY KEY.
 
-    " SAP dimension keys (T006D)
     DATA(dimension_templates) = VALUE dimension_templates( ( dimension = 'AAAADL' name = 'Bez wymiaru' )
                                                            ( dimension = 'MASS'   name = 'Masa' )
                                                            ( dimension = 'VOLUME' name = 'Objętość' )
                                                            ( dimension = 'LENGTH' name = 'Długość' )
                                                            ( dimension = 'SURFAC' name = 'Powierzchnia' ) ).
 
-    " SAP internal unit codes (T006) - the units a spare part is usually counted in
     DATA(uom_templates) = VALUE uom_templates( ( uom = 'ST'  dimension = 'AAAADL' name = 'Sztuka' )
                                                ( uom = 'PAA' dimension = 'AAAADL' name = 'Para' )
                                                ( uom = 'PAK' dimension = 'AAAADL' name = 'Opakowanie' )
@@ -648,7 +544,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
                                                ( uom = 'MM'  dimension = 'LENGTH' name = 'Milimetr' )
                                                ( uom = 'M2'  dimension = 'SURFAC' name = 'Metr kwadratowy' ) ).
 
-    " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
     LOOP AT dimension_templates INTO DATA(dimension).
       APPEND VALUE #( dimension = dimension-dimension ) TO dimensions.
       APPEND VALUE #( language = 'E' dimension = dimension-dimension dimension_text = dimension-name ) TO dimension_texts.
@@ -661,7 +556,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
       APPEND VALUE #( language = 'L' uom = unit-uom uom_text = unit-name ) TO unit_texts.
     ENDLOOP.
 
-    " The dimension table has only key fields, so it can't be MODIFYed - insert and skip existing ones
     INSERT zts_uom_dim FROM TABLE @dimensions ACCEPTING DUPLICATE KEYS.
     MODIFY zts_uom_dim_t FROM TABLE @dimension_texts.
     MODIFY zts_uom FROM TABLE @units.
@@ -697,7 +591,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA storage_locs TYPE STANDARD TABLE OF zts_stor_loc WITH EMPTY KEY.
     DATA texts        TYPE STANDARD TABLE OF zts_stor_loc_t WITH EMPTY KEY.
 
-    " Templates without a plant - they are copied into every plant below
     DATA(templates) = VALUE storage_loc_templates( ( storage_loc = '0001' name = 'Magazyn główny' )
                                                    ( storage_loc = '0002' name = 'Magazyn części zamiennych' )
                                                    ( storage_loc = '0003' name = 'Magazyn olejów i smarów' )
@@ -709,7 +602,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
       LOOP AT templates INTO DATA(template).
         APPEND VALUE #( plant = plant-plant storage_loc = template-storage_loc ) TO storage_locs.
 
-        " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
         APPEND VALUE #( language = 'E' plant = plant-plant storage_loc = template-storage_loc
                         storage_loc_name = template-name ) TO texts.
         APPEND VALUE #( language = 'L' plant = plant-plant storage_loc = template-storage_loc
@@ -717,7 +609,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
       ENDLOOP.
     ENDLOOP.
 
-    " The storage location table has only key fields, so it can't be MODIFYed - insert and skip existing ones
     INSERT zts_stor_loc FROM TABLE @storage_locs ACCEPTING DUPLICATE KEYS.
     MODIFY zts_stor_loc_t FROM TABLE @texts.
 
@@ -747,8 +638,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
       LOOP AT storage_locs INTO DATA(storage_loc).
         DATA(storage_loc_index) = sy-tabix.
 
-        " Made-up but repeatable quantities: some locations are empty, a few hold consignment stock.
-        " Non-stock components (N) are bought for the order directly, so they have no stock anywhere.
         DATA(unrestricted) = COND i( WHEN component-item_category = 'N'
                                        OR ( component_index + storage_loc_index ) MOD 4 = 0
                                      THEN 0
@@ -791,9 +680,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA prts  TYPE STANDARD TABLE OF zts_prt WITH EMPTY KEY.
     DATA texts TYPE STANDARD TABLE OF zts_prt_t WITH EMPTY KEY.
 
-    " PP = pomoc produkcyjna (production resource/tool): first the tools and equipment,
-    " then the personal protective equipment; units are SAP internal codes from ZTS_UOM (ST = sztuka, PAA = para).
-    " Purchase price in PLN / useful life in hours of use = wear cost per hour of use
     DATA(templates) = VALUE prt_templates(
         ( uom = 'ST'  purchase_price = '1200.00'  useful_life_hours = 4000  name = 'Klucz dynamometryczny' )
         ( uom = 'ST'  purchase_price = '350.00'   useful_life_hours = 8000  name = 'Zestaw kluczy płaskich' )
@@ -822,7 +708,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
                       currency          = 'PLN'
                       useful_life_hours = template-useful_life_hours ) TO prts.
 
-      " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
       APPEND VALUE #( language = 'E' prt = prt prt_text = template-name ) TO texts.
       APPEND VALUE #( language = 'L' prt = prt prt_text = template-name ) TO texts.
     ENDLOOP.
@@ -846,7 +731,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
   METHOD fill_exchange_rates.
     DATA rates TYPE STANDARD TABLE OF zts_exch_rate WITH EMPTY KEY.
 
-    " Value of one unit of the currency in PLN - fixed demo rates, not market data
     rates = VALUE #( ( currency = 'PLN' pln_rate = '1' )
                      ( currency = 'EUR' pln_rate = '4.30' )
                      ( currency = 'USD' pln_rate = '3.95' )
@@ -868,7 +752,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
   METHOD fill_cost_categories.
     DATA texts TYPE STANDARD TABLE OF zts_cost_cat_t WITH EMPTY KEY.
 
-    " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
     texts = VALUE #( ( language = 'E' cost_category = 'LA' category_name = 'Robocizna' )
                      ( language = 'L' cost_category = 'LA' category_name = 'Robocizna' )
                      ( language = 'E' cost_category = 'MA' category_name = 'Materiały' )
@@ -913,19 +796,12 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     types = VALUE #( ( tech_obj_type = 'FL' )
                      ( tech_obj_type = 'EQ' ) ).
 
-    " Names are in Polish only - stored under E and L, so they are Polish whatever the logon language
     type_texts = VALUE #( ( language = 'E' tech_obj_type = 'FL' type_text = 'Miejsce funkcjonowania' )
                           ( language = 'L' tech_obj_type = 'FL' type_text = 'Miejsce funkcjonowania' )
                           ( language = 'E' tech_obj_type = 'EQ' type_text = 'Urządzenie' )
                           ( language = 'L' tech_obj_type = 'EQ' type_text = 'Urządzenie' ) ).
 
-    " Functional locations (FL) are the places in the plant structure, equipment (EQ, numbers 100000xx) are the
-    " machines installed there. superior_object is the functional location above (for equipment: the one it is
-    " installed at) - objects without one are the roots of the hierarchy, like the forklift that moves around.
-    " Object type = class of the object, material = the manufacturer part number the equipment was bought as,
-    " serial number and ident number (inventory number) identify the single machine.
     DATA(templates) = VALUE tech_object_templates(
-        " Warsaw plant 0001
         ( tech_object = 'PL01-WAW'           tech_obj_type = 'FL' planning_plant = '0001'
           sort_field = 'ZAKLAD'    object_type = 'ZAKLAD'     location = 'WAW'
           name = 'Zakład Warszawa' )
@@ -982,7 +858,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
           sort_field = 'WOZKI'      object_type = 'WOZEK'      material = 'LIN-H25'        serial_number = 'H2X391T16552'
           ident_number = 'WW-2016-552'  location = 'HALA-B'    marked_for_del = abap_true
           name = 'Wózek widłowy WW-03' )
-        " Krakow plant 0002
         ( tech_object = 'PL02-KRK'           tech_obj_type = 'FL' planning_plant = '0002'
           sort_field = 'ZAKLAD'    object_type = 'ZAKLAD'     location = 'KRK'
           name = 'Zakład Kraków' )
@@ -1003,7 +878,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
       APPEND VALUE #( language = 'L' tech_object = template-tech_object tech_object_text = template-name ) TO texts.
     ENDLOOP.
 
-    " The type table has only key fields, so it can't be MODIFYed - insert and skip existing ones
     INSERT zts_tobj_type FROM TABLE @types ACCEPTING DUPLICATE KEYS.
     MODIFY zts_tobj_type_t FROM TABLE @type_texts.
     MODIFY zts_tech_obj FROM TABLE @tech_objects.
@@ -1035,7 +909,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DATA(today) = cl_abap_context_info=>get_system_date( ).
     DATA(this_year) = CONV i( today(4) ).
 
-    " Non-working days by Polish law (ustawa o dniach wolnych od pracy)
     DO 7 TIMES.
       DATA(holiday_year) = this_year - 2 + sy-index.
       DATA(easter) = easter_sunday( holiday_year ).
@@ -1051,7 +924,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
       APPEND VALUE #( holiday_date = |{ holiday_year }0815| holiday_name = 'Wniebowzięcie NMP' ) TO holidays.
       APPEND VALUE #( holiday_date = |{ holiday_year }1101| holiday_name = 'Wszystkich Świętych' ) TO holidays.
       APPEND VALUE #( holiday_date = |{ holiday_year }1111| holiday_name = 'Narodowe Święto Niepodległości' ) TO holidays.
-      " Christmas Eve is a public holiday since 2025
       IF holiday_year >= 2025.
         APPEND VALUE #( holiday_date = |{ holiday_year }1224| holiday_name = 'Wigilia Bożego Narodzenia' ) TO holidays.
       ENDIF.
@@ -1073,7 +945,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
   METHOD fill_order_statuses.
     DATA texts TYPE STANDARD TABLE OF zts_maint_stat_t WITH EMPTY KEY.
 
-    " Language keys: E = English, L = Polish
     texts = VALUE #( ( language = 'E' status = 'CRTD' description = 'Created' )
                      ( language = 'L' status = 'CRTD' description = 'Utworzone' )
                      ( language = 'E' status = 'REL'  description = 'Released' )
@@ -1093,7 +964,6 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD easter_sunday.
-    " Variable names follow the steps of the algorithm (a, b, c, ... in the literature)
     DATA(golden) = holiday_year MOD 19.
     DATA(century) = holiday_year DIV 100.
     DATA(year_of_century) = holiday_year MOD 100.

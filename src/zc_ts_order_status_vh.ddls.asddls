@@ -5,7 +5,6 @@
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #S, dataClass: #CUSTOMIZING }
 @ObjectModel.resultSet.sizeCategory: #XS
 @VDM.viewType: #CONSUMPTION
-// The statuses exist only as texts (ZTS_MAINT_STAT_T), one row per status in the logon language
 define view entity ZC_TS_ORDER_STATUS_VH
   as select from ZI_TS_MAINT_STATUS_T
 {

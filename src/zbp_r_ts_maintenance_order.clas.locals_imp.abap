@@ -1,21 +1,10 @@
-"! Planned and actual costs of an order, recalculated from its current (draft or active) data, so the
-"! totals are also right in a draft. Per operation one cost item is generated with the split:
-"! labor     = labor hours * hourly rate of the responsible person
-"! material  = required quantity * price of the component (actual costs aren't tracked yet)
-"! PRT       = quantity * usage hours * (purchase price / useful life hours)
-"! Labor hours = work per day * days of the duration (only the work when no duration is given).
-"! PRT usage time is optional - without it the PRT is costed for the labor hours of the operation.
-"! All amounts are converted into the order currency with the rates of ZTS_EXCH_RATE.
 CLASS lcl_cost_calculator DEFINITION.
   PUBLIC SECTION.
     TYPES orders TYPE TABLE FOR READ IMPORT zr_ts_maintenance_order\\MaintenanceOrder.
 
-    "! Recalculates the given orders and the orders remembered by remember_orders
     CLASS-METHODS recalculate
       IMPORTING orders TYPE orders.
 
-    "! Remembers orders whose child instances are about to be deleted - after the delete only the keys
-    "! of the deleted instances are known, so their order can't be read anymore
     CLASS-METHODS remember_orders
       IMPORTING orders TYPE orders.
 
@@ -44,13 +33,11 @@ CLASS lcl_cost_calculator DEFINITION.
     CLASS-DATA time_units TYPE HASHED TABLE OF zts_time_unit WITH UNIQUE KEY time_unit.
     CLASS-DATA exchange_rates TYPE HASHED TABLE OF zts_exch_rate WITH UNIQUE KEY currency.
 
-    "! Work in hours (a unit without a factor counts as hours)
     CLASS-METHODS work_hours
       IMPORTING quantity      TYPE zts_maint_prt-planned_usage
                 unit          TYPE zts_time_unit-time_unit
       RETURNING VALUE(result) TYPE decfloat34.
 
-    "! Work per day * number of working days of the duration (at least one day)
     CLASS-METHODS labor_hours
       IMPORTING work          TYPE zts_maint_prt-planned_usage
                 work_unit     TYPE zts_time_unit-time_unit
@@ -58,7 +45,6 @@ CLASS lcl_cost_calculator DEFINITION.
                 duration_unit TYPE zts_time_unit-time_unit
       RETURNING VALUE(result) TYPE decfloat34.
 
-    "! Amount in another currency; without an exchange rate the amount is taken over unchanged
     CLASS-METHODS convert
       IMPORTING amount        TYPE zts_resp_person-hourly_rate
                 !from         TYPE zts_exch_rate-currency
@@ -112,7 +98,6 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
         WITH CORRESPONDING #( operations )
         RESULT DATA(prts).
 
-    " Master data: time unit factors, exchange rates, hourly rates, component and PRT prices
     SELECT * FROM zts_time_unit INTO TABLE @time_units.
     SELECT * FROM zts_exch_rate INTO TABLE @exchange_rates.
 
@@ -189,12 +174,10 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
             CONTINUE.
           ENDIF.
 
-          " Wear per hour of use: the purchase price spread over the useful life
           DATA(usage_rate) = convert( amount = prt_data-purchase_price from = prt_data-currency to = currency )
                              / prt_data-useful_life_hours.
           DATA(prt_quantity) = COND decfloat34( WHEN prt-ReqQuantity > 0 THEN prt-ReqQuantity ELSE 1 ).
 
-          " Without its own usage time the PRT is used for the whole operation
           DATA(planned_usage) = COND #( WHEN prt-PlannedUsage > 0
                                         THEN work_hours( quantity = prt-PlannedUsage unit = prt-PlannedUsageUnit )
                                         ELSE planned_hours ).
@@ -210,7 +193,6 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
 
         cost_item-planned = cost_item-labor_planned + cost_item-material_planned + cost_item-prt_planned.
         cost_item-actual = cost_item-labor_actual + cost_item-material_actual + cost_item-prt_actual.
-        " Every operation gets its cost item, also while it has no costs yet
         INSERT cost_item INTO TABLE cost_items.
       ENDLOOP.
 
@@ -225,7 +207,6 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
                              WHERE ( is_draft = order-%is_draft AND order_uuid = order-OrderUuid )
                              NEXT sum = sum + item-actual ).
 
-      " Only real changes are written, so the Currency trigger doesn't fire again for nothing
       IF    currency      <> order-Currency
          OR total_planned <> order-TotalPlannedCosts
          OR total_actual  <> order-TotalActualCosts.
@@ -236,7 +217,6 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
-    " Compare with the existing cost items: update the changed, create the missing, delete the rest
     DATA cost_creates TYPE TABLE FOR CREATE zr_ts_maintenance_order\\MaintenanceOrder\_Costs.
     DATA cost_updates TYPE TABLE FOR UPDATE zr_ts_maintenance_order\\MaintenanceCosts.
     DATA cost_deletes TYPE TABLE FOR DELETE zr_ts_maintenance_order\\MaintenanceCosts.
@@ -250,8 +230,6 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
 
       LOOP AT cost_items INTO cost_item
            WHERE is_draft = order-%is_draft AND order_uuid = order-OrderUuid.
-        " The first unused item of the operation is reused, further ones (e.g. from before the split
-        " per operation) are deleted below
         DATA existing LIKE LINE OF existing_costs.
         CLEAR existing.
         LOOP AT existing_costs INTO DATA(candidate)
@@ -338,7 +316,6 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
-    " Cost items of deleted operations and old items from before the split per operation
     LOOP AT existing_costs INTO DATA(old_cost).
       IF NOT line_exists( used_costs[ KEY entity %tky = old_cost-%tky ] ).
         APPEND VALUE #( %tky = old_cost-%tky ) TO cost_deletes.
@@ -367,7 +344,6 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
     IF duration > 0.
       DATA(factor) = VALUE #( time_units[ time_unit = duration_unit ]-working_days OPTIONAL ).
       DATA(days) = CONV decfloat34( duration * COND decfloat34( WHEN factor > 0 THEN factor ELSE 1 ) ).
-      " A duration shorter than a day still is one day of work
       result = result * nmax( val1 = CONV decfloat34( 1 ) val2 = ceil( days ) ).
     ENDIF.
   ENDMETHOD.
@@ -388,9 +364,6 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
   ENDMETHOD.
 ENDCLASS.
 
-"! Rules of the order type from ZTS_ORD_TYPE, shared by the determinations, validation and features
-"! Status of an order: created -> released -> completed. A completed order is read-only.
-"! The texts are in ZTS_MAINT_STAT_T, every status the order got is kept in ZTS_MAINT_ORD_ST.
 INTERFACE lif_order_status.
   CONSTANTS created   TYPE zts_maint_order-order_status VALUE 'CRTD'.
   CONSTANTS released  TYPE zts_maint_order-order_status VALUE 'REL'.
@@ -402,19 +375,15 @@ CLASS lcl_order_type_rules DEFINITION.
     TYPES order_types     TYPE HASHED TABLE OF zts_ord_type WITH UNIQUE KEY order_type.
     TYPES order_type_keys TYPE STANDARD TABLE OF zts_ord_type-order_type WITH EMPTY KEY.
 
-    "! Rules of the given order types (types without customizing are missing)
     CLASS-METHODS read_types
       IMPORTING order_types   TYPE order_type_keys
       RETURNING VALUE(result) TYPE order_types.
 
-    "! Start + due hours of the priority; initial when the start or the hours are missing
     CLASS-METHODS due_date
       IMPORTING !start        TYPE utclong
                 priority      TYPE zts_priority-priority
       RETURNING VALUE(result) TYPE utclong.
 
-    "! Why the date is not a working day - 'weekend' or 'święto: ' + name of the Polish public holiday
-    "! (ZTS_HOLIDAY); initial for a working day
     CLASS-METHODS non_working_day
       IMPORTING check_date    TYPE d
       RETURNING VALUE(result) TYPE string.
@@ -448,7 +417,6 @@ CLASS lcl_order_type_rules IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD non_working_day.
-    " 1900-01-01 was a Monday, so 5 is a Saturday and 6 a Sunday
     IF ( check_date - CONV d( '19000101' ) ) MOD 7 >= 5.
       result = 'weekend'.
       RETURN.
@@ -505,7 +473,6 @@ ENDCLASS.
 
 CLASS lhc_maintenanceorder IMPLEMENTATION.
   METHOD get_global_authorizations.
-    " No authorization object yet - everything is allowed
     result = VALUE #( %create               = if_abap_behv=>auth-allowed
                       %update               = if_abap_behv=>auth-allowed
                       %delete               = if_abap_behv=>auth-allowed
@@ -526,7 +493,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
 
     DATA(types) = lcl_order_type_rules=>read_types( VALUE #( FOR o IN orders ( o-OrderType ) ) ).
 
-    " Orders that are already saved keep their type
     SELECT FROM zts_maint_order
       FIELDS order_uuid
       FOR ALL ENTRIES IN @orders
@@ -536,7 +502,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
     LOOP AT orders INTO DATA(order).
       DATA(rules) = VALUE #( types[ order_type = order-OrderType ] OPTIONAL ).
 
-      " The status changes on the saved order only, a completed order is read-only
       DATA(is_active) = xsdbool( order-%is_draft = if_abap_behv=>mk-off ).
       DATA(is_completed) = xsdbool( order-OrderStatus = lif_order_status=>completed ).
 
@@ -551,7 +516,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
           %action-Edit                       = COND #( WHEN is_completed = abap_true
                                                        THEN if_abap_behv=>fc-o-disabled
                                                        ELSE if_abap_behv=>fc-o-enabled )
-          " Orders saved before the status existed have none - they count as created
           %action-releaseOrder               = COND #( WHEN     is_active = abap_true
                                                             AND (    order-OrderStatus = lif_order_status=>created
                                                                   OR order-OrderStatus IS INITIAL )
@@ -583,7 +547,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD setorderid.
-    " Order number is drawn only on save, so discarded drafts don't consume numbers
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         FIELDS ( OrderId ) WITH CORRESPONDING #( keys )
@@ -611,7 +574,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD settypedefaults.
-    " Runs when the order type is chosen or changed: the type's defaults replace the previous values
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         FIELDS ( OrderType Priority MaintOrdBasicStartDateTime MaintOrdFinalDueDateTime MaintRevision )
@@ -641,7 +603,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         update-Priority = rules-default_priority.
       ENDIF.
 
-      " Corrective work starts now, the due date follows from the priority
       IF rules-immediate_start = abap_true.
         IF update-MaintOrdBasicStartDateTime IS INITIAL.
           update-MaintOrdBasicStartDateTime = utclong_current( ).
@@ -666,7 +627,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD setduedate.
-    " Only for types that start immediately - planned orders keep the due date entered by hand
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         FIELDS ( OrderType Priority MaintOrdBasicStartDateTime MaintOrdFinalDueDateTime )
@@ -702,7 +662,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD releaseorder.
-    " Only offered for created orders (get_instance_features)
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         UPDATE FIELDS ( OrderStatus )
@@ -717,7 +676,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD completeorder.
-    " Only offered for released orders (get_instance_features); afterwards the order is read-only
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         UPDATE FIELDS ( OrderStatus )
@@ -732,8 +690,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD createfirstoperation.
-    " Only the operation is created here - its component and PRT come from createComponentAndPrt,
-    " its number from setOperationId
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         CREATE BY \_Operations
@@ -744,7 +700,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD settechobjtype.
-    " Runs only when TechObject changes - an unknown or removed object clears the type
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         FIELDS ( TechObject ) WITH CORRESPONDING #( keys )
@@ -783,7 +738,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
 
     DATA(types) = lcl_order_type_rules=>read_types( VALUE #( FOR o IN orders ( o-OrderType ) ) ).
 
-    " The start may lie in the past once it is saved - only a new or changed start is checked
     SELECT FROM zts_maint_order
       FIELDS order_uuid, basic_start_datetime
       FOR ALL ENTRIES IN @orders
@@ -799,10 +753,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
     ENDTRY.
 
     LOOP AT orders INTO DATA(order).
-      " Clears the messages of the previous check
       APPEND VALUE #( %tky = order-%tky %state_area = 'TYPE_RULES' ) TO reported-maintenanceorder.
 
-      " Required for every order type
       IF order-PlanningPlant IS INITIAL.
         APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
         APPEND VALUE #( %tky                   = order-%tky
@@ -877,7 +829,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
                         %element-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
-      " No order can start in the past (corrective orders start now, so they pass)
       IF     order-MaintOrdBasicStartDateTime IS NOT INITIAL
          AND order-MaintOrdBasicStartDateTime <> VALUE utclong( saved_orders[ order_uuid = order-OrderUuid ]-basic_start_datetime
                                                                 OPTIONAL ).
@@ -892,7 +843,6 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         ENDIF.
       ENDIF.
 
-      " Planned orders (e.g. PM02) are finished and due on working days only - no weekend, no public holiday
       IF rules-working_days_only = abap_true AND order-MaintOrdBasicFinishDateTime IS NOT INITIAL.
         CONVERT UTCLONG order-MaintOrdBasicFinishDateTime TIME ZONE time_zone INTO DATE DATA(finish_date).
         DATA(finish_reason) = lcl_order_type_rules=>non_working_day( finish_date ).
@@ -973,7 +923,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD createcomponentandprt.
-    " Empty rows to fill in the lists - deleteIfEmpty removes the ones still empty on save
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
         CREATE BY \_Components
@@ -989,7 +938,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD addemptyoperation.
-    " Only drafts get the empty row - it is what the user fills next in the list
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation BY \_MaintenanceOrder
         FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
@@ -1011,7 +959,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
 
     DATA creates TYPE TABLE FOR CREATE zr_ts_maintenance_order\\MaintenanceOrder\_Operations.
     LOOP AT orders INTO DATA(order).
-      " An empty operation is still there - nothing to add
       LOOP AT operations TRANSPORTING NO FIELDS
            WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid
              AND Description IS INITIAL AND PersonResp IS INITIAL
@@ -1030,7 +977,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
                                            %is_draft = order-%is_draft ) ) ) TO creates.
     ENDLOOP.
 
-    " Number, component and PRT of the new operation come from its own create determinations
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         CREATE BY \_Operations FROM creates.
@@ -1044,7 +990,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
         WITH CORRESPONDING #( keys )
         RESULT DATA(operations).
 
-    " Anything entered on the operation keeps it
     DELETE operations WHERE Description IS NOT INITIAL OR PersonResp IS NOT INITIAL
                          OR PlannedWork IS NOT INITIAL OR PlannedWorkDuration IS NOT INITIAL
                          OR ActualWork IS NOT INITIAL OR ActualWorkDuration IS NOT INITIAL
@@ -1054,7 +999,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " ... and so does a component or PRT with data
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation BY \_Components
         FIELDS ( OperationUuid ComponentId Description ReqQuantity ) WITH CORRESPONDING #( operations )
@@ -1076,7 +1020,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " The cost item generated for the operation goes with it (its components and PRTs go by composition)
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation BY \_MaintenanceOrder
         FIELDS ( OrderUuid ) WITH CORRESPONDING #( operations )
@@ -1102,7 +1045,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD setoperationid.
-    " Operations are numbered 1, 2, 3 ... per order right on create, so the number is visible in the draft
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
         FIELDS ( OrderUuid OperationId ) WITH CORRESPONDING #( keys )
@@ -1113,7 +1055,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " The orders of the new operations - draft or active, the same as the operations
     DATA orders TYPE TABLE FOR READ IMPORT zr_ts_maintenance_order\\MaintenanceOrder\_Operations.
     LOOP AT new_operations INTO DATA(new_operation).
       IF NOT line_exists( orders[ KEY id %is_draft = new_operation-%is_draft OrderUuid = new_operation-OrderUuid ] ).
@@ -1122,7 +1063,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
-    " All operations of these orders, including the new ones (their number is still 0)
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder BY \_Operations
         FIELDS ( OrderUuid OperationId ) WITH orders
@@ -1132,7 +1072,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
     DATA operation_id TYPE i.
 
     LOOP AT orders INTO DATA(order).
-      " Continue after the highest number already used in the order
       operation_id = 0.
       LOOP AT all_operations INTO DATA(existing)
            WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid.
@@ -1153,7 +1092,6 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD calculatecosts.
-    " Deleted operations can't be read anymore - their orders were remembered in precheck_delete
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
         FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
@@ -1202,7 +1140,6 @@ ENDCLASS.
 
 CLASS lhc_maintenancecomponent IMPLEMENTATION.
   METHOD get_instance_features.
-    " Without a component description, item category and unit are free input; with one they come from the component
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
         FIELDS ( ComponentId ) WITH CORRESPONDING #( keys )
@@ -1219,7 +1156,6 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD setorderuuid.
-    " OrderUuid is not stored on the component - take it from the parent operation
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent BY \_MaintenanceOperation
         FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
@@ -1244,7 +1180,6 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
         FIELDS ( ComponentId Description ReqQuantity ) WITH CORRESPONDING #( keys )
         RESULT DATA(components).
 
-    " Anything entered keeps the component
     DELETE components WHERE ComponentId IS NOT INITIAL OR Description IS NOT INITIAL OR ReqQuantity IS NOT INITIAL.
     IF components IS INITIAL.
       RETURN.
@@ -1256,7 +1191,6 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD addemptycomponent.
-    " Only drafts get the empty row - it is what the user fills next in the list
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent BY \_MaintenanceOperation
         FIELDS ( OperationUuid ) WITH CORRESPONDING #( keys )
@@ -1276,7 +1210,6 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
 
     DATA creates TYPE TABLE FOR CREATE zr_ts_maintenance_order\\MaintenanceOperation\_Components.
     LOOP AT operations INTO DATA(operation).
-      " An empty component is still there - nothing to add
       LOOP AT components TRANSPORTING NO FIELDS
            WHERE %is_draft = operation-%is_draft AND OperationUuid = operation-OperationUuid
              AND ComponentId IS INITIAL AND Description IS INITIAL AND ReqQuantity IS INITIAL.
@@ -1297,7 +1230,6 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD setcomponentdata.
-    " Runs only when ComponentId changes, so values typed without a component are never touched
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
         FIELDS ( ComponentId ) WITH CORRESPONDING #( keys )
@@ -1316,7 +1248,6 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
       WHERE component~component = @components-ComponentId
       INTO TABLE @DATA(master_data).
 
-    " Component removed or unknown - the old values are cleared, the fields become editable again
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
         UPDATE FIELDS ( Description ItemCategory Uom )
@@ -1329,7 +1260,6 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD calculatecosts.
-    " Through the parent operation - OrderUuid of a new component may not be set yet
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent BY \_MaintenanceOperation
         FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
@@ -1378,7 +1308,6 @@ ENDCLASS.
 
 CLASS lhc_maintenanceprt IMPLEMENTATION.
   METHOD get_instance_features.
-    " Without a PRT description and unit are free input; with one they come from the PRT
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt
         FIELDS ( PrtId ) WITH CORRESPONDING #( keys )
@@ -1409,7 +1338,6 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD setorderuuid.
-    " OrderUuid is not stored on the PRT - take it from the parent operation
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt BY \_MaintenanceOperation
         FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
@@ -1434,7 +1362,6 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
         FIELDS ( PrtId Description ReqQuantity PlannedUsage ActualUsage ) WITH CORRESPONDING #( keys )
         RESULT DATA(prts).
 
-    " Anything entered keeps the PRT
     DELETE prts WHERE PrtId IS NOT INITIAL OR Description IS NOT INITIAL OR ReqQuantity IS NOT INITIAL
                    OR PlannedUsage IS NOT INITIAL OR ActualUsage IS NOT INITIAL.
     IF prts IS INITIAL.
@@ -1447,7 +1374,6 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD addemptyprt.
-    " Only drafts get the empty row - it is what the user fills next in the list
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt BY \_MaintenanceOperation
         FIELDS ( OperationUuid ) WITH CORRESPONDING #( keys )
@@ -1467,7 +1393,6 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
 
     DATA creates TYPE TABLE FOR CREATE zr_ts_maintenance_order\\MaintenanceOperation\_PRTs.
     LOOP AT operations INTO DATA(operation).
-      " An empty PRT is still there - nothing to add
       LOOP AT prts TRANSPORTING NO FIELDS
            WHERE %is_draft = operation-%is_draft AND OperationUuid = operation-OperationUuid
              AND PrtId IS INITIAL AND Description IS INITIAL AND ReqQuantity IS INITIAL
@@ -1489,7 +1414,6 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD setprtdata.
-    " Runs only when PrtId changes, so values typed without a PRT are never touched
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt
         FIELDS ( PrtId ) WITH CORRESPONDING #( keys )
@@ -1508,7 +1432,6 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
       WHERE prt~prt = @prts-PrtId
       INTO TABLE @DATA(master_data).
 
-    " PRT removed or unknown - the old values are cleared, the fields become editable again
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt
         UPDATE FIELDS ( Description Uom )
@@ -1520,7 +1443,6 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD calculatecosts.
-    " Through the parent operation - OrderUuid of a new PRT may not be set yet
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt BY \_MaintenanceOperation
         FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
@@ -1550,7 +1472,6 @@ ENDCLASS.
 
 CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
   METHOD save_modified.
-    " Status history (section Status of the order): one row for every status the order got
     DATA history TYPE STANDARD TABLE OF zts_maint_ord_st WITH EMPTY KEY.
 
     DATA(now) = utclong_current( ).
@@ -1569,7 +1490,6 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
     ENDLOOP.
 
     IF history IS NOT INITIAL.
-      " Saving an edited order passes the unchanged status too - it keeps the time it was first set
       SELECT FROM zts_maint_ord_st
         FIELDS order_uuid, status
         FOR ALL ENTRIES IN @history
@@ -1583,7 +1503,6 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       INSERT zts_maint_ord_st FROM TABLE @history.
     ENDIF.
 
-    " A deleted order takes its history with it
     LOOP AT delete-maintenanceorder INTO DATA(deleted_order).
       DELETE FROM zts_maint_ord_st WHERE order_uuid = @deleted_order-OrderUuid.
     ENDLOOP.

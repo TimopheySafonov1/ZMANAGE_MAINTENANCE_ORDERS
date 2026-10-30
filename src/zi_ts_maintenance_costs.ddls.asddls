@@ -10,11 +10,9 @@ define view entity ZI_TS_MAINTENANCE_COSTS
   key cost_item_uuid         as CostItemUuid,
       order_uuid             as OrderUuid,
       operation_uuid         as OperationUuid,
-      // Copied from the operation, so they are also shown for an operation that exists only in the draft
       operation_id           as OperationId,
       operation_desc         as OperationDescription,
       currency               as Currency,
-      // Totals of the operation = labor + material (components) + PRTs
       @Semantics.amount.currencyCode: 'Currency'
       planned_costs          as PlannedCosts,
       @Semantics.amount.currencyCode: 'Currency'

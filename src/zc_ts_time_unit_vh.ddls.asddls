@@ -5,9 +5,6 @@
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #S, dataClass: #CUSTOMIZING }
 @VDM.viewType: #CONSUMPTION
 @Search.searchable: true
-// The unit is read from I_UnitOfMeasure (data element MEINS), so OData sends the external,
-// language-dependent code (PL: DNI, TG) that the UI expects. ZTS_TIME_UNIT limits the list
-// to the units with time factors, so no lookalike SAP units (D, TYD, GDZ) can be chosen
 define view entity ZC_TS_TIME_UNIT_VH
   as select from I_UnitOfMeasure as Unit
     inner join   ZI_TS_TIME_UNIT as TimeUnit on TimeUnit.TimeUnit = Unit.UnitOfMeasure

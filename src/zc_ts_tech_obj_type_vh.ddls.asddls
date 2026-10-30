@@ -2,7 +2,6 @@
 @EndUserText.label: 'Typ obiektu technicznego'
 @ObjectModel.representativeKey: 'TechObjectType'
 @ObjectModel.dataCategory: #VALUE_HELP
-// Only a few types - shown as a dropdown
 @ObjectModel.resultSet.sizeCategory: #XS
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #S, dataClass: #CUSTOMIZING }
 @VDM.viewType: #CONSUMPTION
