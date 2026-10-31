@@ -11,8 +11,10 @@
 annotate entity ZC_TS_MAINTENANCE_ORDER with
 {
   @UI.facet: [
-    { id: 'HeaderStatus', purpose: #HEADER, type: #DATAPOINT_REFERENCE,
-      targetQualifier: 'OrderStatus', position: 10 },
+    { id: 'HeaderGeneral',   purpose: #HEADER, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'HeaderGeneral',   label: 'Ogólne',              position: 10 },
+    { id: 'HeaderReference', purpose: #HEADER, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'ReferenceObject', label: 'Obiekt referencyjny', position: 20 },
 
     { id: 'OrderScope',       purpose: #STANDARD, type: #COLLECTION,
       label: 'Zakres zlecenia', position: 10 },
@@ -55,7 +57,8 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
                                        useForValidation: true }]
   @UI.textArrangement: #TEXT_FIRST
   @UI: { lineItem:       [{ position: 20, importance: #MEDIUM }],
-         fieldGroup:     [{ qualifier: 'OrderInformation', position: 30 }],
+         fieldGroup:     [{ qualifier: 'OrderInformation', position: 30 },
+                          { qualifier: 'HeaderGeneral', position: 10 }],
          selectionField: [{ position: 20 }] }
   OrderType;
 
@@ -70,8 +73,6 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
                           { type: #FOR_ACTION, dataAction: 'completeOrder', label: 'Zakończ' }],
          identification: [{ type: #FOR_ACTION, dataAction: 'releaseOrder',  label: 'Zwolnij', position: 10 },
                           { type: #FOR_ACTION, dataAction: 'completeOrder', label: 'Zakończ', position: 20 }],
-         dataPoint:      { title: 'Status', criticality: 'OrderStatusCriticality',
-                           criticalityRepresentation: #WITHOUT_ICON },
          selectionField: [{ position: 15 }] }
   OrderStatus;
 
@@ -130,7 +131,8 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PRIORITY_VH', element: 'Priority' },
                                        useForValidation: true }]
   @UI: { lineItem:       [{ position: 70, importance: #HIGH }],
-         fieldGroup:     [{ qualifier: 'Scheduling', position: 10 }],
+         fieldGroup:     [{ qualifier: 'Scheduling', position: 10 },
+                          { qualifier: 'HeaderGeneral', position: 20 }],
          selectionField: [{ position: 50 }] }
   Priority;
 
@@ -155,7 +157,8 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
 
   @EndUserText.label: 'Termin ostateczny'
   @UI: { lineItem:   [{ position: 110, importance: #LOW }],
-         fieldGroup: [{ qualifier: 'Scheduling', position: 50 }] }
+         fieldGroup: [{ qualifier: 'Scheduling', position: 50 },
+                      { qualifier: 'HeaderGeneral', position: 30 }] }
   MaintOrdFinalDueDateTime;
 
   @EndUserText.label: 'Waluta'
@@ -171,6 +174,14 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @UI: { lineItem:   [{ position: 130, importance: #MEDIUM }],
          fieldGroup: [{ qualifier: 'Costs', position: 20 }] }
   TotalActualCosts;
+
+  @EndUserText.label: 'Praca planowana (h)'
+  @UI.fieldGroup: [{ qualifier: 'Costs', position: 30 }]
+  TotalPlannedHours;
+
+  @EndUserText.label: 'Praca rzeczywista (h)'
+  @UI.fieldGroup: [{ qualifier: 'Costs', position: 40 }]
+  TotalActualHours;
 
   @UI.hidden: true
   LocalLastChangedAt;

@@ -26,6 +26,8 @@ CLASS lcl_cost_calculator DEFINITION.
         material_actual  TYPE zts_maint_costs-material_actual_costs,
         prt_planned      TYPE zts_maint_costs-prt_planned_costs,
         prt_actual       TYPE zts_maint_costs-prt_actual_costs,
+        planned_hours    TYPE zts_maint_order-total_planned_hours,
+        actual_hours     TYPE zts_maint_order-total_actual_hours,
       END OF cost_item,
       cost_items TYPE STANDARD TABLE OF cost_item WITH EMPTY KEY.
 
@@ -71,7 +73,8 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( Currency TotalPlannedCosts TotalActualCosts ) WITH CORRESPONDING #( all_orders )
+        FIELDS ( Currency TotalPlannedCosts TotalActualCosts TotalPlannedHours TotalActualHours )
+        WITH CORRESPONDING #( all_orders )
         RESULT DATA(order_data)
       ENTITY MaintenanceOrder BY \_Operations
         FIELDS ( OrderUuid OperationId Description PersonResp PlannedWork PlannedWorkUnit PlannedWorkDuration PlannedDurationUnit
@@ -151,7 +154,9 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
                                            operation_id   = operation-OperationId
                                            operation_desc = operation-Description
                                            labor_planned  = round( val = planned_hours * hourly_rate dec = 2 )
-                                           labor_actual   = round( val = actual_hours * hourly_rate dec = 2 ) ).
+                                           labor_actual   = round( val = actual_hours * hourly_rate dec = 2 )
+                                           planned_hours  = round( val = planned_hours dec = 2 )
+                                           actual_hours   = round( val = actual_hours dec = 2 ) ).
 
         DATA material_planned TYPE decfloat34.
         material_planned = 0.
@@ -206,14 +211,28 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
                              FOR item IN cost_items
                              WHERE ( is_draft = order-%is_draft AND order_uuid = order-OrderUuid )
                              NEXT sum = sum + item-actual ).
+      DATA(total_planned_hours) = REDUCE zts_maint_order-total_planned_hours(
+                                    INIT sum = 0
+                                    FOR item IN cost_items
+                                    WHERE ( is_draft = order-%is_draft AND order_uuid = order-OrderUuid )
+                                    NEXT sum = sum + item-planned_hours ).
+      DATA(total_actual_hours) = REDUCE zts_maint_order-total_actual_hours(
+                                   INIT sum = 0
+                                   FOR item IN cost_items
+                                   WHERE ( is_draft = order-%is_draft AND order_uuid = order-OrderUuid )
+                                   NEXT sum = sum + item-actual_hours ).
 
-      IF    currency      <> order-Currency
-         OR total_planned <> order-TotalPlannedCosts
-         OR total_actual  <> order-TotalActualCosts.
+      IF    currency            <> order-Currency
+         OR total_planned       <> order-TotalPlannedCosts
+         OR total_actual        <> order-TotalActualCosts
+         OR total_planned_hours <> order-TotalPlannedHours
+         OR total_actual_hours  <> order-TotalActualHours.
         APPEND VALUE #( %tky              = order-%tky
                         Currency          = currency
                         TotalPlannedCosts = total_planned
-                        TotalActualCosts  = total_actual ) TO order_updates.
+                        TotalActualCosts  = total_actual
+                        TotalPlannedHours = total_planned_hours
+                        TotalActualHours  = total_actual_hours ) TO order_updates.
       ENDIF.
     ENDLOOP.
 
@@ -324,7 +343,8 @@ CLASS lcl_cost_calculator IMPLEMENTATION.
 
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        UPDATE FIELDS ( Currency TotalPlannedCosts TotalActualCosts ) WITH order_updates
+        UPDATE FIELDS ( Currency TotalPlannedCosts TotalActualCosts TotalPlannedHours TotalActualHours )
+        WITH order_updates
       ENTITY MaintenanceOrder
         CREATE BY \_Costs FROM cost_creates
       ENTITY MaintenanceCosts

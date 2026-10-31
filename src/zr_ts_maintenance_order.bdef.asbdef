@@ -17,7 +17,8 @@ authorization master ( global )
   association _Costs { create; with draft; }
 
   field ( numbering : managed, readonly ) OrderUuid;
-  field ( readonly ) OrderId, OrderStatus, TechObjType, LocalLastChangedAt, LastChangedAt, TotalPlannedCosts, TotalActualCosts;
+  field ( readonly ) OrderId, OrderStatus, TechObjType, LocalLastChangedAt, LastChangedAt, TotalPlannedCosts, TotalActualCosts,
+                     TotalPlannedHours, TotalActualHours;
   field ( mandatory ) PlanningPlant, WorkCenter;
   field ( features : instance ) OrderType, MaintRevision, TechObject, LongText,
                                 MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime;
@@ -78,6 +79,8 @@ authorization master ( global )
       Currency                    = currency;
       TotalPlannedCosts           = total_planned_costs;
       TotalActualCosts            = total_actual_costs;
+      TotalPlannedHours           = total_planned_hours;
+      TotalActualHours            = total_actual_hours;
       LocalLastChangedAt          = local_last_changed_at;
       LastChangedAt               = last_changed_at;
     }

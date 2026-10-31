@@ -44,6 +44,10 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       TotalPlannedCosts,
       @Semantics.amount.currencyCode: 'Currency'
       TotalActualCosts,
+      @EndUserText.label: 'Planned Work (Hours)'
+      TotalPlannedHours,
+      @EndUserText.label: 'Actual Work (Hours)'
+      TotalActualHours,
       @Semantics.systemDateTime.localInstanceLastChangedAt: true
       LocalLastChangedAt,
       @Semantics.systemDateTime.lastChangedAt: true

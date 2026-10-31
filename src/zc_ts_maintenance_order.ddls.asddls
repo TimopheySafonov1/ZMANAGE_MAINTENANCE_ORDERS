@@ -58,6 +58,8 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       TotalPlannedCosts,
       @Semantics.amount.currencyCode: 'Currency'
       TotalActualCosts,
+      TotalPlannedHours,
+      TotalActualHours,
       LocalLastChangedAt,
       LastChangedAt,
       _Operations : redirected to composition child ZC_TS_MAINTENANCE_OPERATION,
