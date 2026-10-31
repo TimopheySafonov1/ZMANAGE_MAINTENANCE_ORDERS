@@ -26,6 +26,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         tech_objects           TYPE abap_bool VALUE abap_true,
         holidays               TYPE abap_bool VALUE abap_true,
         order_statuses         TYPE abap_bool VALUE abap_true,
+        file_types             TYPE abap_bool VALUE abap_true,
       END OF delete,
       BEGIN OF fill,
         maint_order_types      TYPE abap_bool VALUE abap_true,
@@ -47,6 +48,7 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
         tech_objects           TYPE abap_bool VALUE abap_true,
         holidays               TYPE abap_bool VALUE abap_true,
         order_statuses         TYPE abap_bool VALUE abap_true,
+        file_types             TYPE abap_bool VALUE abap_true,
       END OF fill.
 
     DATA(customizing) = NEW zcl_ts_maint_customizing( ).
@@ -127,6 +129,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
       out->write( customizing->delete_order_statuses( ) ).
     ENDIF.
 
+    IF delete-file_types = abap_true.
+      out->write( customizing->delete_file_types( ) ).
+    ENDIF.
+
     IF fill-maint_order_types = abap_true.
       out->write( customizing->fill_maint_order_types( ) ).
     ENDIF.
@@ -201,6 +207,10 @@ CLASS zcl_ts_maint_customizing_run IMPLEMENTATION.
 
     IF fill-order_statuses = abap_true.
       out->write( customizing->fill_order_statuses( ) ).
+    ENDIF.
+
+    IF fill-file_types = abap_true.
+      out->write( customizing->fill_file_types( ) ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.

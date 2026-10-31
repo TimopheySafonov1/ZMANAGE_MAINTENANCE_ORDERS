@@ -64,5 +64,6 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       LastChangedAt,
       _Operations : redirected to composition child ZC_TS_MAINTENANCE_OPERATION,
       _Costs      : redirected to composition child ZC_TS_MAINTENANCE_COSTS,
+      _Attachments : redirected to composition child ZC_TS_MAINTENANCE_ATTACH,
       _Status
 }

@@ -6,6 +6,7 @@ define root view entity ZI_TS_MAINTENANCE_ORDER
   as select from zts_maint_order
   composition [0..*] of ZI_TS_MAINTENANCE_OPERATION as _Operations
   composition [0..*] of ZI_TS_MAINTENANCE_COSTS     as _Costs
+  composition [0..*] of ZI_TS_MAINTENANCE_ATTACH    as _Attachments
 {
   key order_uuid            as OrderUuid,
       order_id              as OrderId,
@@ -34,5 +35,6 @@ define root view entity ZI_TS_MAINTENANCE_ORDER
       @Semantics.systemDateTime.lastChangedAt: true
       last_changed_at       as LastChangedAt,
       _Operations,
-      _Costs
+      _Costs,
+      _Attachments
 }

@@ -1,0 +1,61 @@
+@Metadata.layer: #CUSTOMER
+@UI: {
+  headerInfo: {
+    typeName:       'Załącznik',
+    typeNamePlural: 'Załączniki',
+    title:          { type: #STANDARD, value: 'FileName' },
+    description:    { type: #STANDARD, value: 'Description' }
+  },
+  presentationVariant: [{ sortOrder: [{ by: 'CreatedAt', direction: #DESC }] }]
+}
+annotate entity ZC_TS_MAINTENANCE_ATTACH with
+{
+  @UI.facet: [
+    { id: 'AttachmentData', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'AttachmentData', label: 'Dane załącznika', position: 10 }
+  ]
+
+  @UI.hidden: true
+  AttachmentUuid;
+
+  @UI.hidden: true
+  OrderUuid;
+
+  @EndUserText.label: 'Plik'
+  @UI: { lineItem:   [{ position: 10, importance: #HIGH, cssDefault.width: '18rem' }],
+         fieldGroup: [{ qualifier: 'AttachmentData', position: 10 }] }
+  Attachment;
+
+  @EndUserText.label: 'Nazwa pliku'
+  @UI: { fieldGroup: [{ qualifier: 'AttachmentData', position: 20 }] }
+  FileName;
+
+  @EndUserText.label: 'Opis'
+  @UI: { lineItem:   [{ position: 20, importance: #HIGH, cssDefault.width: '20rem' }],
+         fieldGroup: [{ qualifier: 'AttachmentData', position: 30 }] }
+  Description;
+
+  @EndUserText.label: 'Typ pliku'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_FILE_TYPE_VH', element: 'MimeType' },
+                                       useForValidation: true }]
+  @UI.textArrangement: #TEXT_ONLY
+  @UI: { lineItem:   [{ position: 30, importance: #HIGH, cssDefault.width: '14rem' }],
+         fieldGroup: [{ qualifier: 'AttachmentData', position: 40 }] }
+  MimeType;
+
+  @UI.hidden: true
+  FileTypeName;
+
+  @EndUserText.label: 'Dodał'
+  @UI: { lineItem:   [{ position: 40, importance: #MEDIUM, cssDefault.width: '9rem' }],
+         fieldGroup: [{ qualifier: 'AttachmentData', position: 50 }] }
+  CreatedBy;
+
+  @EndUserText.label: 'Dodano'
+  @UI: { lineItem:   [{ position: 50, importance: #MEDIUM, cssDefault.width: '12rem' }],
+         fieldGroup: [{ qualifier: 'AttachmentData', position: 60 }] }
+  CreatedAt;
+
+  @UI.hidden: true
+  LocalLastChangedAt;
+}

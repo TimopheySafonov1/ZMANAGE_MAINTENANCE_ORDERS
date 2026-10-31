@@ -114,6 +114,12 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS delete_order_statuses
       RETURNING VALUE(result) TYPE string.
 
+    METHODS fill_file_types
+      RETURNING VALUE(result) TYPE string.
+
+    METHODS delete_file_types
+      RETURNING VALUE(result) TYPE string.
+
   PRIVATE SECTION.
     METHODS easter_sunday
       IMPORTING holiday_year  TYPE i
@@ -479,7 +485,9 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
                                                  ( item_category = 'N' uom = 'L'   price = '18.00'  name = 'Olej hydrauliczny' )
                                                  ( item_category = 'L' uom = 'PAK' price = '25.00'  name = 'Bezpiecznik' )
                                                  ( item_category = 'N' uom = 'ST'  price = '220.00' name = 'Stycznik' )
-                                                 ( item_category = 'N' uom = 'ST'  price = '480.00' name = 'Czujnik ciśnienia' ) ).
+                                                 ( item_category = 'N' uom = 'ST'  price = '480.00' name = 'Czujnik ciśnienia' )
+                                                 ( item_category = 'L' uom = 'L'   price = '25.00'  name = 'Olej transformatorowy' )
+                                                 ( item_category = 'L' uom = 'KG'  price = '40.00'  name = 'Silikażel do odwilżacza' ) ).
 
     LOOP AT templates INTO DATA(template).
       DATA(component) = CONV zts_component-component( |CZ{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
@@ -869,7 +877,10 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
           ident_number = 'PR-2022-118'  location = 'HALA-1'    name = 'Prasa hydrauliczna PH-400' )
         ( tech_object = '10000012' tech_obj_type = 'EQ' planning_plant = '0002' superior_object = 'PL02-KRK-TLOCZ'
           sort_field = 'SILNIKI'    object_type = 'SILNIK'     material = 'SIE-1LE1-180'   serial_number = 'UD2203-0381'
-          ident_number = 'S-SIE-0381'   location = 'HALA-1'    name = 'Silnik pompy hydrauliki M-401' ) ).
+          ident_number = 'S-SIE-0381'   location = 'HALA-1'    name = 'Silnik pompy hydrauliki M-401' )
+        ( tech_object = '10000013' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
+          sort_field = 'ELEKTRYKA'  object_type = 'TRAFO'      material = 'ABB-DTR-1000'   serial_number = 'DTR1000-19-2241'
+          ident_number = 'TR-2019-001'  location = 'BUD-TECH'  name = 'Transformator TR-1 15/0,4 kV 1000 kVA' ) ).
 
     LOOP AT templates INTO DATA(template).
       APPEND CORRESPONDING #( template ) TO tech_objects.
@@ -961,6 +972,103 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     DELETE FROM zts_maint_stat_t.
 
     result = |Order statuses deleted: { sy-dbcnt } texts|.
+  ENDMETHOD.
+
+  METHOD fill_file_types.
+    DATA file_types TYPE STANDARD TABLE OF zts_file_type WITH EMPTY KEY.
+    DATA texts      TYPE STANDARD TABLE OF zts_file_type_t WITH EMPTY KEY.
+
+    file_types = VALUE #( ( mime_type = 'image/jpeg'                                                               extensions = 'jpg jpeg' )
+                          ( mime_type = 'image/png'                                                                extensions = 'png' )
+                          ( mime_type = 'image/gif'                                                                extensions = 'gif' )
+                          ( mime_type = 'image/bmp'                                                                extensions = 'bmp' )
+                          ( mime_type = 'image/webp'                                                               extensions = 'webp' )
+                          ( mime_type = 'image/heic'                                                               extensions = 'heic heif' )
+                          ( mime_type = 'image/tiff'                                                               extensions = 'tif tiff' )
+                          ( mime_type = 'video/mp4'                                                                extensions = 'mp4 m4v' )
+                          ( mime_type = 'video/quicktime'                                                          extensions = 'mov' )
+                          ( mime_type = 'video/webm'                                                               extensions = 'webm' )
+                          ( mime_type = 'video/x-msvideo'                                                          extensions = 'avi' )
+                          ( mime_type = 'video/x-matroska'                                                         extensions = 'mkv' )
+                          ( mime_type = 'video/3gpp'                                                               extensions = '3gp' )
+                          ( mime_type = 'audio/mpeg'                                                               extensions = 'mp3' )
+                          ( mime_type = 'audio/wav'                                                                extensions = 'wav' )
+                          ( mime_type = 'audio/ogg'                                                                extensions = 'ogg oga' )
+                          ( mime_type = 'audio/mp4'                                                                extensions = 'm4a' )
+                          ( mime_type = 'application/pdf'                                                          extensions = 'pdf' )
+                          ( mime_type = 'text/plain'                                                               extensions = 'txt log' )
+                          ( mime_type = 'text/csv'                                                                 extensions = 'csv' )
+                          ( mime_type = 'application/msword'                                                       extensions = 'doc' )
+                          ( mime_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'  extensions = 'docx' )
+                          ( mime_type = 'application/vnd.ms-excel'                                                 extensions = 'xls' )
+                          ( mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'        extensions = 'xlsx' )
+                          ( mime_type = 'application/zip'                                                          extensions = 'zip' ) ).
+
+    texts = VALUE #( ( language = 'E' mime_type = 'image/jpeg'                                                               type_name = 'JPEG Image' )
+                     ( language = 'L' mime_type = 'image/jpeg'                                                               type_name = 'Obraz JPEG' )
+                     ( language = 'E' mime_type = 'image/png'                                                                type_name = 'PNG Image' )
+                     ( language = 'L' mime_type = 'image/png'                                                                type_name = 'Obraz PNG' )
+                     ( language = 'E' mime_type = 'image/gif'                                                                type_name = 'GIF Image' )
+                     ( language = 'L' mime_type = 'image/gif'                                                                type_name = 'Obraz GIF' )
+                     ( language = 'E' mime_type = 'image/bmp'                                                                type_name = 'Bitmap Image' )
+                     ( language = 'L' mime_type = 'image/bmp'                                                                type_name = 'Obraz BMP' )
+                     ( language = 'E' mime_type = 'image/webp'                                                               type_name = 'WebP Image' )
+                     ( language = 'L' mime_type = 'image/webp'                                                               type_name = 'Obraz WebP' )
+                     ( language = 'E' mime_type = 'image/heic'                                                               type_name = 'HEIC Image' )
+                     ( language = 'L' mime_type = 'image/heic'                                                               type_name = 'Obraz HEIC' )
+                     ( language = 'E' mime_type = 'image/tiff'                                                               type_name = 'TIFF Image' )
+                     ( language = 'L' mime_type = 'image/tiff'                                                               type_name = 'Obraz TIFF' )
+                     ( language = 'E' mime_type = 'video/mp4'                                                                type_name = 'MP4 Video' )
+                     ( language = 'L' mime_type = 'video/mp4'                                                                type_name = 'Wideo MP4' )
+                     ( language = 'E' mime_type = 'video/quicktime'                                                          type_name = 'QuickTime Video' )
+                     ( language = 'L' mime_type = 'video/quicktime'                                                          type_name = 'Wideo QuickTime' )
+                     ( language = 'E' mime_type = 'video/webm'                                                               type_name = 'WebM Video' )
+                     ( language = 'L' mime_type = 'video/webm'                                                               type_name = 'Wideo WebM' )
+                     ( language = 'E' mime_type = 'video/x-msvideo'                                                          type_name = 'AVI Video' )
+                     ( language = 'L' mime_type = 'video/x-msvideo'                                                          type_name = 'Wideo AVI' )
+                     ( language = 'E' mime_type = 'video/x-matroska'                                                         type_name = 'Matroska Video' )
+                     ( language = 'L' mime_type = 'video/x-matroska'                                                         type_name = 'Wideo Matroska' )
+                     ( language = 'E' mime_type = 'video/3gpp'                                                               type_name = '3GP Video' )
+                     ( language = 'L' mime_type = 'video/3gpp'                                                               type_name = 'Wideo 3GP' )
+                     ( language = 'E' mime_type = 'audio/mpeg'                                                               type_name = 'MP3 Audio' )
+                     ( language = 'L' mime_type = 'audio/mpeg'                                                               type_name = 'Dźwięk MP3' )
+                     ( language = 'E' mime_type = 'audio/wav'                                                                type_name = 'WAV Audio' )
+                     ( language = 'L' mime_type = 'audio/wav'                                                                type_name = 'Dźwięk WAV' )
+                     ( language = 'E' mime_type = 'audio/ogg'                                                                type_name = 'Ogg Audio' )
+                     ( language = 'L' mime_type = 'audio/ogg'                                                                type_name = 'Dźwięk Ogg' )
+                     ( language = 'E' mime_type = 'audio/mp4'                                                                type_name = 'M4A Audio' )
+                     ( language = 'L' mime_type = 'audio/mp4'                                                                type_name = 'Dźwięk M4A' )
+                     ( language = 'E' mime_type = 'application/pdf'                                                          type_name = 'PDF Document' )
+                     ( language = 'L' mime_type = 'application/pdf'                                                          type_name = 'Dokument PDF' )
+                     ( language = 'E' mime_type = 'text/plain'                                                               type_name = 'Text File' )
+                     ( language = 'L' mime_type = 'text/plain'                                                               type_name = 'Plik tekstowy' )
+                     ( language = 'E' mime_type = 'text/csv'                                                                 type_name = 'CSV File' )
+                     ( language = 'L' mime_type = 'text/csv'                                                                 type_name = 'Plik CSV' )
+                     ( language = 'E' mime_type = 'application/msword'                                                       type_name = 'Word Document 97-2003' )
+                     ( language = 'L' mime_type = 'application/msword'                                                       type_name = 'Dokument Word 97-2003' )
+                     ( language = 'E' mime_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'  type_name = 'Word Document' )
+                     ( language = 'L' mime_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'  type_name = 'Dokument Word' )
+                     ( language = 'E' mime_type = 'application/vnd.ms-excel'                                                 type_name = 'Excel Workbook 97-2003' )
+                     ( language = 'L' mime_type = 'application/vnd.ms-excel'                                                 type_name = 'Skoroszyt Excel 97-2003' )
+                     ( language = 'E' mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'        type_name = 'Excel Workbook' )
+                     ( language = 'L' mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'        type_name = 'Skoroszyt Excel' )
+                     ( language = 'E' mime_type = 'application/zip'                                                          type_name = 'ZIP Archive' )
+                     ( language = 'L' mime_type = 'application/zip'                                                          type_name = 'Archiwum ZIP' ) ).
+
+    MODIFY zts_file_type FROM TABLE @file_types.
+    MODIFY zts_file_type_t FROM TABLE @texts.
+
+    result = |File types filled: { lines( file_types ) } file types, { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_file_types.
+    DELETE FROM zts_file_type_t.
+    DATA(deleted_texts) = sy-dbcnt.
+
+    DELETE FROM zts_file_type.
+    DATA(deleted_file_types) = sy-dbcnt.
+
+    result = |File types deleted: { deleted_file_types } file types, { deleted_texts } texts|.
   ENDMETHOD.
 
   METHOD easter_sunday.

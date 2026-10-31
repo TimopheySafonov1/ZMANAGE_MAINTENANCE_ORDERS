@@ -5,6 +5,7 @@ define service ZUI_TS_MAINTENANCE_ORDER {
   expose ZC_TS_MAINTENANCE_COSTS     as MaintenanceCosts;
   expose ZC_TS_MAINTENANCE_COMPONENT as MaintenanceComponent;
   expose ZC_TS_MAINTENANCE_PRT       as MaintenancePrt;
+  expose ZC_TS_MAINTENANCE_ATTACH    as MaintenanceAttachment;
   expose ZC_TS_MAINT_ORDER_STATUS    as MaintenanceOrderStatus;
   expose ZC_TS_MAINT_ORDER_TYPE_VH   as MaintenanceOrderTypeVH;
   expose ZC_TS_PLANT_VH              as PlantVH;
@@ -16,4 +17,5 @@ define service ZUI_TS_MAINTENANCE_ORDER {
   expose ZC_TS_TECH_OBJ_VH           as TechObjectVH;
   expose ZC_TS_TECH_OBJ_HIER_VH      as TechObjectHierarchyVH;
   expose ZC_TS_TECH_OBJ_TYPE_VH      as TechObjectTypeVH;
+  expose ZC_TS_FILE_TYPE_VH          as FileTypeVH;
 }

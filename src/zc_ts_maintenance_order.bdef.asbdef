@@ -21,6 +21,7 @@ use etag
 
   use association _Operations { create; with draft; }
   use association _Costs { with draft; }
+  use association _Attachments { create; with draft; }
 }
 
 define behavior for ZC_TS_MAINTENANCE_OPERATION alias MaintenanceOperation
@@ -53,5 +54,13 @@ define behavior for ZC_TS_MAINTENANCE_PRT alias MaintenancePrt
   use delete;
 
   use association _MaintenanceOperation { with draft; }
+  use association _MaintenanceOrder { with draft; }
+}
+
+define behavior for ZC_TS_MAINTENANCE_ATTACH alias MaintenanceAttachment
+{
+  use update;
+  use delete;
+
   use association _MaintenanceOrder { with draft; }
 }

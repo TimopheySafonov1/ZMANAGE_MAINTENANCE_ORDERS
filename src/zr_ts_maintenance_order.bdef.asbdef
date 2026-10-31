@@ -15,6 +15,7 @@ authorization master ( global )
 
   association _Operations { create; with draft; }
   association _Costs { create; with draft; }
+  association _Attachments { create; with draft; }
 
   field ( numbering : managed, readonly ) OrderUuid;
   field ( readonly ) OrderId, OrderStatus, TechObjType, LocalLastChangedAt, LastChangedAt, TotalPlannedCosts, TotalActualCosts,
@@ -57,7 +58,7 @@ authorization master ( global )
   draft action Discard;
   draft action ( features : instance ) Edit;
   draft action Resume;
-  draft determine action Prepare { validation validateTypeRules; }
+  draft determine action Prepare { validation validateTypeRules; validation MaintenanceAttachment~validateMimeType; }
 
   mapping for zts_maint_order
     {
@@ -278,5 +279,41 @@ authorization dependent by _MaintenanceOrder
       PlannedUsageUnit = planned_usage_unit;
       ActualUsage      = actual_usage;
       ActualUsageUnit  = actual_usage_unit;
+    }
+}
+
+define behavior for ZR_TS_MAINTENANCE_ATTACH alias MaintenanceAttachment
+persistent table zts_maint_attach
+draft table zts_d_maint_att
+lock dependent by _MaintenanceOrder
+authorization dependent by _MaintenanceOrder
+{
+  update;
+  delete;
+
+  association _MaintenanceOrder { with draft; }
+
+  field ( numbering : managed, readonly ) AttachmentUuid;
+  field ( readonly ) OrderUuid, CreatedBy, CreatedAt, LocalLastChangedAt;
+
+  determination setMimeType on modify { field FileName, MimeType; }
+  validation validateMimeType on save { create; field FileName, MimeType; }
+
+  side effects
+  {
+    field Attachment affects field MimeType;
+  }
+
+  mapping for zts_maint_attach
+    {
+      AttachmentUuid     = attach_uuid;
+      OrderUuid          = order_uuid;
+      FileName           = file_name;
+      MimeType           = mime_type;
+      Attachment         = attachment;
+      Description        = description;
+      CreatedBy          = created_by;
+      CreatedAt          = created_at;
+      LocalLastChangedAt = local_last_changed_at;
     }
 }
