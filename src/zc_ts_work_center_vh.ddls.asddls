@@ -1,5 +1,5 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
-@EndUserText.label: 'Work Center Value Help'
+@EndUserText.label: 'Gniazdo robocze'
 @ObjectModel.representativeKey: 'WorkCenter'
 @ObjectModel.dataCategory: #VALUE_HELP
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #S, dataClass: #CUSTOMIZING }

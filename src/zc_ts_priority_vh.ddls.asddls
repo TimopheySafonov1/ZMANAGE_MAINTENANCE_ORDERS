@@ -1,5 +1,5 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
-@EndUserText.label: 'Maintenance Order Priority Value Help'
+@EndUserText.label: 'Priorytet zlecenia'
 @ObjectModel.representativeKey: 'Priority'
 @ObjectModel.dataCategory: #VALUE_HELP
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #S, dataClass: #CUSTOMIZING }

@@ -1,3 +1,17 @@
+CLASS lcl_text DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS get
+      IMPORTING pl            TYPE string
+                en            TYPE string
+      RETURNING VALUE(result) TYPE string.
+ENDCLASS.
+
+CLASS lcl_text IMPLEMENTATION.
+  METHOD get.
+    result = COND #( WHEN sy-langu = 'E' THEN en ELSE pl ).
+  ENDMETHOD.
+ENDCLASS.
+
 CLASS lcl_cost_calculator DEFINITION.
   PUBLIC SECTION.
     TYPES orders TYPE TABLE FOR READ IMPORT zr_ts_maintenance_order\\MaintenanceOrder.
@@ -438,7 +452,7 @@ CLASS lcl_order_type_rules IMPLEMENTATION.
 
   METHOD non_working_day.
     IF ( check_date - CONV d( '19000101' ) ) MOD 7 >= 5.
-      result = 'weekend'.
+      result = lcl_text=>get( pl = `weekend` en = `a weekend` ).
       RETURN.
     ENDIF.
 
@@ -447,7 +461,8 @@ CLASS lcl_order_type_rules IMPLEMENTATION.
       WHERE holiday_date = @check_date
       INTO @DATA(holiday_name).
     IF sy-subrc = 0.
-      result = |święto: { holiday_name }|.
+      result = lcl_text=>get( pl = |święto: { holiday_name }|
+                              en = |a public holiday: { holiday_name }| ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
@@ -779,7 +794,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
         APPEND VALUE #( %tky                   = order-%tky
                         %state_area            = 'TYPE_RULES'
-                        %msg                   = new_message_with_text( text = 'Podaj zakład planowania.' )
+                        %msg                   = new_message_with_text( text = lcl_text=>get( pl = 'Podaj zakład planowania.'
+                                                                                              en = 'Enter a planning plant.' ) )
                         %element-PlanningPlant = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
@@ -787,7 +803,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
         APPEND VALUE #( %tky                = order-%tky
                         %state_area         = 'TYPE_RULES'
-                        %msg                = new_message_with_text( text = 'Podaj główne stanowisko robocze.' )
+                        %msg                = new_message_with_text( text = lcl_text=>get( pl = 'Podaj główne stanowisko robocze.'
+                                                                                           en = 'Enter a main work center.' ) )
                         %element-WorkCenter = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
@@ -795,7 +812,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
         APPEND VALUE #( %tky               = order-%tky
                         %state_area        = 'TYPE_RULES'
-                        %msg               = new_message_with_text( text = 'Podaj rodzaj zlecenia.' )
+                        %msg               = new_message_with_text( text = lcl_text=>get( pl = 'Podaj rodzaj zlecenia.'
+                                                                                          en = 'Enter an order type.' ) )
                         %element-OrderType = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
         CONTINUE.
       ENDIF.
@@ -807,7 +825,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky                = order-%tky
                         %state_area         = 'TYPE_RULES'
                         %msg                = new_message_with_text(
-                                                  text = 'Zlecenie naprawcze wymaga obiektu technicznego.' )
+                                                  text = lcl_text=>get( pl = 'Zlecenie naprawcze wymaga obiektu technicznego.'
+                                                                        en = 'A corrective maintenance order requires a technical object.' ) )
                         %element-TechObject = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
@@ -816,7 +835,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky              = order-%tky
                         %state_area       = 'TYPE_RULES'
                         %msg              = new_message_with_text(
-                                                text = 'Opisz usterkę w tekście długim.' )
+                                                text = lcl_text=>get( pl = 'Opisz usterkę w tekście długim.'
+                                                                      en = 'Describe the malfunction in the long text.' ) )
                         %element-LongText = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
@@ -825,7 +845,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky                                = order-%tky
                         %state_area                         = 'TYPE_RULES'
                         %msg                                = new_message_with_text(
-                                                                  text = 'Podaj podstawową datę rozpoczęcia.' )
+                                                                  text = lcl_text=>get( pl = 'Podaj podstawową datę rozpoczęcia.'
+                                                                                        en = 'Enter a basic start date.' ) )
                         %element-MaintOrdBasicStartDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
@@ -834,7 +855,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky                                 = order-%tky
                         %state_area                          = 'TYPE_RULES'
                         %msg                                 = new_message_with_text(
-                                                                   text = 'Podaj podstawową datę zakończenia.' )
+                                                                   text = lcl_text=>get( pl = 'Podaj podstawową datę zakończenia.'
+                                                                                         en = 'Enter a basic finish date.' ) )
                         %element-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
@@ -845,7 +867,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         APPEND VALUE #( %tky                                 = order-%tky
                         %state_area                          = 'TYPE_RULES'
                         %msg                                 = new_message_with_text(
-                            text = 'Data zakończenia nie może być wcześniejsza niż data rozpoczęcia.' )
+                            text = lcl_text=>get( pl = 'Data zakończenia nie może być wcześniejsza niż data rozpoczęcia.'
+                                                  en = 'The finish date cannot be earlier than the start date.' ) )
                         %element-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
       ENDIF.
 
@@ -858,7 +881,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
           APPEND VALUE #( %tky                                = order-%tky
                           %state_area                         = 'TYPE_RULES'
                           %msg                                = new_message_with_text(
-                                                                    text = 'Data rozpoczęcia nie może być w przeszłości.' )
+                                                                    text = lcl_text=>get( pl = 'Data rozpoczęcia nie może być w przeszłości.'
+                                                                                          en = 'The start date cannot be in the past.' ) )
                           %element-MaintOrdBasicStartDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
         ENDIF.
       ENDIF.
@@ -871,7 +895,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
           APPEND VALUE #( %tky                                 = order-%tky
                           %state_area                          = 'TYPE_RULES'
                           %msg                                 = new_message_with_text(
-                              text = |Podstawowa data zakończenia przypada na { finish_reason }.| )
+                              text = lcl_text=>get( pl = |Podstawowa data zakończenia przypada na { finish_reason }.|
+                                                    en = |The basic finish date falls on { finish_reason }.| ) )
                           %element-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
         ENDIF.
       ENDIF.
@@ -884,7 +909,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
           APPEND VALUE #( %tky                              = order-%tky
                           %state_area                       = 'TYPE_RULES'
                           %msg                              = new_message_with_text(
-                              text = |Termin ostateczny przypada na { due_reason }.| )
+                              text = lcl_text=>get( pl = |Termin ostateczny przypada na { due_reason }.|
+                                                    en = |The final due date falls on { due_reason }.| ) )
                           %element-MaintOrdFinalDueDateTime = if_abap_behv=>mk-on ) TO reported-maintenanceorder.
         ENDIF.
       ENDIF.

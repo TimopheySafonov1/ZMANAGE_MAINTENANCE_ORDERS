@@ -1,5 +1,5 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
-@EndUserText.label: 'Plant Value Help'
+@EndUserText.label: 'Zakład'
 @ObjectModel.representativeKey: 'Plant'
 @ObjectModel.dataCategory: #VALUE_HELP
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #S, dataClass: #CUSTOMIZING }

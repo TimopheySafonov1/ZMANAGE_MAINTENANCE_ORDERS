@@ -1,5 +1,5 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
-@EndUserText.label: 'Maintenance Revision Value Help'
+@EndUserText.label: 'Rewizja'
 @ObjectModel.representativeKey: 'MaintenanceRevision'
 @ObjectModel.dataCategory: #VALUE_HELP
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #S, dataClass: #CUSTOMIZING }
@@ -27,8 +27,8 @@ define view entity ZC_TS_REVISION_VH
       @Semantics.text: true
       @UI.lineItem: [{ position: 40 }]
       @EndUserText.label: 'Tekst rewizji'
-      coalesce( _Text[1: Language = 'L'].MaintenanceRevisionText,
-                _Text[1: Language = $session.system_language].MaintenanceRevisionText ) as MaintenanceRevisionText,
+      coalesce( _Text[1: Language = $session.system_language].MaintenanceRevisionText,
+                _Text[1: Language = 'L'].MaintenanceRevisionText ) as MaintenanceRevisionText,
       @UI.lineItem: [{ position: 50 }]
       @EndUserText.label: 'Data rozpoczęcia'
       StartDate,

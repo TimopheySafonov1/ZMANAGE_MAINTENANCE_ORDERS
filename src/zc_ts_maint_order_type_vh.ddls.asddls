@@ -1,5 +1,5 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
-@EndUserText.label: 'Maintenance Order Type Value Help'
+@EndUserText.label: 'Rodzaj zlecenia'
 @ObjectModel.representativeKey: 'MaintenanceOrderType'
 @ObjectModel.dataCategory: #VALUE_HELP
 @ObjectModel.resultSet.sizeCategory: #XS
@@ -14,6 +14,6 @@ define view entity ZC_TS_MAINT_ORDER_TYPE_VH
   key MaintenanceOrderType,
       @Search: { defaultSearchElement: true, ranking: #HIGH, fuzzinessThreshold: 0.8 }
       @Semantics.text: true
-      @EndUserText.label: 'Order Type Text'
+      @EndUserText.label: 'Nazwa rodzaju zlecenia'
       _Text[1: Language = $session.system_language].MaintenanceOrderTypeName as MaintenanceOrderTypeName
 }

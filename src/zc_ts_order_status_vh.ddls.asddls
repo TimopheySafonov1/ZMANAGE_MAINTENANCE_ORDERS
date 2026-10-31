@@ -1,5 +1,5 @@
 @AccessControl.authorizationCheck: #NOT_REQUIRED
-@EndUserText.label: 'Maintenance Order Status Value Help'
+@EndUserText.label: 'Status zlecenia'
 @ObjectModel.representativeKey: 'Status'
 @ObjectModel.dataCategory: #VALUE_HELP
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #S, dataClass: #CUSTOMIZING }
