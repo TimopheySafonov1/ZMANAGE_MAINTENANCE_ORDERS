@@ -27,25 +27,25 @@ annotate entity ZC_TS_MAINTENANCE_COMPONENT with
   @EndUserText.label: 'Komponent'
   @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_COMPONENT_VH', element: 'Component' },
                                        useForValidation: true }]
-  @UI: { lineItem:       [{ position: 10, importance: #HIGH }],
+  @UI: { lineItem:       [{ position: 10, importance: #HIGH, cssDefault.width: '10rem' }],
          identification: [{ position: 10 }],
          fieldGroup:     [{ qualifier: 'ComponentData', position: 10 }] }
   ComponentId;
 
   @EndUserText.label: 'Opis'
-  @UI: { lineItem:   [{ position: 20, importance: #HIGH }],
+  @UI: { lineItem:   [{ position: 20, importance: #HIGH, cssDefault.width: '16rem' }],
          fieldGroup: [{ qualifier: 'ComponentData', position: 20 }] }
   Description;
 
   @EndUserText.label: 'Typ pozycji'
   @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_ITEM_CATEGORY_VH', element: 'ItemCategory' },
                                        useForValidation: true }]
-  @UI: { lineItem:   [{ position: 30, importance: #MEDIUM }],
+  @UI: { lineItem:   [{ position: 30, importance: #MEDIUM, cssDefault.width: '10rem' }],
          fieldGroup: [{ qualifier: 'ComponentData', position: 30 }] }
   ItemCategory;
 
   @EndUserText.label: 'Ilość wymagana'
-  @UI: { lineItem:   [{ position: 40, importance: #HIGH }],
+  @UI: { lineItem:   [{ position: 40, importance: #HIGH, cssDefault.width: '9rem' }],
          fieldGroup: [{ qualifier: 'ComponentData', position: 40 }] }
   ReqQuantity;
 
@@ -59,7 +59,7 @@ annotate entity ZC_TS_MAINTENANCE_COMPONENT with
                                        additionalBinding: [{ localElement: 'ComponentId',
                                                              element: 'Component',
                                                              usage: #FILTER }] }]
-  @UI: { lineItem:   [{ position: 50, importance: #MEDIUM }],
+  @UI: { lineItem:   [{ position: 50, importance: #MEDIUM, cssDefault.width: '8rem' }],
          fieldGroup: [{ qualifier: 'ComponentData', position: 50 }] }
   StorageLoc;
 }

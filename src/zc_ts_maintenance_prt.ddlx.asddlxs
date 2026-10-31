@@ -57,7 +57,8 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
   StorageLoc;
 
   @EndUserText.label: 'Planowany czas użycia (puste = cała operacja)'
-  @UI: { fieldGroup: [{ qualifier: 'PrtData', position: 50 }] }
+  @UI: { lineItem:   [{ position: 50, importance: #MEDIUM, cssDefault.width: '12rem' }],
+         fieldGroup: [{ qualifier: 'PrtData', position: 50 }] }
   PlannedUsage;
 
   @EndUserText.label: 'Jednostka czasu (plan)'
@@ -66,7 +67,8 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
   PlannedUsageUnit;
 
   @EndUserText.label: 'Rzeczywisty czas użycia'
-  @UI: { fieldGroup: [{ qualifier: 'PrtData', position: 60 }] }
+  @UI: { lineItem:   [{ position: 60, importance: #MEDIUM, cssDefault.width: '12rem' }],
+         fieldGroup: [{ qualifier: 'PrtData', position: 60 }] }
   ActualUsage;
 
   @EndUserText.label: 'Jednostka czasu (rzeczywista)'
