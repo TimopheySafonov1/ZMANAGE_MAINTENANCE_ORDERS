@@ -493,7 +493,7 @@ CLASS lhc_maintenanceorder DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS createfirstoperation FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOrder~createFirstOperation.
 
-    METHODS setinitialstatus FOR DETERMINE ON MODIFY
+    METHODS setinitialstatus FOR DETERMINE ON SAVE
       IMPORTING keys FOR MaintenanceOrder~setInitialStatus.
 
     METHODS releaseorder FOR MODIFY

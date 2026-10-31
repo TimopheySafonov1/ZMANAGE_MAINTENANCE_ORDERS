@@ -29,7 +29,7 @@ authorization master ( global )
   determination setDueDate on modify { field Priority, MaintOrdBasicStartDateTime; }
   determination setTechObjType on modify { field TechObject; }
   determination createFirstOperation on modify { create; }
-  determination setInitialStatus on modify { create; }
+  determination setInitialStatus on save { create; }
 
   action ( features : instance ) releaseOrder result [1] $self;
   action ( features : instance ) completeOrder result [1] $self;
