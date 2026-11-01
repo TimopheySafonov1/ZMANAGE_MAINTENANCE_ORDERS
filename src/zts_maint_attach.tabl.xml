@@ -140,6 +140,12 @@
      <CHECKTABLE>ZTS_MAINT_ORDER</CHECKTABLE>
     </DD08V>
    </DD08V_TABLE>
+   <TABL_EXTRAS>
+    <TDDAT>
+     <TABNAME>ZTS_MAINT_ATTACH</TABNAME>
+     <CCLASS>CUS_DEV_SUP_DA</CCLASS>
+    </TDDAT>
+   </TABL_EXTRAS>
   </asx:values>
  </asx:abap>
 </abapGit>

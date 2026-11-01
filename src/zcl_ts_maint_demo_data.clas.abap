@@ -1,5 +1,33 @@
-CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
+CLASS zcl_ts_maint_demo_data DEFINITION PUBLIC FINAL CREATE PUBLIC.
   PUBLIC SECTION.
+    INTERFACES if_oo_adt_classrun.
+
+    TYPES: BEGIN OF steps,
+             clear_orders       TYPE abap_bool,
+             delete_customizing TYPE abap_bool,
+             fill_customizing   TYPE abap_bool,
+           END OF steps.
+
+    CONSTANTS: BEGIN OF run,
+                 clear_orders       TYPE abap_bool VALUE abap_false,
+                 delete_customizing TYPE abap_bool VALUE abap_true,
+                 fill_customizing   TYPE abap_bool VALUE abap_true,
+               END OF run.
+
+    METHODS execute
+      IMPORTING steps         TYPE steps
+      RETURNING VALUE(result) TYPE string_table.
+
+  PRIVATE SECTION.
+    METHODS clear_orders
+      RETURNING VALUE(result) TYPE string_table.
+
+    METHODS delete_customizing
+      RETURNING VALUE(result) TYPE string_table.
+
+    METHODS fill_customizing
+      RETURNING VALUE(result) TYPE string_table.
+
     METHODS fill_maint_order_types
       RETURNING VALUE(result) TYPE string.
 
@@ -120,13 +148,118 @@ CLASS zcl_ts_maint_customizing DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS delete_file_types
       RETURNING VALUE(result) TYPE string.
 
-  PRIVATE SECTION.
     METHODS easter_sunday
       IMPORTING holiday_year  TYPE i
       RETURNING VALUE(result) TYPE d.
 ENDCLASS.
 
-CLASS zcl_ts_maint_customizing IMPLEMENTATION.
+CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
+  METHOD if_oo_adt_classrun~main.
+    out->write( execute( CORRESPONDING #( run ) ) ).
+  ENDMETHOD.
+
+  METHOD execute.
+    IF steps-clear_orders = abap_true.
+      APPEND LINES OF clear_orders( ) TO result.
+    ENDIF.
+
+    IF steps-delete_customizing = abap_true.
+      APPEND LINES OF delete_customizing( ) TO result.
+    ENDIF.
+
+    IF steps-fill_customizing = abap_true.
+      APPEND LINES OF fill_customizing( ) TO result.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD clear_orders.
+    DELETE FROM zts_maint_attach.
+    APPEND |Attachments deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_maint_prt.
+    APPEND |PRTs deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_maint_compon.
+    APPEND |Components deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_maint_costs.
+    APPEND |Cost items deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_maint_operat.
+    APPEND |Operations deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_maint_ord_st.
+    APPEND |Status history entries deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_maint_order.
+    APPEND |Orders deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_d_maint_att.
+    APPEND |Draft attachments deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_d_maint_prt.
+    APPEND |Draft PRTs deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_d_maint_cmp.
+    APPEND |Draft components deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_d_maint_cst.
+    APPEND |Draft cost items deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_d_maint_opr.
+    APPEND |Draft operations deleted: { sy-dbcnt }| TO result.
+
+    DELETE FROM zts_d_maint_ord.
+    APPEND |Draft orders deleted: { sy-dbcnt }| TO result.
+  ENDMETHOD.
+
+  METHOD delete_customizing.
+    result = VALUE #(
+                      ( delete_maint_order_types( ) )
+                      ( delete_plants( ) )
+                      ( delete_work_center_categories( ) )
+                      ( delete_work_centers( ) )
+                      ( delete_priorities( ) )
+                      ( delete_revisions( ) )
+                      ( delete_responsible_persons( ) )
+                      ( delete_time_units( ) )
+                      ( delete_item_categories( ) )
+                      ( delete_components( ) )
+                      ( delete_units_of_measure( ) )
+                      ( delete_storage_locations( ) )
+                      ( delete_component_stock( ) )
+                      ( delete_prts( ) )
+                      ( delete_exchange_rates( ) )
+                      ( delete_cost_categories( ) )
+                      ( delete_tech_objects( ) )
+                      ( delete_holidays( ) )
+                      ( delete_order_statuses( ) )
+                      ( delete_file_types( ) ) ).
+  ENDMETHOD.
+
+  METHOD fill_customizing.
+    result = VALUE #(
+                      ( fill_maint_order_types( ) )
+                      ( fill_plants( ) )
+                      ( fill_work_center_categories( ) )
+                      ( fill_work_centers( ) )
+                      ( fill_priorities( ) )
+                      ( fill_revisions( ) )
+                      ( fill_responsible_persons( ) )
+                      ( fill_time_units( ) )
+                      ( fill_item_categories( ) )
+                      ( fill_units_of_measure( ) )
+                      ( fill_components( ) )
+                      ( fill_storage_locations( ) )
+                      ( fill_component_stock( ) )
+                      ( fill_prts( ) )
+                      ( fill_exchange_rates( ) )
+                      ( fill_cost_categories( ) )
+                      ( fill_tech_objects( ) )
+                      ( fill_holidays( ) )
+                      ( fill_order_statuses( ) )
+                      ( fill_file_types( ) ) ).
+  ENDMETHOD.
   METHOD fill_maint_order_types.
     DATA order_types TYPE STANDARD TABLE OF zts_ord_type WITH EMPTY KEY.
     DATA texts       TYPE STANDARD TABLE OF zts_ord_type_t WITH EMPTY KEY.
@@ -1090,4 +1223,5 @@ CLASS zcl_ts_maint_customizing IMPLEMENTATION.
     result = |{ holiday_year }{ month WIDTH = 2 ALIGN = RIGHT PAD = '0' }{ day WIDTH = 2 ALIGN = RIGHT PAD = '0' }|.
   ENDMETHOD.
 ENDCLASS.
+
 
