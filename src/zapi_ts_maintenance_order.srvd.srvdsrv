@@ -1,0 +1,10 @@
+@EndUserText.label: 'Maintenance Order - Web API'
+define service ZAPI_TS_MAINTENANCE_ORDER {
+  expose ZA_TS_MAINTENANCE_ORDER     as MaintenanceOrder;
+  expose ZA_TS_MAINTENANCE_OPERATION as MaintenanceOperation;
+  expose ZA_TS_MAINTENANCE_COSTS     as MaintenanceCosts;
+  expose ZA_TS_MAINTENANCE_COMPONENT as MaintenanceComponent;
+  expose ZA_TS_MAINTENANCE_PRT       as MaintenancePrt;
+  expose ZA_TS_MAINTENANCE_ATTACH    as MaintenanceAttachment;
+  expose ZC_TS_MAINT_ORDER_STATUS    as MaintenanceOrderStatus;
+}

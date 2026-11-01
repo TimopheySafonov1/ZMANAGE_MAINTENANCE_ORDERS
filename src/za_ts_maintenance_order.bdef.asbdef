@@ -1,0 +1,58 @@
+projection;
+strict ( 2 );
+
+define behavior for ZA_TS_MAINTENANCE_ORDER alias MaintenanceOrder
+use etag
+{
+  use create;
+  use update;
+  use delete;
+
+  use action releaseOrder;
+  use action completeOrder;
+
+  use association _Operations { create; }
+  use association _Costs;
+  use association _Attachments { create; }
+}
+
+define behavior for ZA_TS_MAINTENANCE_OPERATION alias MaintenanceOperation
+{
+  use update;
+  use delete;
+
+  use association _MaintenanceOrder;
+  use association _Components { create; }
+  use association _PRTs { create; }
+}
+
+define behavior for ZA_TS_MAINTENANCE_COSTS alias MaintenanceCosts
+{
+  use association _MaintenanceOrder;
+}
+
+define behavior for ZA_TS_MAINTENANCE_COMPONENT alias MaintenanceComponent
+{
+  use update;
+  use delete;
+
+  use association _MaintenanceOperation;
+  use association _MaintenanceOrder;
+}
+
+define behavior for ZA_TS_MAINTENANCE_PRT alias MaintenancePrt
+{
+  use update;
+  use delete;
+
+  use association _MaintenanceOperation;
+  use association _MaintenanceOrder;
+}
+
+define behavior for ZA_TS_MAINTENANCE_ATTACH alias MaintenanceAttachment
+{
+  use update;
+  use delete;
+
+  use association _MaintenanceOrder;
+}
