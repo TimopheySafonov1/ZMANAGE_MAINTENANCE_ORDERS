@@ -29,6 +29,8 @@ define behavior for ZC_TS_MAINTENANCE_OPERATION alias MaintenanceOperation
   use update;
   use delete;
 
+  use action confirmOperation;
+
   use association _MaintenanceOrder { with draft; }
   use association _Components { create; with draft; }
   use association _PRTs { create; with draft; }

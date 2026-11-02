@@ -9,7 +9,7 @@ CLASS zcl_ts_maint_demo_data DEFINITION PUBLIC FINAL CREATE PUBLIC.
            END OF steps.
 
     CONSTANTS: BEGIN OF run,
-                 clear_orders       TYPE abap_bool VALUE abap_false,
+                 clear_orders       TYPE abap_bool VALUE abap_true,
                  delete_customizing TYPE abap_bool VALUE abap_true,
                  fill_customizing   TYPE abap_bool VALUE abap_true,
                END OF run.
@@ -142,6 +142,12 @@ CLASS zcl_ts_maint_demo_data DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS delete_order_statuses
       RETURNING VALUE(result) TYPE string.
 
+    METHODS fill_operation_statuses
+      RETURNING VALUE(result) TYPE string.
+
+    METHODS delete_operation_statuses
+      RETURNING VALUE(result) TYPE string.
+
     METHODS fill_file_types
       RETURNING VALUE(result) TYPE string.
 
@@ -234,6 +240,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
                       ( delete_tech_objects( ) )
                       ( delete_holidays( ) )
                       ( delete_order_statuses( ) )
+                      ( delete_operation_statuses( ) )
                       ( delete_file_types( ) ) ).
   ENDMETHOD.
 
@@ -258,6 +265,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
                       ( fill_tech_objects( ) )
                       ( fill_holidays( ) )
                       ( fill_order_statuses( ) )
+                      ( fill_operation_statuses( ) )
                       ( fill_file_types( ) ) ).
   ENDMETHOD.
   METHOD fill_maint_order_types.
@@ -1107,6 +1115,27 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     result = |Order statuses deleted: { sy-dbcnt } texts|.
   ENDMETHOD.
 
+  METHOD fill_operation_statuses.
+    DATA texts TYPE STANDARD TABLE OF zts_oper_stat_t WITH EMPTY KEY.
+
+    texts = VALUE #( ( language = 'E' status = 'WAIT' description = 'Waiting' )
+                     ( language = 'L' status = 'WAIT' description = 'Oczekuje' )
+                     ( language = 'E' status = 'OPEN' description = 'Open' )
+                     ( language = 'L' status = 'OPEN' description = 'Otwarta' )
+                     ( language = 'E' status = 'CONF' description = 'Completed' )
+                     ( language = 'L' status = 'CONF' description = 'Zakończona' ) ).
+
+    MODIFY zts_oper_stat_t FROM TABLE @texts.
+
+    result = |Operation statuses filled: { lines( texts ) } texts|.
+  ENDMETHOD.
+
+  METHOD delete_operation_statuses.
+    DELETE FROM zts_oper_stat_t.
+
+    result = |Operation statuses deleted: { sy-dbcnt } texts|.
+  ENDMETHOD.
+
   METHOD fill_file_types.
     DATA file_types TYPE STANDARD TABLE OF zts_file_type WITH EMPTY KEY.
     DATA texts      TYPE STANDARD TABLE OF zts_file_type_t WITH EMPTY KEY.
@@ -1223,5 +1252,6 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     result = |{ holiday_year }{ month WIDTH = 2 ALIGN = RIGHT PAD = '0' }{ day WIDTH = 2 ALIGN = RIGHT PAD = '0' }|.
   ENDMETHOD.
 ENDCLASS.
+
 
 

@@ -8,6 +8,7 @@ define view entity ZC_TS_MAINTENANCE_OPERATION
   key OperationUuid,
       OrderUuid,
       OperationId,
+      Stage,
       Description,
       @ObjectModel.text.element: [ 'PersonRespName' ]
       @UI.textArrangement: #TEXT_FIRST
@@ -30,6 +31,14 @@ define view entity ZC_TS_MAINTENANCE_OPERATION
       PlannedFinish,
       ActualStart,
       ActualFinish,
+      Confirmed,
+      @ObjectModel.text.element: [ 'OperationStatusText' ]
+      @UI.textArrangement: #TEXT_ONLY
+      OperationStatus,
+      @UI.hidden: true
+      _OperationStatus[1: Language = $session.system_language].StatusDescription as OperationStatusText,
+      OperationStatusCriticality,
+      WaitingFor,
       _MaintenanceOrder : redirected to parent ZC_TS_MAINTENANCE_ORDER,
       _Components       : redirected to composition child ZC_TS_MAINTENANCE_COMPONENT,
       _PRTs             : redirected to composition child ZC_TS_MAINTENANCE_PRT

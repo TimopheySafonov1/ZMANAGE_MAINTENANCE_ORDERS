@@ -7,6 +7,7 @@ define view entity ZA_TS_MAINTENANCE_OPERATION
   key OperationUuid,
       OrderUuid,
       OperationId,
+      Stage,
       Description,
       PersonResp,
       _PersonResp.FullName as PersonRespName,
@@ -26,6 +27,10 @@ define view entity ZA_TS_MAINTENANCE_OPERATION
       PlannedFinish,
       ActualStart,
       ActualFinish,
+      Confirmed,
+      OperationStatus,
+      _OperationStatus[1: Language = $session.system_language].StatusDescription as OperationStatusText,
+      WaitingFor,
       _MaintenanceOrder : redirected to parent ZA_TS_MAINTENANCE_ORDER,
       _Components       : redirected to composition child ZA_TS_MAINTENANCE_COMPONENT,
       _PRTs             : redirected to composition child ZA_TS_MAINTENANCE_PRT

@@ -51,7 +51,7 @@ CLASS zcl_ts_maint_factory IMPLEMENTATION.
 
   METHOD operation.
     IF operation_instance IS NOT BOUND.
-      operation_instance = NEW #( ).
+      operation_instance = NEW #( data_provider( ) ).
     ENDIF.
     result = operation_instance.
   ENDMETHOD.
@@ -86,7 +86,7 @@ CLASS zcl_ts_maint_factory IMPLEMENTATION.
 
   METHOD inject_data_provider.
     data_provider_instance = data_provider.
-    CLEAR: order_instance, component_instance, prt_instance, costs_instance, attachment_instance.
+    CLEAR: order_instance, operation_instance, component_instance, prt_instance, costs_instance, attachment_instance.
   ENDMETHOD.
 ENDCLASS.
 

@@ -11,6 +11,7 @@ define view entity ZI_TS_MAINTENANCE_OPERATION
   key operation_uuid                 as OperationUuid,
       order_uuid                     as OrderUuid,
       operation_id                   as OperationId,
+      stage                          as Stage,
       description                    as Description,
       person_resp                    as PersonResp,
       planned_work_work_unit         as PlannedWorkUnit,
@@ -29,6 +30,9 @@ define view entity ZI_TS_MAINTENANCE_OPERATION
       planned_finish                 as PlannedFinish,
       actual_start                   as ActualStart,
       actual_finish                  as ActualFinish,
+      confirmed                      as Confirmed,
+      oper_status                    as OperationStatus,
+      waiting_for                    as WaitingFor,
       _MaintenanceOrder,
       _Components,
       _PRTs

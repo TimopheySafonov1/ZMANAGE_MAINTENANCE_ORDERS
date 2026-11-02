@@ -32,6 +32,7 @@ CLASS ltc_demo_data IMPLEMENTATION.
                         ( 'ZTS_ITEM_CAT' )
                         ( 'ZTS_ITEM_CAT_T' )
                         ( 'ZTS_MAINT_STAT_T' )
+                        ( 'ZTS_OPER_STAT_T' )
                         ( 'ZTS_ORD_TYPE' )
                         ( 'ZTS_ORD_TYPE_T' )
                         ( 'ZTS_PLANT' )
@@ -85,7 +86,9 @@ CLASS ltc_demo_data IMPLEMENTATION.
   METHOD fill_writes_customizing.
     DATA(messages) = cut->execute( VALUE #( fill_customizing = abap_true ) ).
 
-    cl_abap_unit_assert=>assert_equals( act = lines( messages ) exp = 20 ).
+    cl_abap_unit_assert=>assert_equals( act = lines( messages ) exp = 21 ).
+    SELECT COUNT( * ) FROM zts_oper_stat_t INTO @DATA(operation_statuses).
+    cl_abap_unit_assert=>assert_equals( act = operation_statuses exp = 6 ).
     SELECT COUNT( * ) FROM zts_ord_type INTO @DATA(order_types).
     SELECT COUNT( * ) FROM zts_ord_type_t INTO @DATA(order_type_texts).
     SELECT COUNT( * ) FROM zts_resp_person INTO @DATA(persons).
@@ -101,8 +104,9 @@ CLASS ltc_demo_data IMPLEMENTATION.
 
     DATA(messages) = cut->execute( VALUE #( delete_customizing = abap_true ) ).
 
-    cl_abap_unit_assert=>assert_equals( act = lines( messages ) exp = 20 ).
+    cl_abap_unit_assert=>assert_equals( act = lines( messages ) exp = 21 ).
     cl_abap_unit_assert=>assert_equals( act = messages[ 1 ] exp = `Order types deleted: 2 types, 4 texts` ).
+    cl_abap_unit_assert=>assert_true( xsdbool( line_exists( messages[ table_line = `Operation statuses deleted: 6 texts` ] ) ) ).
     SELECT COUNT( * ) FROM zts_ord_type INTO @DATA(order_types).
     SELECT COUNT( * ) FROM zts_holiday INTO @DATA(holidays).
     SELECT COUNT( * ) FROM zts_component INTO @DATA(components).
@@ -157,4 +161,5 @@ CLASS ltc_demo_data IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = order_types exp = 2 ).
   ENDMETHOD.
 ENDCLASS.
+
 

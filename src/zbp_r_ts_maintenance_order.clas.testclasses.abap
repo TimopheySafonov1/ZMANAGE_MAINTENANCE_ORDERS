@@ -160,6 +160,9 @@ CLASS ltc_behavior_pool DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATIO
     METHODS remembered_orders
       RETURNING VALUE(result) TYPE i.
 
+    METHODS set_stage
+      IMPORTING stage TYPE zcl_ts_maint_operation=>operation-Stage.
+
     METHODS order_global_auth FOR TESTING.
     METHODS order_features FOR TESTING.
     METHODS order_id_assigned FOR TESTING.
@@ -173,6 +176,8 @@ CLASS ltc_behavior_pool DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATIO
     METHODS order_release FOR TESTING.
     METHODS order_complete FOR TESTING.
     METHODS order_validation FOR TESTING.
+    METHODS order_complete_blocked FOR TESTING.
+    METHODS order_schedule FOR TESTING.
 
     METHODS operation_features FOR TESTING.
     METHODS operation_numbering FOR TESTING.
@@ -182,6 +187,9 @@ CLASS ltc_behavior_pool DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATIO
     METHODS operation_with_items_kept FOR TESTING.
     METHODS operation_costs FOR TESTING.
     METHODS operation_precheck_delete FOR TESTING.
+    METHODS operation_schedule FOR TESTING.
+    METHODS operation_confirm FOR TESTING.
+    METHODS operation_validation FOR TESTING.
 
     METHODS component_features FOR TESTING.
     METHODS component_order_uuid FOR TESTING.
@@ -353,6 +361,13 @@ CLASS ltc_behavior_pool IMPLEMENTATION.
 
   METHOD remembered_orders.
     result = lines( zcl_ts_maint_factory=>costs( )->take_orders( VALUE #( ) ) ).
+  ENDMETHOD.
+
+  METHOD set_stage.
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        UPDATE FIELDS ( Stage )
+        WITH VALUE #( ( %is_draft = draft OperationUuid = operation_uuid Stage = stage ) ).
   ENDMETHOD.
 
   METHOD order_global_auth.
@@ -540,6 +555,46 @@ CLASS ltc_behavior_pool IMPLEMENTATION.
     cl_abap_unit_assert=>assert_true( xsdbool( line_exists( reported-maintenanceorder[ %element-LongText = if_abap_behv=>mk-on ] ) ) ).
   ENDMETHOD.
 
+  METHOD order_complete_blocked.
+    DATA cut      TYPE REF TO lhc_maintenanceorder.
+    DATA result   TYPE TABLE FOR ACTION RESULT zr_ts_maintenance_order\\MaintenanceOrder~completeOrder.
+    DATA mapped   TYPE RESPONSE FOR MAPPED EARLY zr_ts_maintenance_order.
+    DATA failed   TYPE RESPONSE FOR FAILED EARLY zr_ts_maintenance_order.
+    DATA reported TYPE RESPONSE FOR REPORTED EARLY zr_ts_maintenance_order.
+    CREATE OBJECT cut FOR TESTING.
+    create_order( status = zif_ts_maint_order_status=>released ).
+    add_operation( ).
+
+    cut->completeorder( EXPORTING keys     = VALUE #( ( %is_draft = draft OrderUuid = order_uuid ) )
+                        CHANGING  result   = result
+                                  mapped   = mapped
+                                  failed   = failed
+                                  reported = reported ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenanceorder ) exp = 1 ).
+    cl_abap_unit_assert=>assert_bound( reported-maintenanceorder[ 1 ]-%msg ).
+    cl_abap_unit_assert=>assert_initial( result ).
+    cl_abap_unit_assert=>assert_equals( act = read_order( )-OrderStatus exp = zif_ts_maint_order_status=>released ).
+  ENDMETHOD.
+
+  METHOD order_schedule.
+    DATA cut      TYPE REF TO lhc_maintenanceorder.
+    DATA reported TYPE RESPONSE FOR REPORTED LATE zr_ts_maintenance_order.
+    CREATE OBJECT cut FOR TESTING.
+    CONVERT DATE CONV d( '20261110' ) TIME CONV t( '070000' ) TIME ZONE 'UTC' INTO UTCLONG DATA(start).
+    create_order( start = start ).
+    add_operation( ).
+    set_stage( 1 ).
+
+    cut->scheduleoperations( EXPORTING keys     = VALUE #( ( %is_draft = draft OrderUuid = order_uuid ) )
+                             CHANGING  reported = reported ).
+
+    DATA(operations) = read_operations( ).
+    DATA(operation) = operations[ 1 ].
+    cl_abap_unit_assert=>assert_not_initial( operation-PlannedStart ).
+    cl_abap_unit_assert=>assert_equals( act = operation-OperationStatus exp = zcl_ts_maint_operation=>status-open ).
+  ENDMETHOD.
+
   METHOD operation_features.
     DATA cut      TYPE REF TO lhc_maintenanceoperation.
     DATA result   TYPE TABLE FOR INSTANCE FEATURES RESULT zr_ts_maintenance_order\\MaintenanceOperation.
@@ -669,6 +724,62 @@ CLASS ltc_behavior_pool IMPLEMENTATION.
                                     reported = reported ).
 
     cl_abap_unit_assert=>assert_equals( act = remembered_orders( ) exp = 1 ).
+  ENDMETHOD.
+
+  METHOD operation_schedule.
+    DATA cut      TYPE REF TO lhc_maintenanceoperation.
+    DATA reported TYPE RESPONSE FOR REPORTED LATE zr_ts_maintenance_order.
+    CREATE OBJECT cut FOR TESTING.
+    create_order( ).
+    add_operation( ).
+    set_stage( 1 ).
+
+    cut->scheduleoperations( EXPORTING keys     = VALUE #( ( %is_draft = draft OperationUuid = operation_uuid )
+                                                           ( %is_draft = draft OperationUuid = unknown_uuid ) )
+                             CHANGING  reported = reported ).
+    cut->scheduleoperations( EXPORTING keys     = VALUE #( ( %is_draft = draft OperationUuid = unknown_uuid ) )
+                             CHANGING  reported = reported ).
+
+    DATA(operations) = read_operations( ).
+    cl_abap_unit_assert=>assert_equals( act = operations[ 1 ]-OperationStatus
+                                        exp = zcl_ts_maint_operation=>status-open ).
+  ENDMETHOD.
+
+  METHOD operation_confirm.
+    DATA cut      TYPE REF TO lhc_maintenanceoperation.
+    DATA result   TYPE TABLE FOR ACTION RESULT zr_ts_maintenance_order\\MaintenanceOperation~confirmOperation.
+    DATA mapped   TYPE RESPONSE FOR MAPPED EARLY zr_ts_maintenance_order.
+    DATA failed   TYPE RESPONSE FOR FAILED EARLY zr_ts_maintenance_order.
+    DATA reported TYPE RESPONSE FOR REPORTED EARLY zr_ts_maintenance_order.
+    CREATE OBJECT cut FOR TESTING.
+    create_order( status = zif_ts_maint_order_status=>released ).
+    add_operation( ).
+
+    cut->confirmoperation( EXPORTING keys     = VALUE #( ( %is_draft = draft OperationUuid = operation_uuid ) )
+                           CHANGING  result   = result
+                                     mapped   = mapped
+                                     failed   = failed
+                                     reported = reported ).
+
+    cl_abap_unit_assert=>assert_equals( act = result[ 1 ]-%param-Confirmed exp = abap_true ).
+    DATA(operations) = read_operations( ).
+    cl_abap_unit_assert=>assert_equals( act = operations[ 1 ]-ActualWork exp = 2 ).
+  ENDMETHOD.
+
+  METHOD operation_validation.
+    DATA cut      TYPE REF TO lhc_maintenanceoperation.
+    DATA failed   TYPE RESPONSE FOR FAILED LATE zr_ts_maintenance_order.
+    DATA reported TYPE RESPONSE FOR REPORTED LATE zr_ts_maintenance_order.
+    CREATE OBJECT cut FOR TESTING.
+    create_order( ).
+    add_operation( ).
+    set_stage( 0 ).
+
+    cut->validateexecution( EXPORTING keys     = VALUE #( ( %is_draft = draft OperationUuid = operation_uuid ) )
+                            CHANGING  failed   = failed
+                                      reported = reported ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenanceoperation ) exp = 1 ).
   ENDMETHOD.
 
   METHOD component_features.
@@ -980,4 +1091,5 @@ CLASS ltc_behavior_pool IMPLEMENTATION.
                                         exp = VALUE zif_ts_maint_data_provider=>order_uuids( ( deleted_uuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 

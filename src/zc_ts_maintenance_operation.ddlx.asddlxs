@@ -6,7 +6,7 @@
     title:       { type: #STANDARD, value: 'Description' },
     description: { type: #STANDARD, value: 'OperationId' }
   },
-  presentationVariant: [{ sortOrder: [{ by: 'OperationId', direction: #ASC }] }]
+  presentationVariant: [{ sortOrder: [{ by: 'Stage', direction: #ASC }, { by: 'OperationId', direction: #ASC }] }]
 }
 annotate entity ZC_TS_MAINTENANCE_OPERATION with
 {
@@ -15,6 +15,8 @@ annotate entity ZC_TS_MAINTENANCE_OPERATION with
       label: 'Informacje ogólne', position: 10 },
     { id: 'BasicData',   parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
       targetQualifier: 'BasicData', label: 'Dane podstawowe', position: 10 },
+    { id: 'Execution',   parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+      targetQualifier: 'Execution', label: 'Realizacja',      position: 15 },
     { id: 'Work',        parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
       targetQualifier: 'Work',      label: 'Praca',           position: 20 },
     { id: 'Dates',       parentId: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
@@ -37,6 +39,11 @@ annotate entity ZC_TS_MAINTENANCE_OPERATION with
          fieldGroup:     [{ qualifier: 'BasicData', position: 10 }] }
   OperationId;
 
+  @EndUserText.label: 'Etap'
+  @UI: { lineItem:   [{ position: 12, importance: #HIGH }],
+         fieldGroup: [{ qualifier: 'Execution', position: 10 }] }
+  Stage;
+
   @EndUserText.label: 'Opis'
   @UI: { lineItem:   [{ position: 20, importance: #HIGH }],
          fieldGroup: [{ qualifier: 'BasicData', position: 20 }] }
@@ -48,6 +55,30 @@ annotate entity ZC_TS_MAINTENANCE_OPERATION with
   @UI: { lineItem:   [{ position: 30, importance: #MEDIUM }],
          fieldGroup: [{ qualifier: 'BasicData', position: 30 }] }
   PersonResp;
+
+  @EndUserText.label: 'Status'
+  @UI: { lineItem:       [{ position: 32, importance: #HIGH,
+                            criticality: 'OperationStatusCriticality', criticalityRepresentation: #WITHOUT_ICON },
+                          { type: #FOR_ACTION, dataAction: 'confirmOperation', label: 'Potwierdź', inline: true,
+                            position: 36, importance: #HIGH }],
+         identification: [{ type: #FOR_ACTION, dataAction: 'confirmOperation', label: 'Potwierdź', position: 20 }],
+         fieldGroup:     [{ qualifier: 'Execution', position: 20,
+                            criticality: 'OperationStatusCriticality', criticalityRepresentation: #WITHOUT_ICON }] }
+  OperationStatus;
+
+  @UI.hidden: true
+  OperationStatusText;
+
+  @UI.hidden: true
+  OperationStatusCriticality;
+
+  @EndUserText.label: 'Czeka na'
+  @UI: { lineItem:   [{ position: 34, importance: #HIGH }],
+         fieldGroup: [{ qualifier: 'Execution', position: 30 }] }
+  WaitingFor;
+
+  @UI.hidden: true
+  Confirmed;
 
   @EndUserText.label: 'Praca planowana'
   @UI: { lineItem:   [{ position: 40, importance: #MEDIUM }],

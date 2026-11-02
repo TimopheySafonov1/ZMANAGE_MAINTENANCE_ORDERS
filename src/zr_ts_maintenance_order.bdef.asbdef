@@ -30,6 +30,7 @@ authorization master ( global )
   determination setDueDate on modify { field Priority, MaintOrdBasicStartDateTime; }
   determination setTechObjType on modify { field TechObject; }
   determination createFirstOperation on modify { create; }
+  determination scheduleOperations on modify { field MaintOrdBasicStartDateTime; }
   determination setInitialStatus on save { create; }
 
   action ( features : instance ) releaseOrder result [1] $self;
@@ -47,7 +48,7 @@ authorization master ( global )
                             permissions ( field MaintRevision, field TechObject, field LongText,
                                           field MaintOrdBasicStartDateTime, field MaintOrdBasicFinishDateTime );
     field Priority affects field MaintOrdFinalDueDateTime;
-    field MaintOrdBasicStartDateTime affects field MaintOrdFinalDueDateTime;
+    field MaintOrdBasicStartDateTime affects field MaintOrdFinalDueDateTime, entity _Operations;
     field TechObject affects field TechObjType;
     entity _Operations affects entity _Operations;
     action releaseOrder affects entity _Status;
@@ -58,7 +59,8 @@ authorization master ( global )
   draft action Discard;
   draft action ( features : instance ) Edit;
   draft action Resume;
-  draft determine action Prepare { validation validateTypeRules; validation MaintenanceAttachment~validateMimeType; }
+  draft determine action Prepare { validation validateTypeRules; validation MaintenanceOperation~validateExecution;
+                                   validation MaintenanceAttachment~validateMimeType; }
 
   mapping for zts_maint_order
     {
@@ -94,26 +96,33 @@ lock dependent by _MaintenanceOrder
 authorization dependent by _MaintenanceOrder
 {
   update;
-  delete ( precheck );
+  delete ( features : instance, precheck );
 
   association _MaintenanceOrder { with draft; }
   association _Components { create; with draft; }
   association _PRTs { create; with draft; }
 
   field ( numbering : managed, readonly ) OperationUuid;
-  field ( readonly ) OrderUuid, OperationId;
-  field ( features : instance ) ActualWork, ActualWorkUnit, ActualWorkDuration, ActualDurationUnit,
+  field ( readonly ) OrderUuid, OperationId, PlannedStart, PlannedFinish, Confirmed, OperationStatus, WaitingFor;
+  field ( features : instance ) Stage, ActualWork, ActualWorkUnit, ActualWorkDuration, ActualDurationUnit,
                                 ActualStart, ActualFinish;
+
+  action ( features : instance, authorization : update ) confirmOperation result [1] $self;
 
   determination setOperationId on modify { create; }
   determination createComponentAndPrt on modify { create; }
   determination addEmptyOperation on modify { field Description, PersonResp, PlannedWork, PlannedWorkDuration,
-                                              ActualWork, ActualWorkDuration, PlannedStart, PlannedFinish,
-                                              ActualStart, ActualFinish; }
+                                              ActualWork, ActualWorkDuration, ActualStart, ActualFinish; }
+  determination scheduleOperations on modify { create; delete; field Stage, Confirmed, Description, PersonResp,
+                                               PlannedWork, PlannedWorkUnit, PlannedWorkDuration, PlannedDurationUnit,
+                                               ActualWork, ActualWorkDuration, ActualStart, ActualFinish; }
   determination deleteIfEmpty on save { create; update; }
   determination calculateCosts on modify { create; delete; field Description, PersonResp, PlannedWork, PlannedWorkUnit,
                                            PlannedWorkDuration, PlannedDurationUnit, ActualWork, ActualWorkUnit,
                                            ActualWorkDuration, ActualDurationUnit; }
+
+  validation validateExecution on save { create; field Stage, Confirmed, ActualStart, ActualFinish,
+                                         PlannedWorkDuration, PlannedDurationUnit; }
 
   side effects
   {
@@ -127,6 +136,8 @@ authorization dependent by _MaintenanceOrder
     field ActualWorkUnit affects entity _MaintenanceOrder;
     field ActualWorkDuration affects entity _MaintenanceOrder;
     field ActualDurationUnit affects entity _MaintenanceOrder;
+    field Stage affects entity _MaintenanceOrder._Operations;
+    action confirmOperation affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations;
     entity _Components affects entity _MaintenanceOrder, entity _Components;
     entity _PRTs affects entity _MaintenanceOrder, entity _PRTs;
   }
@@ -150,6 +161,10 @@ authorization dependent by _MaintenanceOrder
       PlannedFinish       = planned_finish;
       ActualStart         = actual_start;
       ActualFinish        = actual_finish;
+      Stage               = stage;
+      Confirmed           = confirmed;
+      OperationStatus     = oper_status;
+      WaitingFor          = waiting_for;
     }
 }
 
