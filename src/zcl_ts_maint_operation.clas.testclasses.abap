@@ -356,7 +356,7 @@ CLASS ltc_operation IMPLEMENTATION.
                         operations = VALUE #( ( operation( first_uuid ) ) ( operation( second_uuid ) ) )
                         components = VALUE #( ( %is_draft     = if_abap_behv=>mk-on
                                                 OperationUuid = first_uuid
-                                                ComponentId   = 'CZ001' ) )
+                                                ComponentId   = 'SP001' ) )
                         prts       = VALUE #( ( %is_draft     = if_abap_behv=>mk-on
                                                 OperationUuid = second_uuid ) ) ).
 
@@ -384,7 +384,7 @@ CLASS ltc_operation IMPLEMENTATION.
                         components = VALUE #( )
                         prts       = VALUE #( ( %is_draft     = if_abap_behv=>mk-on
                                                 OperationUuid = first_uuid
-                                                PrtId         = 'PP006' ) ) ).
+                                                PrtId         = 'PT006' ) ) ).
 
     cl_abap_unit_assert=>assert_initial( deletes ).
   ENDMETHOD.
@@ -692,4 +692,5 @@ CLASS ltc_operation IMPLEMENTATION.
     cl_abap_unit_assert=>assert_initial( blockers ).
   ENDMETHOD.
 ENDCLASS.
+
 

@@ -19,11 +19,11 @@ CLASS ltd_data_provider IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_ts_maint_data_provider~get_components.
-    result = VALUE #( ( component = 'CZ001' price = '12.5' currency = 'PLN' ) ).
+    result = VALUE #( ( component = 'SP001' price = '12.5' currency = 'PLN' ) ).
   ENDMETHOD.
 
   METHOD zif_ts_maint_data_provider~get_prts.
-    result = VALUE #( ( prt = 'PP001' purchase_price = 1000 currency = 'PLN' useful_life_hours = 1000 ) ).
+    result = VALUE #( ( prt = 'PT001' purchase_price = 1000 currency = 'PLN' useful_life_hours = 1000 ) ).
   ENDMETHOD.
 ENDCLASS.
 
@@ -115,7 +115,7 @@ CLASS ltc_costs IMPLEMENTATION.
                       operations = operation( person = '000000000001' work = 1 )
                       components = VALUE #( ( %is_draft     = if_abap_behv=>mk-on
                                               OperationUuid = operation_uuid
-                                              ComponentId   = 'CZ001'
+                                              ComponentId   = 'SP001'
                                               ReqQuantity   = 4 ) )
                       prts       = VALUE #( ) ).
 
@@ -129,7 +129,7 @@ CLASS ltc_costs IMPLEMENTATION.
                                         components = VALUE #( )
                                         prts       = VALUE #( ( %is_draft     = if_abap_behv=>mk-on
                                                                 OperationUuid = operation_uuid
-                                                                PrtId         = 'PP001'
+                                                                PrtId         = 'PT001'
                                                                 ReqQuantity   = 1 ) ) ).
 
     cl_abap_unit_assert=>assert_equals( act = items[ 1 ]-prt_planned exp = 2 ).
@@ -212,7 +212,7 @@ CLASS ltc_costs IMPLEMENTATION.
                                         components = VALUE #( )
                                         prts       = VALUE #( ( %is_draft     = if_abap_behv=>mk-on
                                                                 OperationUuid = operation_uuid
-                                                                PrtId         = 'PP999'
+                                                                PrtId         = 'PT999'
                                                                 ReqQuantity   = 1 ) ) ).
 
     cl_abap_unit_assert=>assert_equals( act = items[ 1 ]-prt_planned exp = 0 ).
@@ -239,4 +239,5 @@ CLASS ltc_costs IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = cost_updates[ 1 ]-LaborPlannedCosts exp = 100 ).
   ENDMETHOD.
 ENDCLASS.
+
 

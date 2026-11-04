@@ -35,7 +35,7 @@ CLASS ltd_data_provider IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_ts_maint_data_provider~get_components.
-    result = VALUE #( ( component      = 'CZ001'
+    result = VALUE #( ( component      = 'SP001'
                         item_category  = 'L'
                         uom            = 'PC'
                         price          = '12.5'
@@ -44,7 +44,7 @@ CLASS ltd_data_provider IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_ts_maint_data_provider~get_prts.
-    result = VALUE #( ( prt               = 'PP006'
+    result = VALUE #( ( prt               = 'PT006'
                         uom               = 'PC'
                         purchase_price    = 1000
                         currency          = 'PLN'
@@ -128,12 +128,12 @@ CLASS ltc_behavior_pool DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATIO
                 planned_work TYPE zcl_ts_maint_operation=>operation-PlannedWork DEFAULT 2.
 
     METHODS add_component
-      IMPORTING component_id TYPE zcl_ts_maint_component=>component-ComponentId DEFAULT 'CZ001'
+      IMPORTING component_id TYPE zcl_ts_maint_component=>component-ComponentId DEFAULT 'SP001'
                 quantity     TYPE zcl_ts_maint_component=>component-ReqQuantity DEFAULT 4
                 with_order   TYPE abap_bool DEFAULT abap_true.
 
     METHODS add_prt
-      IMPORTING prt_id     TYPE zcl_ts_maint_prt=>prt-PrtId DEFAULT 'PP006'
+      IMPORTING prt_id     TYPE zcl_ts_maint_prt=>prt-PrtId DEFAULT 'PT006'
                 quantity   TYPE zcl_ts_maint_prt=>prt-ReqQuantity DEFAULT 1
                 with_order TYPE abap_bool DEFAULT abap_true.
 
@@ -1091,5 +1091,6 @@ CLASS ltc_behavior_pool IMPLEMENTATION.
                                         exp = VALUE zif_ts_maint_data_provider=>order_uuids( ( deleted_uuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 

@@ -631,7 +631,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
                                                  ( item_category = 'L' uom = 'KG'  price = '40.00'  name = 'Silikażel do odwilżacza' ) ).
 
     LOOP AT templates INTO DATA(template).
-      DATA(component) = CONV zts_component-component( |CZ{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
+      DATA(component) = CONV zts_component-component( |SP{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
       APPEND VALUE #( component     = component
                       item_category = template-item_category
                       uom           = template-uom
@@ -850,7 +850,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
         ( uom = 'ST'  purchase_price = '150.00'   useful_life_hours = 300   name = 'Półmaska z filtrem' ) ).
 
     LOOP AT templates INTO DATA(template).
-      DATA(prt) = CONV zts_prt-prt( |PP{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
+      DATA(prt) = CONV zts_prt-prt( |PT{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
       APPEND VALUE #( prt               = prt
                       uom               = template-uom
                       purchase_price    = template-purchase_price
@@ -1252,6 +1252,8 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     result = |{ holiday_year }{ month WIDTH = 2 ALIGN = RIGHT PAD = '0' }{ day WIDTH = 2 ALIGN = RIGHT PAD = '0' }|.
   ENDMETHOD.
 ENDCLASS.
+
+
 
 
 

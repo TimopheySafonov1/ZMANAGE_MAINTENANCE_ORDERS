@@ -69,19 +69,19 @@ CLASS ltc_data_provider IMPLEMENTATION.
     environment->insert_test_data( persons ).
 
     DATA components TYPE STANDARD TABLE OF zts_component WITH EMPTY KEY.
-    components = VALUE #( ( component = 'CZ001' item_category = 'L' uom = 'PC' price = '12.50' currency = 'PLN' ) ).
+    components = VALUE #( ( component = 'SP001' item_category = 'L' uom = 'PC' price = '12.50' currency = 'PLN' ) ).
     environment->insert_test_data( components ).
 
     DATA component_texts TYPE STANDARD TABLE OF zts_component_t WITH EMPTY KEY.
-    component_texts = VALUE #( ( language = sy-langu component = 'CZ001' component_text = 'Uszczelka' ) ).
+    component_texts = VALUE #( ( language = sy-langu component = 'SP001' component_text = 'Uszczelka' ) ).
     environment->insert_test_data( component_texts ).
 
     DATA prts TYPE STANDARD TABLE OF zts_prt WITH EMPTY KEY.
-    prts = VALUE #( ( prt = 'PP006' uom = 'PC' purchase_price = 9000 currency = 'PLN' useful_life_hours = 3000 ) ).
+    prts = VALUE #( ( prt = 'PT006' uom = 'PC' purchase_price = 9000 currency = 'PLN' useful_life_hours = 3000 ) ).
     environment->insert_test_data( prts ).
 
     DATA prt_texts TYPE STANDARD TABLE OF zts_prt_t WITH EMPTY KEY.
-    prt_texts = VALUE #( ( language = sy-langu prt = 'PP006' prt_text = 'Kamera termowizyjna' ) ).
+    prt_texts = VALUE #( ( language = sy-langu prt = 'PT006' prt_text = 'Kamera termowizyjna' ) ).
     environment->insert_test_data( prt_texts ).
 
     DATA time_units TYPE STANDARD TABLE OF zts_time_unit WITH EMPTY KEY.
@@ -149,17 +149,17 @@ CLASS ltc_data_provider IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD components_with_text.
-    DATA(components) = cut->get_components( VALUE #( ( 'CZ001' ) ) ).
+    DATA(components) = cut->get_components( VALUE #( ( 'SP001' ) ) ).
 
-    DATA(component) = components[ component = 'CZ001' ].
+    DATA(component) = components[ component = 'SP001' ].
     cl_abap_unit_assert=>assert_equals( act = component-component_text exp = 'Uszczelka' ).
     cl_abap_unit_assert=>assert_equals( act = component-price exp = '12.50' ).
   ENDMETHOD.
 
   METHOD prts_with_text.
-    DATA(prts) = cut->get_prts( VALUE #( ( 'PP006' ) ) ).
+    DATA(prts) = cut->get_prts( VALUE #( ( 'PT006' ) ) ).
 
-    DATA(prt) = prts[ prt = 'PP006' ].
+    DATA(prt) = prts[ prt = 'PT006' ].
     cl_abap_unit_assert=>assert_equals( act = prt-prt_text exp = 'Kamera termowizyjna' ).
     cl_abap_unit_assert=>assert_equals( act = prt-useful_life_hours exp = 3000 ).
   ENDMETHOD.
@@ -206,4 +206,5 @@ CLASS ltc_data_provider IMPLEMENTATION.
     cl_abap_unit_assert=>assert_initial( cut->get_status_history( VALUE #( ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 

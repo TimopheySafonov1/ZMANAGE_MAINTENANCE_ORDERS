@@ -30,7 +30,7 @@ CLASS ltc_component IMPLEMENTATION.
   METHOD setup.
     data_provider ?= cl_abap_testdouble=>create( 'ZIF_TS_MAINT_DATA_PROVIDER' ).
     cl_abap_testdouble=>configure_call( data_provider )->ignore_all_parameters( )->returning(
-      VALUE zif_ts_maint_data_provider=>components( ( component      = 'CZ001'
+      VALUE zif_ts_maint_data_provider=>components( ( component      = 'SP001'
                                                       item_category  = 'L'
                                                       uom            = 'PC'
                                                       component_text = 'Uszczelka' ) ) ).
@@ -48,7 +48,7 @@ CLASS ltc_component IMPLEMENTATION.
 
   METHOD empty_row_is_recognized.
     cl_abap_unit_assert=>assert_true( zcl_ts_maint_component=>is_empty( component( first_uuid ) ) ).
-    cl_abap_unit_assert=>assert_false( zcl_ts_maint_component=>is_empty( component( uuid = first_uuid component_id = 'CZ001' ) ) ).
+    cl_abap_unit_assert=>assert_false( zcl_ts_maint_component=>is_empty( component( uuid = first_uuid component_id = 'SP001' ) ) ).
   ENDMETHOD.
 
   METHOD fields_open_without_id.
@@ -58,7 +58,7 @@ CLASS ltc_component IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD fields_locked_with_id.
-    DATA(features) = cut->get_features( VALUE #( ( component( uuid = first_uuid component_id = 'CZ001' ) ) ) ).
+    DATA(features) = cut->get_features( VALUE #( ( component( uuid = first_uuid component_id = 'SP001' ) ) ) ).
 
     cl_abap_unit_assert=>assert_equals( act = features[ 1 ]-master_data exp = if_abap_behv=>fc-f-read_only ).
   ENDMETHOD.
@@ -78,7 +78,7 @@ CLASS ltc_component IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD master_data_is_copied.
-    DATA(updates) = cut->master_data_updates( VALUE #( ( component( uuid = first_uuid component_id = 'CZ001' ) ) ) ).
+    DATA(updates) = cut->master_data_updates( VALUE #( ( component( uuid = first_uuid component_id = 'SP001' ) ) ) ).
 
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-Description exp = 'Uszczelka' ).
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ItemCategory exp = 'L' ).
@@ -87,7 +87,7 @@ CLASS ltc_component IMPLEMENTATION.
 
   METHOD only_empty_rows_deleted.
     DATA(deletes) = cut->empty_components( VALUE #( ( component( first_uuid ) )
-                                                    ( component( uuid = second_uuid component_id = 'CZ001' ) ) ) ).
+                                                    ( component( uuid = second_uuid component_id = 'SP001' ) ) ) ).
 
     cl_abap_unit_assert=>assert_equals( act = lines( deletes ) exp = 1 ).
     cl_abap_unit_assert=>assert_equals( act = deletes[ 1 ]-ComponentUuid exp = first_uuid ).
@@ -96,7 +96,7 @@ CLASS ltc_component IMPLEMENTATION.
   METHOD empty_row_added_when_missing.
     DATA(creates) = cut->empty_row_creates(
                         operations = VALUE #( ( %is_draft = if_abap_behv=>mk-on OperationUuid = operation_uuid ) )
-                        components = VALUE #( ( component( uuid = first_uuid component_id = 'CZ001' ) ) ) ).
+                        components = VALUE #( ( component( uuid = first_uuid component_id = 'SP001' ) ) ) ).
 
     cl_abap_unit_assert=>assert_equals( act = lines( creates ) exp = 1 ).
     cl_abap_unit_assert=>assert_equals( act = creates[ 1 ]-%target[ 1 ]-%cid exp = `EMPTY_COMPONENT_1` ).
@@ -105,7 +105,7 @@ CLASS ltc_component IMPLEMENTATION.
   METHOD no_empty_row_when_present.
     DATA(creates) = cut->empty_row_creates(
                         operations = VALUE #( ( %is_draft = if_abap_behv=>mk-on OperationUuid = operation_uuid ) )
-                        components = VALUE #( ( component( uuid = first_uuid component_id = 'CZ001' ) )
+                        components = VALUE #( ( component( uuid = first_uuid component_id = 'SP001' ) )
                                               ( component( second_uuid ) ) ) ).
 
     cl_abap_unit_assert=>assert_initial( creates ).
@@ -115,4 +115,5 @@ CLASS ltc_component IMPLEMENTATION.
     cl_abap_unit_assert=>assert_initial( cut->master_data_updates( VALUE #( ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
