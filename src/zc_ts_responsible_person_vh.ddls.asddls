@@ -5,8 +5,7 @@
 @ObjectModel.usageType: { serviceQuality: #B, sizeCategory: #S, dataClass: #MASTER }
 @VDM.viewType: #CONSUMPTION
 @Search.searchable: true
-@UI.presentationVariant: [{ sortOrder: [{ by: 'LastName', direction: #ASC },
-                                        { by: 'FirstName', direction: #ASC }] }]
+@UI.presentationVariant: [{ sortOrder: [{ by: 'PersonResp', direction: #ASC }] }]
 define view entity ZC_TS_RESPONSIBLE_PERSON_VH
   as select from ZI_TS_RESP_PERSON
 {
@@ -43,3 +42,4 @@ define view entity ZC_TS_RESPONSIBLE_PERSON_VH
       @EndUserText.label: 'Waluta'
       Currency
 }
+

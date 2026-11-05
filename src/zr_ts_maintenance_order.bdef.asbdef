@@ -60,7 +60,9 @@ authorization master ( global )
   draft action ( features : instance ) Edit;
   draft action Resume;
   draft determine action Prepare { validation validateTypeRules; validation MaintenanceOperation~validateExecution;
-                                   validation MaintenanceAttachment~validateMimeType; }
+                                   validation MaintenanceAttachment~validateMimeType;
+                                   validation MaintenanceComponent~validateQuantity;
+                                   validation MaintenancePrt~validateQuantity; }
 
   mapping for zts_maint_order
     {
@@ -224,6 +226,7 @@ authorization dependent by _MaintenanceOrder
   determination calculateCosts on modify { create; delete; field ComponentId, ReqQuantity, Uom; }
   determination addEmptyComponent on modify { field ComponentId, Description, ReqQuantity; }
   determination deleteIfEmpty on save { create; update; }
+  validation validateQuantity on save { create; update; }
 
   side effects
   {
@@ -266,6 +269,7 @@ authorization dependent by _MaintenanceOrder
   determination setPrtData on modify { field PrtId; }
   determination addEmptyPrt on modify { field PrtId, Description, ReqQuantity, PlannedUsage, ActualUsage; }
   determination deleteIfEmpty on save { create; update; }
+  validation validateQuantity on save { create; update; }
   determination calculateCosts on modify { create; delete; field PrtId, ReqQuantity, PlannedUsage, PlannedUsageUnit,
                                            ActualUsage, ActualUsageUnit; }
 

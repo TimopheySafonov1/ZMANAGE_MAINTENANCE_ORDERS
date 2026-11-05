@@ -112,6 +112,12 @@ CLASS zcl_ts_maint_demo_data DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS delete_prts
       RETURNING VALUE(result) TYPE string.
 
+    METHODS fill_prt_stock
+      RETURNING VALUE(result) TYPE string.
+
+    METHODS delete_prt_stock
+      RETURNING VALUE(result) TYPE string.
+
     METHODS fill_exchange_rates
       RETURNING VALUE(result) TYPE string.
 
@@ -234,6 +240,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
                       ( delete_units_of_measure( ) )
                       ( delete_storage_locations( ) )
                       ( delete_component_stock( ) )
+                      ( delete_prt_stock( ) )
                       ( delete_prts( ) )
                       ( delete_exchange_rates( ) )
                       ( delete_cost_categories( ) )
@@ -260,6 +267,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
                       ( fill_storage_locations( ) )
                       ( fill_component_stock( ) )
                       ( fill_prts( ) )
+                      ( fill_prt_stock( ) )
                       ( fill_exchange_rates( ) )
                       ( fill_cost_categories( ) )
                       ( fill_tech_objects( ) )
@@ -877,6 +885,42 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     result = |Production resources/tools deleted: { deleted_prts } PRTs, { deleted_texts } texts|.
   ENDMETHOD.
 
+  METHOD fill_prt_stock.
+    DATA stock TYPE STANDARD TABLE OF zts_prt_stock WITH EMPTY KEY.
+
+    SELECT prt, uom FROM zts_prt ORDER BY prt INTO TABLE @DATA(prts).
+    SELECT plant, storage_loc FROM zts_stor_loc
+      WHERE storage_loc IN ( '0001', '0004' )
+      ORDER BY plant, storage_loc
+      INTO TABLE @DATA(storage_locs).
+
+    LOOP AT prts INTO DATA(prt).
+      DATA(prt_index) = sy-tabix.
+
+      LOOP AT storage_locs INTO DATA(storage_loc).
+        IF storage_loc-storage_loc = '0001' AND prt_index MOD 2 = 1.
+          CONTINUE.
+        ENDIF.
+
+        APPEND VALUE #( prt                = prt-prt
+                        plant              = storage_loc-plant
+                        storage_loc        = storage_loc-storage_loc
+                        uom                = prt-uom
+                        unrestricted_stock = prt_index MOD 8 + 1 ) TO stock.
+      ENDLOOP.
+    ENDLOOP.
+
+    MODIFY zts_prt_stock FROM TABLE @stock.
+
+    result = |PRT stock filled: { lines( stock ) } entries for { lines( prts ) } PRTs|.
+  ENDMETHOD.
+
+  METHOD delete_prt_stock.
+    DELETE FROM zts_prt_stock.
+
+    result = |PRT stock deleted: { sy-dbcnt } entries|.
+  ENDMETHOD.
+
   METHOD fill_exchange_rates.
     DATA rates TYPE STANDARD TABLE OF zts_exch_rate WITH EMPTY KEY.
 
@@ -1252,6 +1296,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     result = |{ holiday_year }{ month WIDTH = 2 ALIGN = RIGHT PAD = '0' }{ day WIDTH = 2 ALIGN = RIGHT PAD = '0' }|.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

@@ -22,6 +22,7 @@ CLASS ltc_demo_data IMPLEMENTATION.
   METHOD class_setup.
     environment = cl_osql_test_environment=>create( VALUE #(
                         ( 'ZTS_COMP_STOCK' )
+                        ( 'ZTS_PRT_STOCK' )
                         ( 'ZTS_COMPONENT' )
                         ( 'ZTS_COMPONENT_T' )
                         ( 'ZTS_COST_CAT_T' )
@@ -161,5 +162,6 @@ CLASS ltc_demo_data IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = order_types exp = 2 ).
   ENDMETHOD.
 ENDCLASS.
+
 
 

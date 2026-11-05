@@ -46,7 +46,14 @@ CLASS zcl_ts_maint_prt DEFINITION PUBLIC FINAL CREATE PUBLIC.
                 prts          TYPE prts
       RETURNING VALUE(result) TYPE creates.
 
+    METHODS validate
+      IMPORTING prts     TYPE prts
+      CHANGING  failed   TYPE zcl_ts_maint_order=>failed
+                reported TYPE zcl_ts_maint_order=>reported.
+
   PRIVATE SECTION.
+    CONSTANTS state_area TYPE string VALUE 'VALIDATE_QUANTITY'.
+
     DATA data_provider TYPE REF TO zif_ts_maint_data_provider.
 ENDCLASS.
 
@@ -116,6 +123,33 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+  METHOD validate.
+    LOOP AT prts INTO DATA(prt).
+      APPEND VALUE #( %tky        = prt-%tky
+                      %state_area = state_area ) TO reported-maintenanceprt.
+
+      IF is_empty( prt ) = abap_true OR prt-ReqQuantity IS NOT INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      DATA(name) = COND string( WHEN prt-Description IS NOT INITIAL
+                                THEN prt-Description
+                                ELSE prt-PrtId ).
+
+      APPEND VALUE #( %tky = prt-%tky ) TO failed-maintenanceprt.
+      APPEND VALUE #( %tky                 = prt-%tky
+                      %state_area          = state_area
+                      %msg                 = zcx_ts_maint_message=>error( pl = |Podaj ilość pomocy produkcyjnej: { name }.|
+                                                                          en = |Enter the quantity of the production resource: { name }.| )
+                      %element-ReqQuantity = if_abap_behv=>mk-on
+                      %path                = VALUE #( MaintenanceOrder-%is_draft         = prt-%is_draft
+                                                      MaintenanceOrder-OrderUuid         = prt-OrderUuid
+                                                      MaintenanceOperation-%is_draft     = prt-%is_draft
+                                                      MaintenanceOperation-OperationUuid = prt-OperationUuid ) )
+        TO reported-maintenanceprt.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD empty_row_creates.
     DATA(draft_operations) = operations.
     DELETE draft_operations WHERE %is_draft = if_abap_behv=>mk-off.
@@ -141,4 +175,5 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 

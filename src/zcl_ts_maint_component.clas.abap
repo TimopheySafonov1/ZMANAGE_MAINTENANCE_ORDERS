@@ -42,7 +42,14 @@ CLASS zcl_ts_maint_component DEFINITION PUBLIC FINAL CREATE PUBLIC.
                 components    TYPE components
       RETURNING VALUE(result) TYPE creates.
 
+    METHODS validate
+      IMPORTING components TYPE components
+      CHANGING  failed   TYPE zcl_ts_maint_order=>failed
+                reported TYPE zcl_ts_maint_order=>reported.
+
   PRIVATE SECTION.
+    CONSTANTS state_area TYPE string VALUE 'VALIDATE_QUANTITY'.
+
     DATA data_provider TYPE REF TO zif_ts_maint_data_provider.
 ENDCLASS.
 
@@ -101,6 +108,33 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+  METHOD validate.
+    LOOP AT components INTO DATA(component).
+      APPEND VALUE #( %tky        = component-%tky
+                      %state_area = state_area ) TO reported-maintenancecomponent.
+
+      IF is_empty( component ) = abap_true OR component-ReqQuantity IS NOT INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      DATA(name) = COND string( WHEN component-Description IS NOT INITIAL
+                                THEN component-Description
+                                ELSE component-ComponentId ).
+
+      APPEND VALUE #( %tky = component-%tky ) TO failed-maintenancecomponent.
+      APPEND VALUE #( %tky                 = component-%tky
+                      %state_area          = state_area
+                      %msg                 = zcx_ts_maint_message=>error( pl = |Podaj ilość komponentu: { name }.|
+                                                                          en = |Enter the quantity of component: { name }.| )
+                      %element-ReqQuantity = if_abap_behv=>mk-on
+                      %path                = VALUE #( MaintenanceOrder-%is_draft         = component-%is_draft
+                                                      MaintenanceOrder-OrderUuid         = component-OrderUuid
+                                                      MaintenanceOperation-%is_draft     = component-%is_draft
+                                                      MaintenanceOperation-OperationUuid = component-OperationUuid ) )
+        TO reported-maintenancecomponent.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD empty_row_creates.
     DATA(draft_operations) = operations.
     DELETE draft_operations WHERE %is_draft = if_abap_behv=>mk-off.
@@ -126,4 +160,5 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 

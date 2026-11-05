@@ -605,6 +605,9 @@ CLASS lhc_maintenancecomponent DEFINITION INHERITING FROM cl_abap_behavior_handl
 
     METHODS precheck_delete FOR PRECHECK
       IMPORTING keys FOR DELETE MaintenanceComponent.
+
+    METHODS validatequantity FOR VALIDATE ON SAVE
+      IMPORTING keys FOR MaintenanceComponent~validateQuantity.
 ENDCLASS.
 
 CLASS lhc_maintenancecomponent IMPLEMENTATION.
@@ -713,6 +716,17 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
                                                               ( %is_draft = operation-%is_draft
                                                                 OrderUuid = operation-OrderUuid ) ) ).
   ENDMETHOD.
+
+  METHOD validatequantity.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceComponent
+        ALL FIELDS WITH CORRESPONDING #( keys )
+        RESULT DATA(components).
+
+    zcl_ts_maint_factory=>component( )->validate( EXPORTING components = components
+                                              CHANGING  failed   = failed
+                                                        reported = reported ).
+  ENDMETHOD.
 ENDCLASS.
 
 CLASS lhc_maintenanceprt DEFINITION INHERITING FROM cl_abap_behavior_handler FRIENDS ltc_behavior_pool.
@@ -737,6 +751,9 @@ CLASS lhc_maintenanceprt DEFINITION INHERITING FROM cl_abap_behavior_handler FRI
 
     METHODS precheck_delete FOR PRECHECK
       IMPORTING keys FOR DELETE MaintenancePrt.
+
+    METHODS validatequantity FOR VALIDATE ON SAVE
+      IMPORTING keys FOR MaintenancePrt~validateQuantity.
 ENDCLASS.
 
 CLASS lhc_maintenanceprt IMPLEMENTATION.
@@ -855,6 +872,17 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
                                                               ( %is_draft = operation-%is_draft
                                                                 OrderUuid = operation-OrderUuid ) ) ).
   ENDMETHOD.
+
+  METHOD validatequantity.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenancePrt
+        ALL FIELDS WITH CORRESPONDING #( keys )
+        RESULT DATA(prts).
+
+    zcl_ts_maint_factory=>prt( )->validate( EXPORTING prts = prts
+                                              CHANGING  failed   = failed
+                                                        reported = reported ).
+  ENDMETHOD.
 ENDCLASS.
 
 CLASS lhc_maintenanceattachment DEFINITION INHERITING FROM cl_abap_behavior_handler FRIENDS ltc_behavior_pool.
@@ -913,4 +941,5 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
