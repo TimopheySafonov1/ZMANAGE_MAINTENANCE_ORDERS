@@ -796,9 +796,8 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
         DATA(storage_loc_index) = sy-tabix.
 
         DATA(unrestricted) = COND i( WHEN component-item_category = 'N'
-                                       OR ( component_index + storage_loc_index ) MOD 4 = 0
                                      THEN 0
-                                     ELSE ( component_index * 37 + storage_loc_index * 11 ) MOD 200 + 5 ).
+                                     ELSE ( component_index * 37 + storage_loc_index * 11 ) MOD 200 + 20 ).
         DATA(consignment) = COND i( WHEN component-item_category = 'N'
                                       OR ( component_index * storage_loc_index ) MOD 5 <> 0
                                     THEN 0
@@ -906,7 +905,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
                         plant              = storage_loc-plant
                         storage_loc        = storage_loc-storage_loc
                         uom                = prt-uom
-                        unrestricted_stock = prt_index MOD 8 + 1 ) TO stock.
+                        unrestricted_stock = prt_index MOD 8 * 5 + 20 ) TO stock.
       ENDLOOP.
     ENDLOOP.
 
