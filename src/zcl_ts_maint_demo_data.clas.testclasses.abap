@@ -30,8 +30,6 @@ CLASS ltc_demo_data IMPLEMENTATION.
                         ( 'ZTS_FILE_TYPE' )
                         ( 'ZTS_FILE_TYPE_T' )
                         ( 'ZTS_HOLIDAY' )
-                        ( 'ZTS_ITEM_CAT' )
-                        ( 'ZTS_ITEM_CAT_T' )
                         ( 'ZTS_MAINT_STAT_T' )
                         ( 'ZTS_OPER_STAT_T' )
                         ( 'ZTS_ORD_TYPE' )
@@ -162,6 +160,7 @@ CLASS ltc_demo_data IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = order_types exp = 2 ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

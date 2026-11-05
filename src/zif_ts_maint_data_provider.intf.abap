@@ -3,8 +3,9 @@ INTERFACE zif_ts_maint_data_provider PUBLIC.
   TYPES order_type_keys TYPE STANDARD TABLE OF zts_ord_type-order_type WITH EMPTY KEY.
 
   TYPES: BEGIN OF tech_object,
-           tech_object   TYPE zts_tech_obj-tech_object,
-           tech_obj_type TYPE zts_tech_obj-tech_obj_type,
+           tech_object    TYPE zts_tech_obj-tech_object,
+           planning_plant TYPE zts_tech_obj-planning_plant,
+           tech_obj_type  TYPE zts_tech_obj-tech_obj_type,
          END OF tech_object,
          tech_objects     TYPE HASHED TABLE OF tech_object WITH UNIQUE KEY tech_object,
          tech_object_keys TYPE STANDARD TABLE OF zts_tech_obj-tech_object WITH EMPTY KEY.
@@ -14,7 +15,6 @@ INTERFACE zif_ts_maint_data_provider PUBLIC.
 
   TYPES: BEGIN OF component,
            component      TYPE zts_component-component,
-           item_category  TYPE zts_component-item_category,
            uom            TYPE zts_component-uom,
            price          TYPE zts_component-price,
            currency       TYPE zts_component-currency,

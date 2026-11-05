@@ -1,5 +1,6 @@
 CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
   PUBLIC SECTION.
+    TYPES order_updates TYPE TABLE FOR UPDATE zr_ts_maintenance_order\\MaintenanceOrder.
     TYPES keys              TYPE TABLE FOR READ IMPORT zr_ts_maintenance_order\\MaintenanceOperation.
     TYPES operations        TYPE TABLE FOR READ RESULT zr_ts_maintenance_order\\MaintenanceOperation.
     TYPES operation         TYPE STRUCTURE FOR READ RESULT zr_ts_maintenance_order\\MaintenanceOperation.
@@ -102,6 +103,11 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS confirm
       IMPORTING operations    TYPE operations
       RETURNING VALUE(result) TYPE updates.
+
+    METHODS basic_finish_updates
+      IMPORTING orders        TYPE zcl_ts_maint_order=>orders
+                operations    TYPE operations
+      RETURNING VALUE(result) TYPE order_updates.
 
     METHODS validate
       IMPORTING operations TYPE operations
@@ -449,6 +455,31 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+  METHOD basic_finish_updates.
+    LOOP AT orders INTO DATA(order).
+      DATA(latest) = VALUE zts_maint_operat-planned_finish( ).
+      LOOP AT operations INTO DATA(operation)
+           WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid.
+        IF operation-PlannedFinish > latest.
+          latest = operation-PlannedFinish.
+        ENDIF.
+      ENDLOOP.
+
+      IF latest IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      CONVERT TIME STAMP latest TIME ZONE 'UTC' INTO DATE DATA(finish_date) TIME DATA(finish_time).
+      CONVERT DATE finish_date TIME finish_time TIME ZONE 'UTC' INTO UTCLONG DATA(finish).
+
+      IF finish <> order-MaintOrdBasicFinishDateTime.
+        APPEND VALUE #( %tky                                 = order-%tky
+                        MaintOrdBasicFinishDateTime          = finish
+                        %control-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO result.
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD validate.
     DATA(time_zone) = data_provider->get_time_zone( ).
 
@@ -464,8 +495,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       IF operation-Stage IS INITIAL.
         add_message( EXPORTING operation = operation
                                element   = `Stage`
-                               message   = zcx_ts_maint_message=>error( pl = |Podaj etap operacji { number }.|
-                                                                        en = |Enter the stage of operation { number }.| )
+                               message   = zcx_ts_maint_message=>create( number = '015' v1 = |{ number }| )
                      CHANGING  failed    = failed reported = reported ).
       ENDIF.
 
@@ -479,9 +509,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
         IF operation-Stage < confirmed_stage.
           add_message( EXPORTING operation = operation
                                  element   = `Stage`
-                                 message   = zcx_ts_maint_message=>error(
-                                                 pl = |Operacja { number }: etap nie może być wcześniejszy niż { CONV i( confirmed_stage ) }, w którym są już potwierdzone operacje.|
-                                                 en = |Operation { number }: the stage cannot be earlier than { CONV i( confirmed_stage ) }, which already has confirmed operations.| )
+                                 message   = zcx_ts_maint_message=>create( number = '016' v1 = |{ number }| v2 = |{ CONV i( confirmed_stage ) }| )
                        CHANGING  failed    = failed reported = reported ).
         ENDIF.
       ENDIF.
@@ -491,9 +519,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
          AND operation-ActualFinish < operation-ActualStart.
         add_message( EXPORTING operation = operation
                                element   = `ActualFinish`
-                               message   = zcx_ts_maint_message=>error(
-                                               pl = |Operacja { number }: rzeczywisty koniec nie może być wcześniejszy niż rzeczywisty początek.|
-                                               en = |Operation { number }: the actual finish cannot be earlier than the actual start.| )
+                               message   = zcx_ts_maint_message=>create( number = '017' v1 = |{ number }| )
                      CHANGING  failed    = failed reported = reported ).
       ENDIF.
 
@@ -508,9 +534,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
           CONVERT TIME STAMP previous_finish TIME ZONE time_zone INTO DATE DATA(finish_date) TIME DATA(finish_time).
           add_message( EXPORTING operation = operation
                                  element   = `ActualStart`
-                                 message   = zcx_ts_maint_message=>error(
-                                                 pl = |Operacja { number }: rzeczywisty początek nie może być wcześniejszy niż koniec poprzedniego etapu ({ finish_date DATE = ISO } { finish_time TIME = ISO }).|
-                                                 en = |Operation { number }: the actual start cannot be earlier than the end of the previous stage ({ finish_date DATE = ISO } { finish_time TIME = ISO }).| )
+                                 message   = zcx_ts_maint_message=>create( number = '018' v1 = |{ number }| v2 = |{ finish_date DATE = ISO }| v3 = |{ finish_time TIME = ISO }| )
                        CHANGING  failed    = failed reported = reported ).
         ENDIF.
       ENDIF.
@@ -523,10 +547,9 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
         IF planned_finish > basic_finish.
           add_message( EXPORTING operation = operation
                                  element   = `PlannedFinish`
-                                 message   = NEW #( text     = zcl_ts_maint_text=>get(
-                                                                   pl = |Operacja { number } kończy się po podstawowej dacie zakończenia zlecenia.|
-                                                                   en = |Operation { number } ends after the basic finish date of the order.| )
-                                                    severity = if_abap_behv_message=>severity-warning )
+                                 message   = zcx_ts_maint_message=>create( number   = '019'
+                                                                                v1       = |{ number }|
+                                                                                severity = if_abap_behv_message=>severity-warning )
                        CHANGING  failed    = failed reported = reported ).
         ENDIF.
       ENDIF.
@@ -547,9 +570,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
 
       IF open_ids IS NOT INITIAL.
         APPEND VALUE #( order   = order
-                        message = zcx_ts_maint_message=>error(
-                                      pl = |Zlecenia nie można zakończyć. Niepotwierdzone operacje: { open_ids }.|
-                                      en = |The order cannot be completed. Operations not confirmed: { open_ids }.| ) )
+                        message = zcx_ts_maint_message=>create( number = '020' v1 = |{ open_ids }| ) )
                TO result.
       ENDIF.
     ENDLOOP.
@@ -653,4 +674,6 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
+
 

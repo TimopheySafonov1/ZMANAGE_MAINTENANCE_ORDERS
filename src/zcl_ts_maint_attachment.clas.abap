@@ -73,9 +73,7 @@ CLASS zcl_ts_maint_attachment IMPLEMENTATION.
         APPEND VALUE #( %tky = attachment-%tky ) TO failed-maintenanceattachment.
         APPEND VALUE #( %tky              = attachment-%tky
                         %state_area       = state_area
-                        %msg              = zcx_ts_maint_message=>error(
-                                              pl = `Nie rozpoznano typu pliku. Wybierz go z listy.`
-                                              en = `File type not recognized. Choose it from the list.` )
+                        %msg              = zcx_ts_maint_message=>create( number = '021' )
                         %element-MimeType = if_abap_behv=>mk-on
                         %path             = VALUE #( MaintenanceOrder-%is_draft = attachment-%is_draft
                                                      MaintenanceOrder-OrderUuid = attachment-OrderUuid ) )
@@ -151,4 +149,5 @@ CLASS zcl_ts_maint_attachment IMPLEMENTATION.
       ELSE `` ).
   ENDMETHOD.
 ENDCLASS.
+
 

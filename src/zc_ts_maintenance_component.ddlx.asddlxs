@@ -37,13 +37,6 @@ annotate entity ZC_TS_MAINTENANCE_COMPONENT with
          fieldGroup: [{ qualifier: 'ComponentData', position: 20 }] }
   Description;
 
-  @EndUserText.label: 'Typ pozycji'
-  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_ITEM_CATEGORY_VH', element: 'ItemCategory' },
-                                       useForValidation: true }]
-  @UI: { lineItem:   [{ position: 30, importance: #MEDIUM, cssDefault.width: '10rem' }],
-         fieldGroup: [{ qualifier: 'ComponentData', position: 30 }] }
-  ItemCategory;
-
   @EndUserText.label: 'Ilość wymagana'
   @UI: { lineItem:   [{ position: 40, importance: #HIGH, cssDefault.width: '9rem' }],
          fieldGroup: [{ qualifier: 'ComponentData', position: 40 }] }

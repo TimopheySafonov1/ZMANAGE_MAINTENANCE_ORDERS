@@ -96,10 +96,16 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
 
   @EndUserText.label: 'Obiekt techniczny'
   @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TECH_OBJ_VH', element: 'TechObject' },
+                                       additionalBinding: [{ localElement: 'PlanningPlant',
+                                                             element: 'PlanningPlant',
+                                                             usage: #FILTER }],
                                        label: 'Wyszukiwanie wg danych obiektu',
                                        useForValidation: true },
                                      { qualifier: 'Hierarchy',
                                        entity: { name: 'ZC_TS_TECH_OBJ_HIER_VH', element: 'TechObject' },
+                                       additionalBinding: [{ localElement: 'PlanningPlant',
+                                                             element: 'PlanningPlant',
+                                                             usage: #FILTER }],
                                        presentationVariantQualifier: 'Hierarchy',
                                        label: 'Wyszukiwanie wg hierarchii' }]
   @UI: { lineItem:       [{ position: 40, importance: #MEDIUM }],

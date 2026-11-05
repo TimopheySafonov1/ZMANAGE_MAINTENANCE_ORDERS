@@ -47,7 +47,8 @@ CLASS zcl_ts_maint_prt DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING VALUE(result) TYPE creates.
 
     METHODS validate
-      IMPORTING prts     TYPE prts
+      IMPORTING siblings TYPE prts
+                prts     TYPE prts
       CHANGING  failed   TYPE zcl_ts_maint_order=>failed
                 reported TYPE zcl_ts_maint_order=>reported.
 
@@ -146,17 +147,30 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
       IF prt-ReqQuantity IS INITIAL.
         add_error( EXPORTING prt = prt
                              element = `ReqQuantity`
-                             message = zcx_ts_maint_message=>error( pl = |Nie można dodać pomocy { name } bez ilości.|
-                                                                    en = |Cannot add PRT { name } without a quantity.| )
+                             message = zcx_ts_maint_message=>create( number = '025' v1 = |{ name }| )
                    CHANGING  failed  = failed
                              reported = reported ).
+      ENDIF.
+
+      IF prt-PrtId IS NOT INITIAL.
+        LOOP AT siblings TRANSPORTING NO FIELDS
+             WHERE     %is_draft     = prt-%is_draft
+                   AND OperationUuid = prt-OperationUuid
+                   AND PrtId = prt-PrtId
+                   AND PrtUuid <> prt-PrtUuid.
+          add_error( EXPORTING prt = prt
+                               element = `PrtId`
+                               message = zcx_ts_maint_message=>create( number = '026' v1 = |{ name }| )
+                     CHANGING  failed  = failed
+                               reported = reported ).
+          EXIT.
+        ENDLOOP.
       ENDIF.
 
       IF prt-StorageLoc IS INITIAL.
         add_error( EXPORTING prt = prt
                              element = `StorageLoc`
-                             message = zcx_ts_maint_message=>error( pl = |Pomoc { name }: podaj skład.|
-                                                                    en = |PRT { name }: enter the storage location.| )
+                             message = zcx_ts_maint_message=>create( number = '027' v1 = |{ name }| )
                    CHANGING  failed  = failed
                              reported = reported ).
       ENDIF.
@@ -203,5 +217,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
+
 
 

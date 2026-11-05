@@ -12,7 +12,6 @@ define view entity ZI_TS_MAINTENANCE_COMPONENT
       _MaintenanceOperation.OrderUuid as OrderUuid,
       component_id                    as ComponentId,
       description                     as Description,
-      item_category                   as ItemCategory,
       uom                             as Uom,
       @Semantics.quantity.unitOfMeasure: 'Uom'
       req_quantity                    as ReqQuantity,
@@ -20,3 +19,4 @@ define view entity ZI_TS_MAINTENANCE_COMPONENT
       _MaintenanceOperation,
       _MaintenanceOrder
 }
+

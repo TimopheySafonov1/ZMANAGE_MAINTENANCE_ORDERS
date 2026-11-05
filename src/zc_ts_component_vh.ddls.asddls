@@ -20,17 +20,6 @@ define view entity ZC_TS_COMPONENT_VH
       @UI.selectionField: [{ position: 20 }]
       @EndUserText.label: 'Opis komponentu'
       _Text[1: Language = $session.system_language].ComponentText                       as ComponentText,
-      @ObjectModel.text.element: [ 'ItemCategoryName' ]
-      @UI.textArrangement: #TEXT_ONLY
-      @UI.lineItem: [{ position: 30 }]
-      @UI.selectionField: [{ position: 30 }]
-      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_ITEM_CATEGORY_VH', element: 'ItemCategory' } }]
-      @EndUserText.label: 'Typ pozycji'
-      ItemCategory,
-      @Semantics.text: true
-      @UI.hidden: true
-      @EndUserText.label: 'Nazwa typu pozycji'
-      _ItemCategory._Text[1: Language = $session.system_language].ItemCategoryName as ItemCategoryName,
       @ObjectModel.text.element: [ 'UomText' ]
       @UI.textArrangement: #TEXT_LAST
       @UI.lineItem: [{ position: 40 }]
@@ -50,3 +39,4 @@ define view entity ZC_TS_COMPONENT_VH
       @EndUserText.label: 'Waluta'
       Currency
 }
+

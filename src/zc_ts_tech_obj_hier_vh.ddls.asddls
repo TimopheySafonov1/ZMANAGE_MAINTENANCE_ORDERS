@@ -16,6 +16,7 @@ define view entity ZC_TS_TECH_OBJ_HIER_VH
   association [0..1] to ZI_TS_TECH_OBJ         as _SuperiorObject on $projection.SuperiorObject = _SuperiorObject.TechObject
   association [0..1] to ZC_TS_PLANT_VH         as _PlanningPlant  on $projection.PlanningPlant = _PlanningPlant.Plant
 {
+      @Search: { defaultSearchElement: true, ranking: #HIGH }
       @ObjectModel.text.element: [ 'TechObjectText' ]
       @UI.textArrangement: #TEXT_LAST
       @UI.lineItem: [{ position: 10 }]
@@ -82,3 +83,4 @@ define view entity ZC_TS_TECH_OBJ_HIER_VH
       _Superior,
       _PlanningPlant
 }
+

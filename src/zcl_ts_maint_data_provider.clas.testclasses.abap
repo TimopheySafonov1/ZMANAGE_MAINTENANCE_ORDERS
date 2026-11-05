@@ -69,7 +69,7 @@ CLASS ltc_data_provider IMPLEMENTATION.
     environment->insert_test_data( persons ).
 
     DATA components TYPE STANDARD TABLE OF zts_component WITH EMPTY KEY.
-    components = VALUE #( ( component = 'SP001' item_category = 'L' uom = 'PC' price = '12.50' currency = 'PLN' ) ).
+    components = VALUE #( ( component = 'SP001' uom = 'PC' price = '12.50' currency = 'PLN' ) ).
     environment->insert_test_data( components ).
 
     DATA component_texts TYPE STANDARD TABLE OF zts_component_t WITH EMPTY KEY.
@@ -206,5 +206,6 @@ CLASS ltc_data_provider IMPLEMENTATION.
     cl_abap_unit_assert=>assert_initial( cut->get_status_history( VALUE #( ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 

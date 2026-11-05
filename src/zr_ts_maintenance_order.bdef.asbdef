@@ -48,11 +48,12 @@ authorization master ( global )
                             permissions ( field MaintRevision, field TechObject, field LongText,
                                           field MaintOrdBasicStartDateTime, field MaintOrdBasicFinishDateTime );
     field Priority affects field MaintOrdFinalDueDateTime;
-    field MaintOrdBasicStartDateTime affects field MaintOrdFinalDueDateTime, entity _Operations;
+    field MaintOrdBasicStartDateTime affects field MaintOrdFinalDueDateTime, field MaintOrdBasicFinishDateTime,
+                                         entity _Operations;
     field TechObject affects field TechObjType;
     entity _Operations affects entity _Operations;
-    action releaseOrder affects entity _Status;
-    action completeOrder affects entity _Status;
+    action releaseOrder affects entity _Status, entity _Operations;
+    action completeOrder affects entity _Status, entity _Operations;
   }
 
   draft action Activate optimized;
@@ -138,7 +139,7 @@ authorization dependent by _MaintenanceOrder
     field ActualWorkUnit affects entity _MaintenanceOrder;
     field ActualWorkDuration affects entity _MaintenanceOrder;
     field ActualDurationUnit affects entity _MaintenanceOrder;
-    field Stage affects entity _MaintenanceOrder._Operations;
+    field Stage affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations;
     action confirmOperation affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations;
     entity _Components affects entity _MaintenanceOrder, entity _Components;
     entity _PRTs affects entity _MaintenanceOrder, entity _PRTs;
@@ -219,7 +220,7 @@ authorization dependent by _MaintenanceOrder
 
   field ( numbering : managed, readonly ) ComponentUuid;
   field ( readonly ) OperationUuid, OrderUuid;
-  field ( features : instance ) Description, ItemCategory, Uom;
+  field ( features : instance ) Description, Uom;
 
   determination setOrderUuid on modify { create; }
   determination setComponentData on modify { field ComponentId; }
@@ -230,8 +231,8 @@ authorization dependent by _MaintenanceOrder
 
   side effects
   {
-    field ComponentId affects field Description, field ItemCategory, field Uom,
-                              permissions ( field Description, field ItemCategory, field Uom ),
+    field ComponentId affects field Description, field Uom,
+                              permissions ( field Description, field Uom ),
                               entity _MaintenanceOrder;
     field ReqQuantity affects entity _MaintenanceOrder;
   }
@@ -242,7 +243,6 @@ authorization dependent by _MaintenanceOrder
       OperationUuid = operation_uuid;
       ComponentId   = component_id;
       Description   = description;
-      ItemCategory  = item_category;
       Uom           = uom;
       ReqQuantity   = req_quantity;
       StorageLoc    = storage_loc;

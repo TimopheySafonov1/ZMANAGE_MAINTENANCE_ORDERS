@@ -43,7 +43,8 @@ CLASS zcl_ts_maint_component DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING VALUE(result) TYPE creates.
 
     METHODS validate
-      IMPORTING components TYPE components
+      IMPORTING siblings TYPE components
+                components TYPE components
       CHANGING  failed   TYPE zcl_ts_maint_order=>failed
                 reported TYPE zcl_ts_maint_order=>reported.
 
@@ -100,10 +101,8 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
                       LET master = VALUE #( master_data[ component = component-ComponentId ] OPTIONAL ) IN
                       ( %tky                  = component-%tky
                         Description           = master-component_text
-                        ItemCategory          = master-item_category
                         Uom                   = master-uom
                         %control-Description  = if_abap_behv=>mk-on
-                        %control-ItemCategory = if_abap_behv=>mk-on
                         %control-Uom          = if_abap_behv=>mk-on ) ).
   ENDMETHOD.
 
@@ -131,17 +130,30 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
       IF component-ReqQuantity IS INITIAL.
         add_error( EXPORTING component = component
                              element = `ReqQuantity`
-                             message = zcx_ts_maint_message=>error( pl = |Nie można dodać komponentu { name } bez ilości.|
-                                                                    en = |Cannot add component { name } without a quantity.| )
+                             message = zcx_ts_maint_message=>create( number = '022' v1 = |{ name }| )
                    CHANGING  failed  = failed
                              reported = reported ).
+      ENDIF.
+
+      IF component-ComponentId IS NOT INITIAL.
+        LOOP AT siblings TRANSPORTING NO FIELDS
+             WHERE     %is_draft     = component-%is_draft
+                   AND OperationUuid = component-OperationUuid
+                   AND ComponentId = component-ComponentId
+                   AND ComponentUuid <> component-ComponentUuid.
+          add_error( EXPORTING component = component
+                               element = `ComponentId`
+                               message = zcx_ts_maint_message=>create( number = '023' v1 = |{ name }| )
+                     CHANGING  failed  = failed
+                               reported = reported ).
+          EXIT.
+        ENDLOOP.
       ENDIF.
 
       IF component-StorageLoc IS INITIAL.
         add_error( EXPORTING component = component
                              element = `StorageLoc`
-                             message = zcx_ts_maint_message=>error( pl = |Komponent { name }: podaj skład.|
-                                                                    en = |Component { name }: enter the storage location.| )
+                             message = zcx_ts_maint_message=>create( number = '024' v1 = |{ name }| )
                    CHANGING  failed  = failed
                              reported = reported ).
       ENDIF.
@@ -188,5 +200,8 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
+
+
 
 

@@ -38,7 +38,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
     ENDIF.
 
     SELECT FROM zts_tech_obj
-      FIELDS tech_object, tech_obj_type
+      FIELDS tech_object, planning_plant, tech_obj_type
       FOR ALL ENTRIES IN @tech_objects
       WHERE tech_object = @tech_objects-table_line
       INTO TABLE @result.
@@ -64,7 +64,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
       LEFT OUTER JOIN zts_component_t AS text
         ON  text~component = component~component
         AND text~language  = @sy-langu
-      FIELDS component~component, component~item_category, component~uom, component~price, component~currency,
+      FIELDS component~component, component~uom, component~price, component~currency,
              text~component_text
       FOR ALL ENTRIES IN @components
       WHERE component~component = @components-table_line
@@ -147,4 +147,6 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
+
 

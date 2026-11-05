@@ -91,7 +91,7 @@ CLASS lcl_schedule IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( MaintOrdBasicStartDateTime ) WITH CORRESPONDING #( all_orders )
+        FIELDS ( MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime ) WITH CORRESPONDING #( all_orders )
         RESULT order_data
       ENTITY MaintenanceOrder BY \_Operations
         FIELDS ( OrderUuid OperationId Stage Description PersonResp PlannedWork PlannedWorkUnit PlannedWorkDuration
@@ -104,6 +104,16 @@ CLASS lcl_schedule IMPLEMENTATION.
       ENTITY MaintenanceOperation
         UPDATE FROM operation->plan( orders     = order_data
                                      operations = operations ).
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder BY \_Operations
+        FIELDS ( OrderUuid PlannedFinish ) WITH CORRESPONDING #( all_orders )
+        RESULT operations.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FROM operation->basic_finish_updates( orders     = order_data
+                                                     operations = operations ).
   ENDMETHOD.
 ENDCLASS.
 
@@ -376,10 +386,10 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
                         %delete                   = feature-delete
                         %action-confirmOperation  = feature-confirm
                         %field-Stage              = feature-stage
-                        %field-ActualWork         = feature-actuals
-                        %field-ActualWorkUnit     = feature-actuals
-                        %field-ActualWorkDuration = feature-actuals
-                        %field-ActualDurationUnit = feature-actuals
+                        %field-ActualWork         = if_abap_behv=>fc-f-read_only
+                        %field-ActualWorkUnit     = if_abap_behv=>fc-f-read_only
+                        %field-ActualWorkDuration = if_abap_behv=>fc-f-read_only
+                        %field-ActualDurationUnit = if_abap_behv=>fc-f-read_only
                         %field-ActualStart        = feature-actuals
                         %field-ActualFinish       = feature-actuals ) ).
   ENDMETHOD.
@@ -620,7 +630,6 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
     result = VALUE #( FOR feature IN zcl_ts_maint_factory=>component( )->get_features( components )
                       ( %tky                = feature-component-%tky
                         %field-Description  = feature-master_data
-                        %field-ItemCategory = feature-master_data
                         %field-Uom          = feature-master_data ) ).
   ENDMETHOD.
 
@@ -718,12 +727,23 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD validatequantity.
+    DATA operations TYPE zcl_ts_maint_operation=>operations.
+
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
         ALL FIELDS WITH CORRESPONDING #( keys )
-        RESULT DATA(components).
+        RESULT DATA(components)
+      ENTITY MaintenanceComponent BY \_MaintenanceOperation
+        FIELDS ( OperationId ) WITH CORRESPONDING #( keys )
+        RESULT operations.
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_Components
+        ALL FIELDS WITH CORRESPONDING #( operations )
+        RESULT DATA(siblings).
 
     zcl_ts_maint_factory=>component( )->validate( EXPORTING components = components
+                                                        siblings = siblings
                                               CHANGING  failed   = failed
                                                         reported = reported ).
   ENDMETHOD.
@@ -874,12 +894,23 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD validatequantity.
+    DATA operations TYPE zcl_ts_maint_operation=>operations.
+
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt
         ALL FIELDS WITH CORRESPONDING #( keys )
-        RESULT DATA(prts).
+        RESULT DATA(prts)
+      ENTITY MaintenancePrt BY \_MaintenanceOperation
+        FIELDS ( OperationId ) WITH CORRESPONDING #( keys )
+        RESULT operations.
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_PRTs
+        ALL FIELDS WITH CORRESPONDING #( operations )
+        RESULT DATA(siblings).
 
     zcl_ts_maint_factory=>prt( )->validate( EXPORTING prts = prts
+                                                        siblings = siblings
                                               CHANGING  failed   = failed
                                                         reported = reported ).
   ENDMETHOD.
@@ -941,5 +972,7 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
+
 
 

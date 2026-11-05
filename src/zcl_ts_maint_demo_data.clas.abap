@@ -76,12 +76,6 @@ CLASS zcl_ts_maint_demo_data DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS delete_time_units
       RETURNING VALUE(result) TYPE string.
 
-    METHODS fill_item_categories
-      RETURNING VALUE(result) TYPE string.
-
-    METHODS delete_item_categories
-      RETURNING VALUE(result) TYPE string.
-
     METHODS fill_components
       RETURNING VALUE(result) TYPE string.
 
@@ -235,7 +229,6 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
                       ( delete_revisions( ) )
                       ( delete_responsible_persons( ) )
                       ( delete_time_units( ) )
-                      ( delete_item_categories( ) )
                       ( delete_components( ) )
                       ( delete_units_of_measure( ) )
                       ( delete_storage_locations( ) )
@@ -261,7 +254,6 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
                       ( fill_revisions( ) )
                       ( fill_responsible_persons( ) )
                       ( fill_time_units( ) )
-                      ( fill_item_categories( ) )
                       ( fill_units_of_measure( ) )
                       ( fill_components( ) )
                       ( fill_storage_locations( ) )
@@ -587,37 +579,8 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     result = |Time units deleted: { sy-dbcnt } units|.
   ENDMETHOD.
 
-  METHOD fill_item_categories.
-    DATA item_categories TYPE STANDARD TABLE OF zts_item_cat WITH EMPTY KEY.
-    DATA texts           TYPE STANDARD TABLE OF zts_item_cat_t WITH EMPTY KEY.
-
-    item_categories = VALUE #( ( item_category = 'L' )
-                               ( item_category = 'N' ) ).
-
-    texts = VALUE #( ( language = 'E' item_category = 'L' item_category_name = 'Magazynowa' )
-                     ( language = 'L' item_category = 'L' item_category_name = 'Magazynowa' )
-                     ( language = 'E' item_category = 'N' item_category_name = 'Niemagazynowa' )
-                     ( language = 'L' item_category = 'N' item_category_name = 'Niemagazynowa' ) ).
-
-    INSERT zts_item_cat FROM TABLE @item_categories ACCEPTING DUPLICATE KEYS.
-    MODIFY zts_item_cat_t FROM TABLE @texts.
-
-    result = |Item categories filled: { lines( item_categories ) } categories, { lines( texts ) } texts|.
-  ENDMETHOD.
-
-  METHOD delete_item_categories.
-    DELETE FROM zts_item_cat_t.
-    DATA(deleted_texts) = sy-dbcnt.
-
-    DELETE FROM zts_item_cat.
-    DATA(deleted_categories) = sy-dbcnt.
-
-    result = |Item categories deleted: { deleted_categories } categories, { deleted_texts } texts|.
-  ENDMETHOD.
-
   METHOD fill_components.
     TYPES: BEGIN OF component_template,
-             item_category TYPE zts_component-item_category,
              uom           TYPE zts_component-uom,
              price         TYPE zts_component-price,
              name          TYPE zts_component_t-component_text,
@@ -627,21 +590,20 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     DATA components TYPE STANDARD TABLE OF zts_component WITH EMPTY KEY.
     DATA texts      TYPE STANDARD TABLE OF zts_component_t WITH EMPTY KEY.
 
-    DATA(templates) = VALUE component_templates( ( item_category = 'L' uom = 'ST'  price = '85.00'  name = 'Łożysko' )
-                                                 ( item_category = 'L' uom = 'ST'  price = '12.50'  name = 'Uszczelka' )
-                                                 ( item_category = 'L' uom = 'ST'  price = '45.00'  name = 'Pasek klinowy' )
-                                                 ( item_category = 'L' uom = 'ST'  price = '60.00'  name = 'Filtr oleju' )
-                                                 ( item_category = 'N' uom = 'L'   price = '18.00'  name = 'Olej hydrauliczny' )
-                                                 ( item_category = 'L' uom = 'PAK' price = '25.00'  name = 'Bezpiecznik' )
-                                                 ( item_category = 'N' uom = 'ST'  price = '220.00' name = 'Stycznik' )
-                                                 ( item_category = 'N' uom = 'ST'  price = '480.00' name = 'Czujnik ciśnienia' )
-                                                 ( item_category = 'L' uom = 'L'   price = '25.00'  name = 'Olej transformatorowy' )
-                                                 ( item_category = 'L' uom = 'KG'  price = '40.00'  name = 'Silikażel do odwilżacza' ) ).
+    DATA(templates) = VALUE component_templates( ( uom = 'ST'  price = '85.00'  name = 'Łożysko' )
+                                                 ( uom = 'ST'  price = '12.50'  name = 'Uszczelka' )
+                                                 ( uom = 'ST'  price = '45.00'  name = 'Pasek klinowy' )
+                                                 ( uom = 'ST'  price = '60.00'  name = 'Filtr oleju' )
+                                                 ( uom = 'L'   price = '18.00'  name = 'Olej hydrauliczny' )
+                                                 ( uom = 'PAK' price = '25.00'  name = 'Bezpiecznik' )
+                                                 ( uom = 'ST'  price = '220.00' name = 'Stycznik' )
+                                                 ( uom = 'ST'  price = '480.00' name = 'Czujnik ciśnienia' )
+                                                 ( uom = 'L'   price = '25.00'  name = 'Olej transformatorowy' )
+                                                 ( uom = 'KG'  price = '40.00'  name = 'Silikażel do odwilżacza' ) ).
 
     LOOP AT templates INTO DATA(template).
       DATA(component) = CONV zts_component-component( |SP{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
       APPEND VALUE #( component     = component
-                      item_category = template-item_category
                       uom           = template-uom
                       price         = template-price
                       currency      = 'PLN' ) TO components.
@@ -786,7 +748,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
   METHOD fill_component_stock.
     DATA stock TYPE STANDARD TABLE OF zts_comp_stock WITH EMPTY KEY.
 
-    SELECT component, item_category, uom FROM zts_component ORDER BY component INTO TABLE @DATA(components).
+    SELECT component, uom FROM zts_component ORDER BY component INTO TABLE @DATA(components).
     SELECT plant, storage_loc FROM zts_stor_loc ORDER BY plant, storage_loc INTO TABLE @DATA(storage_locs).
 
     LOOP AT components INTO DATA(component).
@@ -795,11 +757,8 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
       LOOP AT storage_locs INTO DATA(storage_loc).
         DATA(storage_loc_index) = sy-tabix.
 
-        DATA(unrestricted) = COND i( WHEN component-item_category = 'N'
-                                     THEN 0
-                                     ELSE ( component_index * 37 + storage_loc_index * 11 ) MOD 200 + 20 ).
-        DATA(consignment) = COND i( WHEN component-item_category = 'N'
-                                      OR ( component_index * storage_loc_index ) MOD 5 <> 0
+        DATA(unrestricted) = ( component_index * 37 + storage_loc_index * 11 ) MOD 200 + 20.
+        DATA(consignment) = COND i( WHEN ( component_index * storage_loc_index ) MOD 5 <> 0
                                     THEN 0
                                     ELSE 25 ).
 
@@ -1295,6 +1254,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     result = |{ holiday_year }{ month WIDTH = 2 ALIGN = RIGHT PAD = '0' }{ day WIDTH = 2 ALIGN = RIGHT PAD = '0' }|.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

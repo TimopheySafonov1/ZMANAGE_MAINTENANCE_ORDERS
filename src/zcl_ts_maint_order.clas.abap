@@ -271,6 +271,8 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     DATA(saved_orders) = data_provider->get_saved_orders( VALUE #( FOR o IN orders ( o-OrderUuid ) ) ).
     DATA(today) = data_provider->get_today( ).
     DATA(time_zone) = data_provider->get_time_zone( ).
+    DATA(tech_objects) = data_provider->get_tech_objects( VALUE #( FOR o IN orders WHERE ( TechObject IS NOT INITIAL )
+                                                                   ( o-TechObject ) ) ).
 
     LOOP AT orders INTO DATA(order).
       APPEND VALUE #( %tky = order-%tky %state_area = state_area ) TO reported-maintenanceorder.
@@ -278,24 +280,21 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
       IF order-PlanningPlant IS INITIAL.
         add_error( EXPORTING order   = order
                              element = `PlanningPlant`
-                             message = zcx_ts_maint_message=>error( pl = `Podaj zakład planowania.`
-                                                                    en = `Enter a planning plant.` )
+                             message = zcx_ts_maint_message=>create( number = '001' )
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
       IF order-WorkCenter IS INITIAL.
         add_error( EXPORTING order   = order
                              element = `WorkCenter`
-                             message = zcx_ts_maint_message=>error( pl = `Podaj główne stanowisko robocze.`
-                                                                    en = `Enter a main work center.` )
+                             message = zcx_ts_maint_message=>create( number = '002' )
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
       IF order-OrderType IS INITIAL.
         add_error( EXPORTING order   = order
                              element = `OrderType`
-                             message = zcx_ts_maint_message=>error( pl = `Podaj rodzaj zlecenia.`
-                                                                    en = `Enter an order type.` )
+                             message = zcx_ts_maint_message=>create( number = '003' )
                    CHANGING  failed  = failed reported = reported ).
         CONTINUE.
       ENDIF.
@@ -305,33 +304,36 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
       IF rules-tech_obj_req = abap_true AND order-TechObject IS INITIAL.
         add_error( EXPORTING order   = order
                              element = `TechObject`
-                             message = zcx_ts_maint_message=>error(
-                                           pl = `Zlecenie naprawcze wymaga obiektu technicznego.`
-                                           en = `A corrective maintenance order requires a technical object.` )
+                             message = zcx_ts_maint_message=>create( number = '004' )
+                   CHANGING  failed  = failed reported = reported ).
+      ENDIF.
+
+      DATA(tech_plant) = VALUE #( tech_objects[ tech_object = order-TechObject ]-planning_plant OPTIONAL ).
+      IF tech_plant IS NOT INITIAL AND tech_plant <> order-PlanningPlant.
+        add_error( EXPORTING order   = order
+                             element = `TechObject`
+                             message = zcx_ts_maint_message=>create( number = '005' v1 = |{ order-PlanningPlant }| )
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
       IF rules-long_text_req = abap_true AND order-LongText IS INITIAL.
         add_error( EXPORTING order   = order
                              element = `LongText`
-                             message = zcx_ts_maint_message=>error( pl = `Opisz usterkę w tekście długim.`
-                                                                    en = `Describe the malfunction in the long text.` )
+                             message = zcx_ts_maint_message=>create( number = '006' )
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
       IF rules-dates_req = abap_true AND order-MaintOrdBasicStartDateTime IS INITIAL.
         add_error( EXPORTING order   = order
                              element = `MaintOrdBasicStartDateTime`
-                             message = zcx_ts_maint_message=>error( pl = `Podaj podstawową datę rozpoczęcia.`
-                                                                    en = `Enter a basic start date.` )
+                             message = zcx_ts_maint_message=>create( number = '007' )
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
       IF rules-dates_req = abap_true AND order-MaintOrdBasicFinishDateTime IS INITIAL.
         add_error( EXPORTING order   = order
                              element = `MaintOrdBasicFinishDateTime`
-                             message = zcx_ts_maint_message=>error( pl = `Podaj podstawową datę zakończenia.`
-                                                                    en = `Enter a basic finish date.` )
+                             message = zcx_ts_maint_message=>create( number = '008' )
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
@@ -340,9 +342,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
          AND order-MaintOrdBasicFinishDateTime < order-MaintOrdBasicStartDateTime.
         add_error( EXPORTING order   = order
                              element = `MaintOrdBasicFinishDateTime`
-                             message = zcx_ts_maint_message=>error(
-                                           pl = `Data zakończenia nie może być wcześniejsza niż data rozpoczęcia.`
-                                           en = `The finish date cannot be earlier than the start date.` )
+                             message = zcx_ts_maint_message=>create( number = '009' )
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
@@ -353,8 +353,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
         IF start_date < today.
           add_error( EXPORTING order   = order
                                element = `MaintOrdBasicStartDateTime`
-                               message = zcx_ts_maint_message=>error( pl = `Data rozpoczęcia nie może być w przeszłości.`
-                                                                      en = `The start date cannot be in the past.` )
+                               message = zcx_ts_maint_message=>create( number = '010' )
                      CHANGING  failed  = failed reported = reported ).
         ENDIF.
       ENDIF.
@@ -365,9 +364,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
         IF finish_reason IS NOT INITIAL.
           add_error( EXPORTING order   = order
                                element = `MaintOrdBasicFinishDateTime`
-                               message = zcx_ts_maint_message=>error(
-                                             pl = |Podstawowa data zakończenia przypada na { finish_reason }.|
-                                             en = |The basic finish date falls on { finish_reason }.| )
+                               message = zcx_ts_maint_message=>create( number = '011' v1 = |{ finish_reason }| )
                      CHANGING  failed  = failed reported = reported ).
         ENDIF.
       ENDIF.
@@ -378,9 +375,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
         IF due_reason IS NOT INITIAL.
           add_error( EXPORTING order   = order
                                element = `MaintOrdFinalDueDateTime`
-                               message = zcx_ts_maint_message=>error(
-                                             pl = |Termin ostateczny przypada na { due_reason }.|
-                                             en = |The final due date falls on { due_reason }.| )
+                               message = zcx_ts_maint_message=>create( number = '012' v1 = |{ due_reason }| )
                      CHANGING  failed  = failed reported = reported ).
         ENDIF.
       ENDIF.
@@ -428,14 +423,13 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
 
   METHOD non_working_day.
     IF ( check_date - CONV d( '19000101' ) ) MOD 7 >= 5.
-      result = zcl_ts_maint_text=>get( pl = `weekend` en = `a weekend` ).
+      result = zcx_ts_maint_message=>text( number = '013' ).
       RETURN.
     ENDIF.
 
     DATA(holiday_name) = data_provider->get_holiday_name( check_date ).
     IF holiday_name IS NOT INITIAL.
-      result = zcl_ts_maint_text=>get( pl = |święto: { holiday_name }|
-                                       en = |a public holiday: { holiday_name }| ).
+      result = zcx_ts_maint_message=>text( number = '014' v1 = |{ holiday_name }| ).
     ENDIF.
   ENDMETHOD.
 
@@ -450,4 +444,6 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
+
 

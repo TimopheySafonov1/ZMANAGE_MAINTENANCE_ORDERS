@@ -36,7 +36,6 @@ CLASS ltd_data_provider IMPLEMENTATION.
 
   METHOD zif_ts_maint_data_provider~get_components.
     result = VALUE #( ( component      = 'SP001'
-                        item_category  = 'L'
                         uom            = 'PC'
                         price          = '12.5'
                         currency       = 'PLN'
@@ -1091,6 +1090,7 @@ CLASS ltc_behavior_pool IMPLEMENTATION.
                                         exp = VALUE zif_ts_maint_data_provider=>order_uuids( ( deleted_uuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

@@ -31,7 +31,6 @@ CLASS ltc_component IMPLEMENTATION.
     data_provider ?= cl_abap_testdouble=>create( 'ZIF_TS_MAINT_DATA_PROVIDER' ).
     cl_abap_testdouble=>configure_call( data_provider )->ignore_all_parameters( )->returning(
       VALUE zif_ts_maint_data_provider=>components( ( component      = 'SP001'
-                                                      item_category  = 'L'
                                                       uom            = 'PC'
                                                       component_text = 'Uszczelka' ) ) ).
     data_provider->get_components( VALUE #( ) ).
@@ -81,7 +80,6 @@ CLASS ltc_component IMPLEMENTATION.
     DATA(updates) = cut->master_data_updates( VALUE #( ( component( uuid = first_uuid component_id = 'SP001' ) ) ) ).
 
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-Description exp = 'Uszczelka' ).
-    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ItemCategory exp = 'L' ).
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-Uom exp = 'PC' ).
   ENDMETHOD.
 
@@ -115,5 +113,6 @@ CLASS ltc_component IMPLEMENTATION.
     cl_abap_unit_assert=>assert_initial( cut->master_data_updates( VALUE #( ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 

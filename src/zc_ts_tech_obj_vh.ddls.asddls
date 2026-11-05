@@ -57,5 +57,10 @@ define view entity ZC_TS_TECH_OBJ_VH
       @UI.lineItem: [{ position: 90 }]
       @UI.selectionField: [{ position: 90 }]
       @EndUserText.label: 'Nieaktywny'
-      IsInactive
+      IsInactive,
+      @UI.lineItem: [{ position: 100 }]
+      @UI.selectionField: [{ position: 100 }]
+      @EndUserText.label: 'Zakład planowania'
+      PlanningPlant
 }
+
