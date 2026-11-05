@@ -40,3 +40,4 @@ CLASS zcx_ts_maint_message IMPLEMENTATION.
   ENDMETHOD.
 ENDCLASS.
 
+

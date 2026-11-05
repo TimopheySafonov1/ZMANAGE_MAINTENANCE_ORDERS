@@ -50,6 +50,13 @@ CLASS zcl_ts_maint_component DEFINITION PUBLIC FINAL CREATE PUBLIC.
   PRIVATE SECTION.
     CONSTANTS state_area TYPE string VALUE 'VALIDATE_QUANTITY'.
 
+    METHODS add_error
+      IMPORTING !component TYPE component
+                element  TYPE string
+                !message TYPE REF TO zcx_ts_maint_message
+      CHANGING  failed   TYPE zcl_ts_maint_order=>failed
+                reported TYPE zcl_ts_maint_order=>reported.
+
     DATA data_provider TYPE REF TO zif_ts_maint_data_provider.
 ENDCLASS.
 
@@ -113,26 +120,47 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
       APPEND VALUE #( %tky        = component-%tky
                       %state_area = state_area ) TO reported-maintenancecomponent.
 
-      IF is_empty( component ) = abap_true OR component-ReqQuantity IS NOT INITIAL.
+      IF is_empty( component ) = abap_true.
         CONTINUE.
       ENDIF.
 
-      DATA(name) = COND string( WHEN component-Description IS NOT INITIAL
-                                THEN component-Description
-                                ELSE component-ComponentId ).
+      DATA(name) = COND string( WHEN component-ComponentId IS NOT INITIAL
+                                THEN component-ComponentId
+                                ELSE component-Description ).
 
-      APPEND VALUE #( %tky = component-%tky ) TO failed-maintenancecomponent.
-      APPEND VALUE #( %tky                 = component-%tky
-                      %state_area          = state_area
-                      %msg                 = zcx_ts_maint_message=>error( pl = |Podaj ilość komponentu: { name }.|
-                                                                          en = |Enter the quantity of component: { name }.| )
-                      %element-ReqQuantity = if_abap_behv=>mk-on
-                      %path                = VALUE #( MaintenanceOrder-%is_draft         = component-%is_draft
-                                                      MaintenanceOrder-OrderUuid         = component-OrderUuid
-                                                      MaintenanceOperation-%is_draft     = component-%is_draft
-                                                      MaintenanceOperation-OperationUuid = component-OperationUuid ) )
-        TO reported-maintenancecomponent.
+      IF component-ReqQuantity IS INITIAL.
+        add_error( EXPORTING component = component
+                             element = `ReqQuantity`
+                             message = zcx_ts_maint_message=>error( pl = |Nie można dodać komponentu { name } bez ilości.|
+                                                                    en = |Cannot add component { name } without a quantity.| )
+                   CHANGING  failed  = failed
+                             reported = reported ).
+      ENDIF.
+
+      IF component-StorageLoc IS INITIAL.
+        add_error( EXPORTING component = component
+                             element = `StorageLoc`
+                             message = zcx_ts_maint_message=>error( pl = |Komponent { name }: podaj skład.|
+                                                                    en = |Component { name }: enter the storage location.| )
+                   CHANGING  failed  = failed
+                             reported = reported ).
+      ENDIF.
     ENDLOOP.
+  ENDMETHOD.
+
+  METHOD add_error.
+    APPEND VALUE #( %tky = component-%tky ) TO failed-maintenancecomponent.
+    APPEND VALUE #( %tky        = component-%tky
+                    %state_area = state_area
+                    %msg        = message
+                    %path       = VALUE #( MaintenanceOrder-%is_draft         = component-%is_draft
+                                           MaintenanceOrder-OrderUuid         = component-OrderUuid
+                                           MaintenanceOperation-%is_draft     = component-%is_draft
+                                           MaintenanceOperation-OperationUuid = component-OperationUuid ) )
+      TO reported-maintenancecomponent ASSIGNING FIELD-SYMBOL(<line>).
+
+    ASSIGN COMPONENT element OF STRUCTURE <line>-%element TO FIELD-SYMBOL(<flag>).
+    <flag> = if_abap_behv=>mk-on.
   ENDMETHOD.
 
   METHOD empty_row_creates.

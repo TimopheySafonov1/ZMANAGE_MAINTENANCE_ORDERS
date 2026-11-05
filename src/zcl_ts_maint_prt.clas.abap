@@ -54,6 +54,13 @@ CLASS zcl_ts_maint_prt DEFINITION PUBLIC FINAL CREATE PUBLIC.
   PRIVATE SECTION.
     CONSTANTS state_area TYPE string VALUE 'VALIDATE_QUANTITY'.
 
+    METHODS add_error
+      IMPORTING !prt TYPE prt
+                element  TYPE string
+                !message TYPE REF TO zcx_ts_maint_message
+      CHANGING  failed   TYPE zcl_ts_maint_order=>failed
+                reported TYPE zcl_ts_maint_order=>reported.
+
     DATA data_provider TYPE REF TO zif_ts_maint_data_provider.
 ENDCLASS.
 
@@ -128,26 +135,47 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
       APPEND VALUE #( %tky        = prt-%tky
                       %state_area = state_area ) TO reported-maintenanceprt.
 
-      IF is_empty( prt ) = abap_true OR prt-ReqQuantity IS NOT INITIAL.
+      IF is_empty( prt ) = abap_true.
         CONTINUE.
       ENDIF.
 
-      DATA(name) = COND string( WHEN prt-Description IS NOT INITIAL
-                                THEN prt-Description
-                                ELSE prt-PrtId ).
+      DATA(name) = COND string( WHEN prt-PrtId IS NOT INITIAL
+                                THEN prt-PrtId
+                                ELSE prt-Description ).
 
-      APPEND VALUE #( %tky = prt-%tky ) TO failed-maintenanceprt.
-      APPEND VALUE #( %tky                 = prt-%tky
-                      %state_area          = state_area
-                      %msg                 = zcx_ts_maint_message=>error( pl = |Podaj ilość pomocy produkcyjnej: { name }.|
-                                                                          en = |Enter the quantity of the production resource: { name }.| )
-                      %element-ReqQuantity = if_abap_behv=>mk-on
-                      %path                = VALUE #( MaintenanceOrder-%is_draft         = prt-%is_draft
-                                                      MaintenanceOrder-OrderUuid         = prt-OrderUuid
-                                                      MaintenanceOperation-%is_draft     = prt-%is_draft
-                                                      MaintenanceOperation-OperationUuid = prt-OperationUuid ) )
-        TO reported-maintenanceprt.
+      IF prt-ReqQuantity IS INITIAL.
+        add_error( EXPORTING prt = prt
+                             element = `ReqQuantity`
+                             message = zcx_ts_maint_message=>error( pl = |Nie można dodać pomocy { name } bez ilości.|
+                                                                    en = |Cannot add PRT { name } without a quantity.| )
+                   CHANGING  failed  = failed
+                             reported = reported ).
+      ENDIF.
+
+      IF prt-StorageLoc IS INITIAL.
+        add_error( EXPORTING prt = prt
+                             element = `StorageLoc`
+                             message = zcx_ts_maint_message=>error( pl = |Pomoc { name }: podaj skład.|
+                                                                    en = |PRT { name }: enter the storage location.| )
+                   CHANGING  failed  = failed
+                             reported = reported ).
+      ENDIF.
     ENDLOOP.
+  ENDMETHOD.
+
+  METHOD add_error.
+    APPEND VALUE #( %tky = prt-%tky ) TO failed-maintenanceprt.
+    APPEND VALUE #( %tky        = prt-%tky
+                    %state_area = state_area
+                    %msg        = message
+                    %path       = VALUE #( MaintenanceOrder-%is_draft         = prt-%is_draft
+                                           MaintenanceOrder-OrderUuid         = prt-OrderUuid
+                                           MaintenanceOperation-%is_draft     = prt-%is_draft
+                                           MaintenanceOperation-OperationUuid = prt-OperationUuid ) )
+      TO reported-maintenanceprt ASSIGNING FIELD-SYMBOL(<line>).
+
+    ASSIGN COMPONENT element OF STRUCTURE <line>-%element TO FIELD-SYMBOL(<flag>).
+    <flag> = if_abap_behv=>mk-on.
   ENDMETHOD.
 
   METHOD empty_row_creates.
