@@ -115,6 +115,8 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD validate.
+    DATA duplicates TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line.
+
     LOOP AT components INTO DATA(component).
       APPEND VALUE #( %tky        = component-%tky
                       %state_area = state_area ) TO reported-maintenancecomponent.
@@ -141,11 +143,16 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
                    AND OperationUuid = component-OperationUuid
                    AND ComponentId = component-ComponentId
                    AND ComponentUuid <> component-ComponentUuid.
-          add_error( EXPORTING component = component
-                               element = `ComponentId`
-                               message = zcx_ts_maint_message=>create( number = '023' v1 = |{ name }| )
-                     CHANGING  failed  = failed
-                               reported = reported ).
+          INSERT |{ component-OperationUuid }{ component-ComponentId }| INTO TABLE duplicates.
+          IF sy-subrc = 0.
+            add_error( EXPORTING component = component
+                                 element = `ComponentId`
+                                 message = zcx_ts_maint_message=>create( number = '023' v1 = |{ name }| )
+                       CHANGING  failed  = failed
+                                 reported = reported ).
+          ELSE.
+            APPEND VALUE #( %tky = component-%tky ) TO failed-maintenancecomponent.
+          ENDIF.
           EXIT.
         ENDLOOP.
       ENDIF.
@@ -200,6 +207,7 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

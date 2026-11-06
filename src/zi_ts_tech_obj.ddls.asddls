@@ -24,6 +24,7 @@ define view entity ZI_TS_TECH_OBJ
       superior_object as SuperiorObject,
       @ObjectModel.foreignKey.association: '_PlanningPlant'
       planning_plant  as PlanningPlant,
+      work_center     as WorkCenter,
       material        as Material,
       serial_number   as SerialNumber,
 
@@ -32,3 +33,4 @@ define view entity ZI_TS_TECH_OBJ
       _Superior,
       _PlanningPlant
 }
+

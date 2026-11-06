@@ -185,6 +185,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
                         %field-OrderType                   = feature-order_type
                         %field-MaintRevision               = feature-revision
                         %field-TechObject                  = feature-tech_object
+                        %field-PlanningPlant               = feature-assignment
+                        %field-WorkCenter                  = feature-assignment
                         %field-LongText                    = feature-long_text
                         %field-MaintOrdBasicStartDateTime  = feature-dates
                         %field-MaintOrdBasicFinishDateTime = feature-dates ) ).
@@ -386,10 +388,14 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
                         %delete                   = feature-delete
                         %action-confirmOperation  = feature-confirm
                         %field-Stage              = feature-stage
-                        %field-ActualWork         = if_abap_behv=>fc-f-read_only
-                        %field-ActualWorkUnit     = if_abap_behv=>fc-f-read_only
-                        %field-ActualWorkDuration = if_abap_behv=>fc-f-read_only
-                        %field-ActualDurationUnit = if_abap_behv=>fc-f-read_only
+                        %field-ActualWork         = feature-actuals
+                        %field-ActualWorkUnit     = feature-actuals
+                        %field-ActualWorkDuration = feature-actuals
+                        %field-ActualDurationUnit = feature-actuals
+                        %field-PlannedWork         = feature-planned
+                        %field-PlannedWorkUnit     = feature-planned
+                        %field-PlannedWorkDuration = feature-planned
+                        %field-PlannedDurationUnit = feature-planned
                         %field-ActualStart        = feature-actuals
                         %field-ActualFinish       = feature-actuals ) ).
   ENDMETHOD.
@@ -972,6 +978,7 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

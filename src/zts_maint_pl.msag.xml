@@ -153,6 +153,16 @@
      <MSGNR>027</MSGNR>
      <TEXT>Pomoc &amp;1: podaj skład.</TEXT>
     </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>028</MSGNR>
+     <TEXT>Operacja &amp;1 nie ma czasu planowanego. Koszty nie zostaną obliczone.</TEXT>
+    </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>029</MSGNR>
+     <TEXT>Obiekt techniczny nie należy do stanowiska roboczego &amp;1.</TEXT>
+    </item>
    </T100_TEXTS>
   </asx:values>
  </asx:abap>

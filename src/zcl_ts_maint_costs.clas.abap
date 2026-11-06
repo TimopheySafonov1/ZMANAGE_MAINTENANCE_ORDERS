@@ -246,6 +246,10 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
 
       LOOP AT cost_items INTO DATA(cost_item)
            WHERE is_draft = order-%is_draft AND order_uuid = order-OrderUuid.
+        IF cost_item-planned IS INITIAL AND cost_item-actual IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
         DATA existing LIKE LINE OF existing_costs.
         CLEAR existing.
         LOOP AT existing_costs INTO DATA(candidate)
@@ -373,4 +377,5 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 

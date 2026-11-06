@@ -170,6 +170,18 @@
      <MSGNR>027</MSGNR>
      <TEXT>PRT &amp;1: enter the storage location.</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>028</MSGNR>
+     <TEXT>Operation &amp;1 has no planned time. Costs will not be calculated.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>029</MSGNR>
+     <TEXT>The technical object does not belong to work center &amp;1.</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

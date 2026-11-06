@@ -17,6 +17,7 @@ CLASS zcl_ts_maint_order DEFINITION PUBLIC FINAL CREATE PUBLIC.
              tech_object TYPE field_control,
              long_text   TYPE field_control,
              dates       TYPE field_control,
+             assignment  TYPE field_control,
            END OF feature,
            features TYPE STANDARD TABLE OF feature WITH EMPTY KEY.
     TYPES failed    TYPE RESPONSE FOR FAILED LATE zr_ts_maintenance_order.
@@ -133,7 +134,12 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                       revision    = COND #( WHEN rules-revision_allowed = abap_true
                                             THEN if_abap_behv=>fc-f-unrestricted
                                             ELSE if_abap_behv=>fc-f-read_only )
-                      tech_object = COND #( WHEN rules-tech_obj_req = abap_true
+                      assignment  = COND #( WHEN state->allows_planning( ) = abap_true
+                                            THEN if_abap_behv=>fc-f-mandatory
+                                            ELSE if_abap_behv=>fc-f-read_only )
+                      tech_object = COND #( WHEN state->allows_planning( ) = abap_false
+                                            THEN if_abap_behv=>fc-f-read_only
+                                            WHEN rules-tech_obj_req = abap_true
                                             THEN if_abap_behv=>fc-f-mandatory
                                             ELSE if_abap_behv=>fc-f-unrestricted )
                       long_text   = COND #( WHEN rules-long_text_req = abap_true
@@ -316,6 +322,14 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
+      DATA(tech_center) = VALUE #( tech_objects[ tech_object = order-TechObject ]-work_center OPTIONAL ).
+      IF tech_center IS NOT INITIAL AND tech_center <> order-WorkCenter.
+        add_error( EXPORTING order   = order
+                             element = `TechObject`
+                             message = zcx_ts_maint_message=>create( number = '029' v1 = |{ order-WorkCenter }| )
+                   CHANGING  failed  = failed reported = reported ).
+      ENDIF.
+
       IF rules-long_text_req = abap_true AND order-LongText IS INITIAL.
         add_error( EXPORTING order   = order
                              element = `LongText`
@@ -444,6 +458,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

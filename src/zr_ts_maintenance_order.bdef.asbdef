@@ -20,8 +20,7 @@ authorization master ( global )
   field ( numbering : managed, readonly ) OrderUuid;
   field ( readonly ) OrderId, OrderStatus, TechObjType, LocalLastChangedAt, LastChangedAt, TotalPlannedCosts, TotalActualCosts,
                      TotalPlannedHours, TotalActualHours;
-  field ( mandatory ) PlanningPlant, WorkCenter;
-  field ( features : instance ) OrderType, MaintRevision, TechObject, LongText,
+  field ( features : instance ) OrderType, MaintRevision, TechObject, LongText, PlanningPlant, WorkCenter,
                                 MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime;
 
   determination setOrderId on save { create; }
@@ -108,7 +107,8 @@ authorization dependent by _MaintenanceOrder
   field ( numbering : managed, readonly ) OperationUuid;
   field ( readonly ) OrderUuid, OperationId, PlannedStart, PlannedFinish, Confirmed, OperationStatus, WaitingFor;
   field ( features : instance ) Stage, ActualWork, ActualWorkUnit, ActualWorkDuration, ActualDurationUnit,
-                                ActualStart, ActualFinish;
+                                ActualStart, ActualFinish, PlannedWork, PlannedWorkUnit, PlannedWorkDuration,
+                                PlannedDurationUnit;
 
   action ( features : instance, authorization : update ) confirmOperation result [1] $self;
 
@@ -124,8 +124,8 @@ authorization dependent by _MaintenanceOrder
                                            PlannedWorkDuration, PlannedDurationUnit, ActualWork, ActualWorkUnit,
                                            ActualWorkDuration, ActualDurationUnit; }
 
-  validation validateExecution on save { create; field Stage, Confirmed, ActualStart, ActualFinish,
-                                         PlannedWorkDuration, PlannedDurationUnit; }
+  validation validateExecution on save { create; field Stage, Confirmed, ActualStart, ActualFinish, Description,
+                                         PlannedWork, PlannedWorkDuration, PlannedDurationUnit; }
 
   side effects
   {

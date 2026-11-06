@@ -38,7 +38,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
     ENDIF.
 
     SELECT FROM zts_tech_obj
-      FIELDS tech_object, planning_plant, tech_obj_type
+      FIELDS tech_object, planning_plant, tech_obj_type, work_center
       FOR ALL ENTRIES IN @tech_objects
       WHERE tech_object = @tech_objects-table_line
       INTO TABLE @result.
@@ -147,6 +147,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

@@ -132,6 +132,8 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD validate.
+    DATA duplicates TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line.
+
     LOOP AT prts INTO DATA(prt).
       APPEND VALUE #( %tky        = prt-%tky
                       %state_area = state_area ) TO reported-maintenanceprt.
@@ -158,11 +160,16 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
                    AND OperationUuid = prt-OperationUuid
                    AND PrtId = prt-PrtId
                    AND PrtUuid <> prt-PrtUuid.
-          add_error( EXPORTING prt = prt
-                               element = `PrtId`
-                               message = zcx_ts_maint_message=>create( number = '026' v1 = |{ name }| )
-                     CHANGING  failed  = failed
-                               reported = reported ).
+          INSERT |{ prt-OperationUuid }{ prt-PrtId }| INTO TABLE duplicates.
+          IF sy-subrc = 0.
+            add_error( EXPORTING prt = prt
+                                 element = `PrtId`
+                                 message = zcx_ts_maint_message=>create( number = '026' v1 = |{ name }| )
+                       CHANGING  failed  = failed
+                                 reported = reported ).
+          ELSE.
+            APPEND VALUE #( %tky = prt-%tky ) TO failed-maintenanceprt.
+          ENDIF.
           EXIT.
         ENDLOOP.
       ENDIF.
@@ -217,6 +224,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

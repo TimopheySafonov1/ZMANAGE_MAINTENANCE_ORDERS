@@ -98,6 +98,9 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TECH_OBJ_VH', element: 'TechObject' },
                                        additionalBinding: [{ localElement: 'PlanningPlant',
                                                              element: 'PlanningPlant',
+                                                             usage: #FILTER },
+                                                           { localElement: 'WorkCenter',
+                                                             element: 'WorkCenter',
                                                              usage: #FILTER }],
                                        label: 'Wyszukiwanie wg danych obiektu',
                                        useForValidation: true },
@@ -105,6 +108,9 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
                                        entity: { name: 'ZC_TS_TECH_OBJ_HIER_VH', element: 'TechObject' },
                                        additionalBinding: [{ localElement: 'PlanningPlant',
                                                              element: 'PlanningPlant',
+                                                             usage: #FILTER },
+                                                           { localElement: 'WorkCenter',
+                                                             element: 'WorkCenter',
                                                              usage: #FILTER }],
                                        presentationVariantQualifier: 'Hierarchy',
                                        label: 'Wyszukiwanie wg hierarchii' }]
@@ -197,3 +203,4 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @UI.hidden: true
   LastChangedAt;
 }
+

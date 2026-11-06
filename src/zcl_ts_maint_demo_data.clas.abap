@@ -927,6 +927,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
              tech_obj_type   TYPE zts_tech_obj-tech_obj_type,
              superior_object TYPE zts_tech_obj-superior_object,
              planning_plant  TYPE zts_tech_obj-planning_plant,
+             work_center     TYPE zts_tech_obj-work_center,
              sort_field      TYPE zts_tech_obj-sort_field,
              object_type     TYPE zts_tech_obj-object_type,
              material        TYPE zts_tech_obj-material,
@@ -954,75 +955,75 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
 
     DATA(templates) = VALUE tech_object_templates(
         ( tech_object = 'PL01-WAW'           tech_obj_type = 'FL' planning_plant = '0001'
-          sort_field = 'ZAKLAD'    object_type = 'ZAKLAD'     location = 'WAW'
+          work_center = 'MECH' sort_field = 'ZAKLAD'    object_type = 'ZAKLAD'     location = 'WAW'
           name = 'Zakład Warszawa' )
         ( tech_object = 'PL01-WAW-PROD'      tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW'
-          sort_field = 'PRODUKCJA' object_type = 'HALA'       location = 'HALA-A'
+          work_center = 'MECH' sort_field = 'PRODUKCJA' object_type = 'HALA'       location = 'HALA-A'
           name = 'Hala produkcyjna A' )
         ( tech_object = 'PL01-WAW-PROD-L01'  tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-PROD'
-          sort_field = 'LINIE'     object_type = 'LINIA'      location = 'HALA-A'
+          work_center = 'MECH' sort_field = 'LINIE'     object_type = 'LINIA'      location = 'HALA-A'
           name = 'Linia rozlewnicza 1' )
         ( tech_object = 'PL01-WAW-PROD-L02'  tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-PROD'
-          sort_field = 'LINIE'     object_type = 'LINIA'      location = 'HALA-A'
+          work_center = 'MECH' sort_field = 'LINIE'     object_type = 'LINIA'      location = 'HALA-A'
           name = 'Linia pakująca 2' )
         ( tech_object = 'PL01-WAW-UTIL'      tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW'
-          sort_field = 'MEDIA'     object_type = 'BUDYNEK'    location = 'BUD-TECH'
+          work_center = 'MECH' sort_field = 'MEDIA'     object_type = 'BUDYNEK'    location = 'BUD-TECH'
           name = 'Budynek techniczny - media' )
         ( tech_object = 'PL01-WAW-UTIL-SPR'  tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
-          sort_field = 'MEDIA'     object_type = 'STACJA'     location = 'BUD-TECH'
+          work_center = 'MECH' sort_field = 'MEDIA'     object_type = 'STACJA'     location = 'BUD-TECH'
           name = 'Stacja sprężarek' )
         ( tech_object = 'PL01-WAW-UTIL-HVAC' tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
-          sort_field = 'MEDIA'     object_type = 'INSTALACJA' location = 'DACH'
+          work_center = 'HVAC' sort_field = 'MEDIA'     object_type = 'INSTALACJA' location = 'DACH'
           name = 'Instalacja wentylacji i klimatyzacji' )
         ( tech_object = 'PL01-WAW-MAG-OLD'   tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW'
-          sort_field = 'MAGAZYN'   object_type = 'BUDYNEK'    location = 'MAG-STARY' marked_for_del = abap_true
+          work_center = 'MECH' sort_field = 'MAGAZYN'   object_type = 'BUDYNEK'    location = 'MAG-STARY' marked_for_del = abap_true
           name = 'Stary magazyn wyrobów gotowych' )
         ( tech_object = '10000001' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L01'
-          sort_field = 'POMPY'      object_type = 'POMPA'      material = 'GRU-CR32-4'     serial_number = 'A965123P11945'
+          work_center = 'MECH' sort_field = 'POMPY'      object_type = 'POMPA'      material = 'GRU-CR32-4'     serial_number = 'A965123P11945'
           ident_number = 'P-2019-0451'  location = 'HALA-A'    name = 'Pompa odśrodkowa P-101' )
         ( tech_object = '10000002' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L02'
-          sort_field = 'POMPY'      object_type = 'POMPA'      material = 'PRO-DDE-6-10'   serial_number = 'DDE20200112'
+          work_center = 'MECH' sort_field = 'POMPY'      object_type = 'POMPA'      material = 'PRO-DDE-6-10'   serial_number = 'DDE20200112'
           ident_number = 'P-2020-0112'  location = 'HALA-A'    name = 'Pompa dozująca P-102' )
         ( tech_object = '10000003' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L01'
-          sort_field = 'SILNIKI'    object_type = 'SILNIK'     material = 'ABB-M3BP-160'   serial_number = '3GBP1614-77812'
+          work_center = 'ELEC' sort_field = 'SILNIKI'    object_type = 'SILNIK'     material = 'ABB-M3BP-160'   serial_number = '3GBP1614-77812'
           ident_number = 'S-ABB-77812'  location = 'HALA-A'    name = 'Silnik napędu przenośnika M-201' )
         ( tech_object = '10000004' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L01'
-          sort_field = 'PRZENOSNIK' object_type = 'PRZENOSNIK' material = 'INT-PT-600'     serial_number = 'PT600-18-033'
+          work_center = 'MECH' sort_field = 'PRZENOSNIK' object_type = 'PRZENOSNIK' material = 'INT-PT-600'     serial_number = 'PT600-18-033'
           ident_number = 'PT-2018-033'  location = 'HALA-A'    name = 'Przenośnik taśmowy PT-01' )
         ( tech_object = '10000005' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL-SPR'
-          sort_field = 'SPREZARKI'  object_type = 'SPREZARKA'  material = 'AC-GA37VSD'     serial_number = 'API625521'
+          work_center = 'MECH' sort_field = 'SPREZARKI'  object_type = 'SPREZARKA'  material = 'AC-GA37VSD'     serial_number = 'API625521'
           ident_number = 'AC-GA37-5521' location = 'BUD-TECH'  name = 'Sprężarka śrubowa K-301' )
         ( tech_object = '10000006' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL-SPR'
-          sort_field = 'SPREZARKI'  object_type = 'OSUSZACZ'   material = 'AC-FD95'        serial_number = 'ITJ21118'
+          work_center = 'MECH' sort_field = 'SPREZARKI'  object_type = 'OSUSZACZ'   material = 'AC-FD95'        serial_number = 'ITJ21118'
           ident_number = 'OS-2021-118'  location = 'BUD-TECH'  name = 'Osuszacz powietrza OS-01' )
         ( tech_object = '10000007' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL-HVAC'
-          sort_field = 'HVAC'       object_type = 'CENTRALA'   material = 'KLI-CV-25'      serial_number = 'CV25-17-904'
+          work_center = 'HVAC' sort_field = 'HVAC'       object_type = 'CENTRALA'   material = 'KLI-CV-25'      serial_number = 'CV25-17-904'
           ident_number = 'CW-2017-904'  location = 'DACH'      name = 'Centrala wentylacyjna CW-1' )
         ( tech_object = '10000008' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
-          sort_field = 'ELEKTRYKA'  object_type = 'ROZDZIELN'  material = 'SCH-PRISMA-G'   serial_number = 'PRG15001'
+          work_center = 'ELEC' sort_field = 'ELEKTRYKA'  object_type = 'ROZDZIELN'  material = 'SCH-PRISMA-G'   serial_number = 'PRG15001'
           ident_number = 'RG-2015-001'  location = 'BUD-TECH'  name = 'Rozdzielnica główna RG 0,4 kV' )
         ( tech_object = '10000009' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-MAG-OLD'
-          sort_field = 'POMPY'      object_type = 'POMPA'      material = 'GRU-SEG-40'     serial_number = 'SEG12007'
+          work_center = 'MECH' sort_field = 'POMPY'      object_type = 'POMPA'      material = 'GRU-SEG-40'     serial_number = 'SEG12007'
           ident_number = 'P-2012-0007'  location = 'MAG-STARY' inactive = abap_true
           name = 'Pompa zatapialna (wycofana)' )
         ( tech_object = '10000010' tech_obj_type = 'EQ' planning_plant = '0001'
-          sort_field = 'WOZKI'      object_type = 'WOZEK'      material = 'LIN-H25'        serial_number = 'H2X391T16552'
+          work_center = 'MECH' sort_field = 'WOZKI'      object_type = 'WOZEK'      material = 'LIN-H25'        serial_number = 'H2X391T16552'
           ident_number = 'WW-2016-552'  location = 'HALA-B'    marked_for_del = abap_true
           name = 'Wózek widłowy WW-03' )
         ( tech_object = 'PL02-KRK'           tech_obj_type = 'FL' planning_plant = '0002'
-          sort_field = 'ZAKLAD'    object_type = 'ZAKLAD'     location = 'KRK'
+          work_center = 'MECH' sort_field = 'ZAKLAD'    object_type = 'ZAKLAD'     location = 'KRK'
           name = 'Zakład Kraków' )
         ( tech_object = 'PL02-KRK-TLOCZ'     tech_obj_type = 'FL' planning_plant = '0002' superior_object = 'PL02-KRK'
-          sort_field = 'PRODUKCJA' object_type = 'HALA'       location = 'HALA-1'
+          work_center = 'MECH' sort_field = 'PRODUKCJA' object_type = 'HALA'       location = 'HALA-1'
           name = 'Tłocznia' )
         ( tech_object = '10000011' tech_obj_type = 'EQ' planning_plant = '0002' superior_object = 'PL02-KRK-TLOCZ'
-          sort_field = 'PRASY'      object_type = 'PRASA'      material = 'SCHU-HPX-400'   serial_number = 'HPX400-22-118'
+          work_center = 'MECH' sort_field = 'PRASY'      object_type = 'PRASA'      material = 'SCHU-HPX-400'   serial_number = 'HPX400-22-118'
           ident_number = 'PR-2022-118'  location = 'HALA-1'    name = 'Prasa hydrauliczna PH-400' )
         ( tech_object = '10000012' tech_obj_type = 'EQ' planning_plant = '0002' superior_object = 'PL02-KRK-TLOCZ'
-          sort_field = 'SILNIKI'    object_type = 'SILNIK'     material = 'SIE-1LE1-180'   serial_number = 'UD2203-0381'
+          work_center = 'ELEC' sort_field = 'SILNIKI'    object_type = 'SILNIK'     material = 'SIE-1LE1-180'   serial_number = 'UD2203-0381'
           ident_number = 'S-SIE-0381'   location = 'HALA-1'    name = 'Silnik pompy hydrauliki M-401' )
         ( tech_object = '10000013' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
-          sort_field = 'ELEKTRYKA'  object_type = 'TRAFO'      material = 'ABB-DTR-1000'   serial_number = 'DTR1000-19-2241'
+          work_center = 'ELEC' sort_field = 'ELEKTRYKA'  object_type = 'TRAFO'      material = 'ABB-DTR-1000'   serial_number = 'DTR1000-19-2241'
           ident_number = 'TR-2019-001'  location = 'BUD-TECH'  name = 'Transformator TR-1 15/0,4 kV 1000 kVA' ) ).
 
     LOOP AT templates INTO DATA(template).
@@ -1254,6 +1255,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     result = |{ holiday_year }{ month WIDTH = 2 ALIGN = RIGHT PAD = '0' }{ day WIDTH = 2 ALIGN = RIGHT PAD = '0' }|.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

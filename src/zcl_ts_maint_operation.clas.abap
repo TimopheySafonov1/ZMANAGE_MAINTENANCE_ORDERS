@@ -11,6 +11,7 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
     TYPES: BEGIN OF feature,
              operation TYPE operation,
              actuals   TYPE zcl_ts_maint_order=>field_control,
+             planned   TYPE zcl_ts_maint_order=>field_control,
              stage     TYPE zcl_ts_maint_order=>field_control,
              confirm   TYPE zcl_ts_maint_order=>operation_control,
              delete    TYPE zcl_ts_maint_order=>operation_control,
@@ -189,10 +190,13 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
   METHOD get_features.
     LOOP AT operations INTO DATA(operation).
       DATA(allows_actuals) = abap_false.
+      DATA(allows_planning) = abap_true.
       LOOP AT links INTO DATA(link) WHERE source-%tky = operation-%tky.
         READ TABLE orders WITH KEY %tky = link-target-%tky INTO DATA(order).
-        IF sy-subrc = 0 AND zcl_ts_maint_order_state=>for_status( order-OrderStatus )->allows_actuals( ) = abap_true.
-          allows_actuals = abap_true.
+        IF sy-subrc = 0.
+          DATA(state) = zcl_ts_maint_order_state=>for_status( order-OrderStatus ).
+          allows_actuals = state->allows_actuals( ).
+          allows_planning = state->allows_planning( ).
         ENDIF.
       ENDLOOP.
 
@@ -201,6 +205,9 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                                 AND blocking_operations( operation = operation siblings = siblings ) IS INITIAL ).
 
       APPEND VALUE #( operation = operation
+                      planned   = COND #( WHEN allows_planning = abap_true
+                                          THEN if_abap_behv=>fc-f-unrestricted
+                                          ELSE if_abap_behv=>fc-f-read_only )
                       actuals   = COND #( WHEN can_work = abap_true
                                           THEN if_abap_behv=>fc-f-unrestricted
                                           ELSE if_abap_behv=>fc-f-read_only )
@@ -553,6 +560,15 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                        CHANGING  failed    = failed reported = reported ).
         ENDIF.
       ENDIF.
+
+      IF operation-PlannedWork IS INITIAL.
+        add_message( EXPORTING operation = operation
+                               element   = `PlannedWork`
+                               message   = zcx_ts_maint_message=>create( number   = '028'
+                                                                         v1       = |{ number }|
+                                                                         severity = if_abap_behv_message=>severity-warning )
+                     CHANGING  failed    = failed reported = reported ).
+      ENDIF.
     ENDLOOP.
   ENDMETHOD.
 
@@ -667,13 +683,17 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDIF.
     APPEND VALUE #( %tky        = operation-%tky
                     %state_area = state_area
-                    %msg        = message ) TO reported-maintenanceoperation ASSIGNING FIELD-SYMBOL(<reported>).
+                    %msg        = message
+                    %path       = VALUE #( MaintenanceOrder-%is_draft = operation-%is_draft
+                                           MaintenanceOrder-OrderUuid = operation-OrderUuid ) )
+      TO reported-maintenanceoperation ASSIGNING FIELD-SYMBOL(<reported>).
     ASSIGN COMPONENT to_upper( element ) OF STRUCTURE <reported>-%element TO FIELD-SYMBOL(<element>).
     IF sy-subrc = 0.
       <element> = if_abap_behv=>mk-on.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

@@ -24,6 +24,10 @@ CLASS zcl_ts_maint_state_released IMPLEMENTATION.
     result = abap_true.
   ENDMETHOD.
 
+  METHOD zif_ts_maint_order_state~allows_planning.
+    result = abap_false.
+  ENDMETHOD.
+
   METHOD zif_ts_maint_order_state~release.
     result = me.
   ENDMETHOD.
@@ -32,4 +36,5 @@ CLASS zcl_ts_maint_state_released IMPLEMENTATION.
     result = zcl_ts_maint_order_state=>for_status( zif_ts_maint_order_status=>completed ).
   ENDMETHOD.
 ENDCLASS.
+
 

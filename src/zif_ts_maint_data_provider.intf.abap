@@ -6,6 +6,7 @@ INTERFACE zif_ts_maint_data_provider PUBLIC.
            tech_object    TYPE zts_tech_obj-tech_object,
            planning_plant TYPE zts_tech_obj-planning_plant,
            tech_obj_type  TYPE zts_tech_obj-tech_obj_type,
+           work_center    TYPE zts_tech_obj-work_center,
          END OF tech_object,
          tech_objects     TYPE HASHED TABLE OF tech_object WITH UNIQUE KEY tech_object,
          tech_object_keys TYPE STANDARD TABLE OF zts_tech_obj-tech_object WITH EMPTY KEY.

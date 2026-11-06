@@ -14,6 +14,9 @@ INTERFACE zif_ts_maint_order_state PUBLIC.
   METHODS allows_actuals
     RETURNING VALUE(result) TYPE abap_bool.
 
+  METHODS allows_planning
+    RETURNING VALUE(result) TYPE abap_bool.
+
   METHODS release
     RETURNING VALUE(result) TYPE REF TO zif_ts_maint_order_state.
 
