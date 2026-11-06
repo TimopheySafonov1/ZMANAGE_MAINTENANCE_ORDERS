@@ -349,6 +349,9 @@ CLASS lhc_maintenanceoperation DEFINITION INHERITING FROM cl_abap_behavior_handl
     METHODS scheduleoperations FOR DETERMINE ON MODIFY
       IMPORTING keys FOR MaintenanceOperation~scheduleOperations.
 
+    METHODS setactualfinish FOR DETERMINE ON MODIFY
+      IMPORTING keys FOR MaintenanceOperation~setActualFinish.
+
     METHODS confirmoperation FOR MODIFY
       IMPORTING keys FOR ACTION MaintenanceOperation~confirmOperation RESULT result.
 
@@ -396,8 +399,7 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
                         %field-PlannedWorkUnit     = feature-planned
                         %field-PlannedWorkDuration = feature-planned
                         %field-PlannedDurationUnit = feature-planned
-                        %field-ActualStart        = feature-actuals
-                        %field-ActualFinish       = feature-actuals ) ).
+                        %field-ActualStart        = feature-actuals ) ).
   ENDMETHOD.
 
   METHOD createcomponentandprt.
@@ -554,6 +556,18 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
     lcl_schedule=>refresh( VALUE #( FOR operation IN operations
                                     ( %is_draft = operation-%is_draft
                                       OrderUuid = operation-OrderUuid ) ) ).
+  ENDMETHOD.
+
+  METHOD setactualfinish.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        FIELDS ( ActualStart ActualFinish ActualWork ActualWorkUnit ActualWorkDuration ActualDurationUnit Confirmed )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(operations).
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        UPDATE FROM zcl_ts_maint_factory=>operation( )->actual_finish_updates( operations ).
   ENDMETHOD.
 
   METHOD confirmoperation.

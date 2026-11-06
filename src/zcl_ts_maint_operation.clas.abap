@@ -105,6 +105,10 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
       IMPORTING operations    TYPE operations
       RETURNING VALUE(result) TYPE updates.
 
+    METHODS actual_finish_updates
+      IMPORTING operations    TYPE operations
+      RETURNING VALUE(result) TYPE updates.
+
     METHODS basic_finish_updates
       IMPORTING orders        TYPE zcl_ts_maint_order=>orders
                 operations    TYPE operations
@@ -146,6 +150,11 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING VALUE(result) TYPE zts_maint_operat-waiting_for.
 
     METHODS duration_hours
+      IMPORTING !operation    TYPE operation
+                time_units    TYPE zif_ts_maint_data_provider=>time_units
+      RETURNING VALUE(result) TYPE decfloat34.
+
+    METHODS actual_hours
       IMPORTING !operation    TYPE operation
                 time_units    TYPE zif_ts_maint_data_provider=>time_units
       RETURNING VALUE(result) TYPE decfloat34.
@@ -462,6 +471,36 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+  METHOD actual_finish_updates.
+    IF operations IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DATA(time_units) = data_provider->get_time_units( ).
+    DATA(time_zone) = data_provider->get_time_zone( ).
+
+    LOOP AT operations INTO DATA(operation).
+      DATA(hours) = actual_hours( operation = operation time_units = time_units ).
+      DATA(finish) = VALUE zts_maint_operat-actual_finish( ).
+
+      IF operation-ActualStart IS NOT INITIAL AND hours > 0.
+        CONVERT TIME STAMP operation-ActualStart TIME ZONE time_zone INTO DATE DATA(finish_date) TIME DATA(finish_time).
+        add_working_hours( EXPORTING hours = hours
+                           CHANGING  date  = finish_date
+                                     time  = finish_time ).
+        CONVERT DATE finish_date TIME finish_time INTO TIME STAMP finish TIME ZONE time_zone.
+      ELSEIF operation-Confirmed = abap_true.
+        CONTINUE.
+      ENDIF.
+
+      IF finish <> operation-ActualFinish.
+        APPEND VALUE #( %tky                  = operation-%tky
+                        ActualFinish          = finish
+                        %control-ActualFinish = if_abap_behv=>mk-on ) TO result.
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD basic_finish_updates.
     LOOP AT orders INTO DATA(order).
       DATA(latest) = VALUE zts_maint_operat-planned_finish( ).
@@ -573,9 +612,12 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD completion_blockers.
+    DATA(sorted_operations) = operations.
+    SORT sorted_operations BY OperationId.
+
     LOOP AT orders INTO DATA(order).
       DATA(open_ids) = ``.
-      LOOP AT operations INTO DATA(operation)
+      LOOP AT sorted_operations INTO DATA(operation)
            WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid AND Confirmed = abap_false.
         IF is_empty( operation ) = abap_false.
           open_ids = COND #( WHEN open_ids IS INITIAL
@@ -637,6 +679,16 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ELSE.
       result = operation-PlannedWork
                * VALUE #( time_units[ time_unit = operation-PlannedWorkUnit ]-work_hours DEFAULT 1 ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD actual_hours.
+    IF operation-ActualWorkDuration IS NOT INITIAL.
+      result = operation-ActualWorkDuration
+               * VALUE #( time_units[ time_unit = operation-ActualDurationUnit ]-work_hours DEFAULT 1 ).
+    ELSE.
+      result = operation-ActualWork
+               * VALUE #( time_units[ time_unit = operation-ActualWorkUnit ]-work_hours DEFAULT 1 ).
     ENDIF.
   ENDMETHOD.
 

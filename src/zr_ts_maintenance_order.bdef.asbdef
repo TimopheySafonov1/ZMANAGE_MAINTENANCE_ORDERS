@@ -105,9 +105,10 @@ authorization dependent by _MaintenanceOrder
   association _PRTs { create; with draft; }
 
   field ( numbering : managed, readonly ) OperationUuid;
-  field ( readonly ) OrderUuid, OperationId, PlannedStart, PlannedFinish, Confirmed, OperationStatus, WaitingFor;
+  field ( readonly ) OrderUuid, OperationId, PlannedStart, PlannedFinish, ActualFinish, Confirmed, OperationStatus,
+                     WaitingFor;
   field ( features : instance ) Stage, ActualWork, ActualWorkUnit, ActualWorkDuration, ActualDurationUnit,
-                                ActualStart, ActualFinish, PlannedWork, PlannedWorkUnit, PlannedWorkDuration,
+                                ActualStart, PlannedWork, PlannedWorkUnit, PlannedWorkDuration,
                                 PlannedDurationUnit;
 
   action ( features : instance, authorization : update ) confirmOperation result [1] $self;
@@ -119,6 +120,8 @@ authorization dependent by _MaintenanceOrder
   determination scheduleOperations on modify { create; delete; field Stage, Confirmed, Description, PersonResp,
                                                PlannedWork, PlannedWorkUnit, PlannedWorkDuration, PlannedDurationUnit,
                                                ActualWork, ActualWorkDuration, ActualStart, ActualFinish; }
+  determination setActualFinish on modify { field ActualStart, ActualWork, ActualWorkUnit, ActualWorkDuration,
+                                            ActualDurationUnit; }
   determination deleteIfEmpty on save { create; update; }
   determination calculateCosts on modify { create; delete; field Description, PersonResp, PlannedWork, PlannedWorkUnit,
                                            PlannedWorkDuration, PlannedDurationUnit, ActualWork, ActualWorkUnit,
@@ -135,10 +138,11 @@ authorization dependent by _MaintenanceOrder
     field PlannedWorkUnit affects entity _MaintenanceOrder;
     field PlannedWorkDuration affects entity _MaintenanceOrder;
     field PlannedDurationUnit affects entity _MaintenanceOrder;
-    field ActualWork affects entity _MaintenanceOrder;
-    field ActualWorkUnit affects entity _MaintenanceOrder;
-    field ActualWorkDuration affects entity _MaintenanceOrder;
-    field ActualDurationUnit affects entity _MaintenanceOrder;
+    field ActualStart affects field ActualFinish;
+    field ActualWork affects field ActualFinish, entity _MaintenanceOrder;
+    field ActualWorkUnit affects field ActualFinish, entity _MaintenanceOrder;
+    field ActualWorkDuration affects field ActualFinish, entity _MaintenanceOrder;
+    field ActualDurationUnit affects field ActualFinish, entity _MaintenanceOrder;
     field Stage affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations;
     action confirmOperation affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations;
     entity _Components affects entity _MaintenanceOrder, entity _Components;
