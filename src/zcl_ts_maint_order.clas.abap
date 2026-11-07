@@ -145,7 +145,9 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                       long_text   = COND #( WHEN rules-long_text_req = abap_true
                                             THEN if_abap_behv=>fc-f-mandatory
                                             ELSE if_abap_behv=>fc-f-unrestricted )
-                      dates       = COND #( WHEN rules-dates_req = abap_true
+                      dates       = COND #( WHEN state->allows_planning( ) = abap_false
+                                            THEN if_abap_behv=>fc-f-read_only
+                                            WHEN rules-dates_req = abap_true
                                             THEN if_abap_behv=>fc-f-mandatory
                                             ELSE if_abap_behv=>fc-f-unrestricted ) ) TO result.
     ENDLOOP.

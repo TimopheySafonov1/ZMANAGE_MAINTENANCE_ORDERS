@@ -10,6 +10,8 @@ CLASS zcl_ts_maint_prt DEFINITION PUBLIC FINAL CREATE PUBLIC.
              prt         TYPE prt,
              master_data TYPE zcl_ts_maint_order=>field_control,
              actuals     TYPE zcl_ts_maint_order=>field_control,
+             details     TYPE zcl_ts_maint_order=>field_control,
+             delete      TYPE zcl_ts_maint_order=>operation_control,
            END OF feature,
            features TYPE STANDARD TABLE OF feature WITH EMPTY KEY.
     TYPES operation_links TYPE TABLE FOR READ LINK zr_ts_maintenance_order\\MaintenancePrt\_MaintenanceOperation.
@@ -26,6 +28,7 @@ CLASS zcl_ts_maint_prt DEFINITION PUBLIC FINAL CREATE PUBLIC.
       IMPORTING prts          TYPE prts
                 orders        TYPE zcl_ts_maint_order=>orders
                 links         TYPE order_links
+                operations    TYPE zcl_ts_maint_operation=>operations OPTIONAL
       RETURNING VALUE(result) TYPE features.
 
     METHODS order_uuid_updates
@@ -80,21 +83,33 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
 
   METHOD get_features.
     LOOP AT prts INTO DATA(prt).
-      DATA(field_control) = COND #( WHEN prt-PrtId IS INITIAL
+      DATA(confirmed) = xsdbool( line_exists( operations[ %is_draft     = prt-%is_draft
+                                                          OperationUuid = prt-OperationUuid
+                                                          Confirmed     = abap_true ] ) ).
+
+      DATA(field_control) = COND #( WHEN prt-PrtId IS INITIAL AND confirmed = abap_false
                                     THEN if_abap_behv=>fc-f-unrestricted
                                     ELSE if_abap_behv=>fc-f-read_only ).
 
       DATA(actual_control) = if_abap_behv=>fc-f-read_only.
       LOOP AT links INTO DATA(link) WHERE source-%tky = prt-%tky.
         READ TABLE orders WITH KEY %tky = link-target-%tky INTO DATA(order).
-        IF sy-subrc = 0 AND zcl_ts_maint_order_state=>for_status( order-OrderStatus )->allows_actuals( ) = abap_true.
+        IF     sy-subrc = 0
+           AND confirmed = abap_false
+           AND zcl_ts_maint_order_state=>for_status( order-OrderStatus )->allows_actuals( ) = abap_true.
           actual_control = if_abap_behv=>fc-f-unrestricted.
         ENDIF.
       ENDLOOP.
 
       APPEND VALUE #( prt         = prt
                       master_data = field_control
-                      actuals     = actual_control ) TO result.
+                      actuals     = actual_control
+                      details     = COND #( WHEN confirmed = abap_true
+                                            THEN if_abap_behv=>fc-f-read_only
+                                            ELSE if_abap_behv=>fc-f-unrestricted )
+                      delete      = COND #( WHEN confirmed = abap_true
+                                            THEN if_abap_behv=>fc-o-disabled
+                                            ELSE if_abap_behv=>fc-o-enabled ) ) TO result.
     ENDLOOP.
   ENDMETHOD.
 
@@ -224,6 +239,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

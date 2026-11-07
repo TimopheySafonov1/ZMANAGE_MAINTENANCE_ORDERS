@@ -108,13 +108,13 @@ authorization dependent by _MaintenanceOrder
   delete ( features : instance, precheck );
 
   association _MaintenanceOrder { with draft; }
-  association _Components { create; with draft; }
-  association _PRTs { create; with draft; }
+  association _Components { create ( features : instance ); with draft; }
+  association _PRTs { create ( features : instance ); with draft; }
 
   field ( numbering : managed, readonly ) OperationUuid;
   field ( readonly ) OrderUuid, OperationId, PlannedStart, PlannedFinish, ActualFinish, Confirmed, OperationStatus,
                      WaitingFor;
-  field ( features : instance ) Stage, ActualWork, ActualWorkUnit, ActualWorkDuration, ActualDurationUnit,
+  field ( features : instance ) Stage, Description, PersonResp, ActualWork, ActualWorkUnit, ActualWorkDuration, ActualDurationUnit,
                                 ActualStart, PlannedWork, PlannedWorkUnit, PlannedWorkDuration,
                                 PlannedDurationUnit;
 
@@ -129,7 +129,7 @@ authorization dependent by _MaintenanceOrder
   determination setActualFinish on modify { field ActualStart, ActualWork, ActualWorkUnit, ActualWorkDuration,
                                             ActualDurationUnit; }
   determination deleteIfEmpty on save { create; update; }
-  determination calculateCosts on modify { create; delete; field Description, PersonResp, PlannedWork, PlannedWorkUnit,
+  determination calculateCosts on modify { create; delete; field Confirmed, Description, PersonResp, PlannedWork, PlannedWorkUnit,
                                            PlannedWorkDuration, PlannedDurationUnit, ActualWork, ActualWorkUnit,
                                            ActualWorkDuration, ActualDurationUnit; }
 
@@ -154,7 +154,8 @@ authorization dependent by _MaintenanceOrder
     field ActualWorkDuration affects field ActualFinish, entity _MaintenanceOrder;
     field ActualDurationUnit affects field ActualFinish, entity _MaintenanceOrder;
     field Stage affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations;
-    action confirmOperation affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations;
+    action confirmOperation affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations,
+                                    entity _MaintenanceOrder._Costs;
     entity _Components affects entity _MaintenanceOrder, entity _Components;
     entity _PRTs affects entity _MaintenanceOrder, entity _PRTs;
   }
@@ -227,14 +228,14 @@ lock dependent by _MaintenanceOrder
 authorization dependent by _MaintenanceOrder
 {
   update;
-  delete ( precheck );
+  delete ( features : instance, precheck );
 
   association _MaintenanceOperation { with draft; }
   association _MaintenanceOrder { with draft; }
 
   field ( numbering : managed, readonly ) ComponentUuid;
   field ( readonly ) OperationUuid, OrderUuid;
-  field ( features : instance ) Description, Uom;
+  field ( features : instance ) Description, Uom, ComponentId, ReqQuantity, StorageLoc;
 
   determination setOrderUuid on modify { create; }
   determination setComponentData on modify { field ComponentId; }
@@ -270,14 +271,15 @@ lock dependent by _MaintenanceOrder
 authorization dependent by _MaintenanceOrder
 {
   update;
-  delete ( precheck );
+  delete ( features : instance, precheck );
 
   association _MaintenanceOperation { with draft; }
   association _MaintenanceOrder { with draft; }
 
   field ( numbering : managed, readonly ) PrtUuid;
   field ( readonly ) OperationUuid, OrderUuid;
-  field ( features : instance ) Description, Uom, ActualUsage, ActualUsageUnit;
+  field ( features : instance ) Description, Uom, ActualUsage, ActualUsageUnit, PrtId, ReqQuantity, StorageLoc,
+                                PlannedUsage, PlannedUsageUnit;
 
   determination setOrderUuid on modify { create; }
   determination setPrtData on modify { field PrtId; }

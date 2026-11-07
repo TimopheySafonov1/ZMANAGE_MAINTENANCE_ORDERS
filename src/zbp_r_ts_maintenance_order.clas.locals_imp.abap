@@ -26,8 +26,8 @@ CLASS lcl_costs IMPLEMENTATION.
         WITH CORRESPONDING #( all_orders )
         RESULT order_data
       ENTITY MaintenanceOrder BY \_Operations
-        FIELDS ( OrderUuid OperationId Description PersonResp PlannedWork PlannedWorkUnit PlannedWorkDuration PlannedDurationUnit
-                 ActualWork ActualWorkUnit ActualWorkDuration ActualDurationUnit )
+        FIELDS ( OrderUuid OperationId Confirmed Description PersonResp PlannedWork PlannedWorkUnit PlannedWorkDuration
+                 PlannedDurationUnit ActualWork ActualWorkUnit ActualWorkDuration ActualDurationUnit )
         WITH CORRESPONDING #( all_orders )
         RESULT operations
       ENTITY MaintenanceOrder BY \_Costs
@@ -417,8 +417,12 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
                                                                                        saved      = saved )
                       ( %tky                      = feature-operation-%tky
                         %delete                   = feature-delete
+                        %assoc-_Components        = feature-items
+                        %assoc-_PRTs              = feature-items
                         %action-confirmOperation  = feature-confirm
                         %field-Stage              = feature-stage
+                        %field-Description        = feature-stage
+                        %field-PersonResp         = feature-stage
                         %field-ActualWork         = feature-actuals
                         %field-ActualWorkUnit     = feature-actuals
                         %field-ActualWorkDuration = feature-actuals
@@ -682,15 +686,25 @@ ENDCLASS.
 
 CLASS lhc_maintenancecomponent IMPLEMENTATION.
   METHOD get_instance_features.
+    DATA operations TYPE zcl_ts_maint_operation=>operations.
+
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
-        FIELDS ( ComponentId ) WITH CORRESPONDING #( keys )
-        RESULT DATA(components).
+        FIELDS ( ComponentId OperationUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(components)
+      ENTITY MaintenanceComponent BY \_MaintenanceOperation
+        FIELDS ( Confirmed ) WITH CORRESPONDING #( keys )
+        RESULT operations.
 
-    result = VALUE #( FOR feature IN zcl_ts_maint_factory=>component( )->get_features( components )
+    result = VALUE #( FOR feature IN zcl_ts_maint_factory=>component( )->get_features( components = components
+                                                                                       operations = operations )
                       ( %tky                = feature-component-%tky
+                        %delete             = feature-delete
                         %field-Description  = feature-master_data
-                        %field-Uom          = feature-master_data ) ).
+                        %field-Uom          = feature-master_data
+                        %field-ComponentId  = feature-details
+                        %field-ReqQuantity  = feature-details
+                        %field-StorageLoc   = feature-details ) ).
   ENDMETHOD.
 
   METHOD setorderuuid.
@@ -840,24 +854,35 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
   METHOD get_instance_features.
     DATA orders TYPE zcl_ts_maint_order=>orders.
     DATA links TYPE zcl_ts_maint_prt=>order_links.
+    DATA operations TYPE zcl_ts_maint_operation=>operations.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt
-        FIELDS ( PrtId ) WITH CORRESPONDING #( keys )
+        FIELDS ( PrtId OperationUuid ) WITH CORRESPONDING #( keys )
         RESULT DATA(prts)
       ENTITY MaintenancePrt BY \_MaintenanceOrder
         FIELDS ( OrderStatus ) WITH CORRESPONDING #( keys )
         RESULT orders
-        LINK links.
+        LINK links
+      ENTITY MaintenancePrt BY \_MaintenanceOperation
+        FIELDS ( Confirmed ) WITH CORRESPONDING #( keys )
+        RESULT operations.
 
-    result = VALUE #( FOR feature IN zcl_ts_maint_factory=>prt( )->get_features( prts   = prts
-                                                                                 orders = orders
-                                                                                 links  = links )
-                      ( %tky                   = feature-prt-%tky
-                        %field-Description     = feature-master_data
-                        %field-Uom             = feature-master_data
-                        %field-ActualUsage     = feature-actuals
-                        %field-ActualUsageUnit = feature-actuals ) ).
+    result = VALUE #( FOR feature IN zcl_ts_maint_factory=>prt( )->get_features( prts       = prts
+                                                                                 orders     = orders
+                                                                                 links      = links
+                                                                                 operations = operations )
+                      ( %tky                    = feature-prt-%tky
+                        %delete                 = feature-delete
+                        %field-Description      = feature-master_data
+                        %field-Uom              = feature-master_data
+                        %field-ActualUsage      = feature-actuals
+                        %field-ActualUsageUnit  = feature-actuals
+                        %field-PrtId            = feature-details
+                        %field-ReqQuantity      = feature-details
+                        %field-StorageLoc       = feature-details
+                        %field-PlannedUsage     = feature-details
+                        %field-PlannedUsageUnit = feature-details ) ).
   ENDMETHOD.
 
   METHOD setorderuuid.

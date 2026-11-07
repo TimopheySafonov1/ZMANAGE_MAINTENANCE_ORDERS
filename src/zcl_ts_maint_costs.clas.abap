@@ -149,6 +149,9 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
                               * convert( amount = component_data-price from = component_data-currency to = currency ).
         ENDLOOP.
         cost_item-material_planned = round( val = material_planned dec = 2 ).
+        IF operation-Confirmed = abap_true.
+          cost_item-material_actual = cost_item-material_planned.
+        ENDIF.
 
         DATA prt_planned TYPE decfloat34.
         DATA prt_actual  TYPE decfloat34.

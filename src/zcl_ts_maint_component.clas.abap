@@ -9,6 +9,8 @@ CLASS zcl_ts_maint_component DEFINITION PUBLIC FINAL CREATE PUBLIC.
     TYPES: BEGIN OF feature,
              component   TYPE component,
              master_data TYPE zcl_ts_maint_order=>field_control,
+             details     TYPE zcl_ts_maint_order=>field_control,
+             delete      TYPE zcl_ts_maint_order=>operation_control,
            END OF feature,
            features TYPE STANDARD TABLE OF feature WITH EMPTY KEY.
     TYPES operation_links TYPE TABLE FOR READ LINK zr_ts_maintenance_order\\MaintenanceComponent\_MaintenanceOperation.
@@ -22,6 +24,7 @@ CLASS zcl_ts_maint_component DEFINITION PUBLIC FINAL CREATE PUBLIC.
 
     METHODS get_features
       IMPORTING components    TYPE components
+                operations    TYPE zcl_ts_maint_operation=>operations OPTIONAL
       RETURNING VALUE(result) TYPE features.
 
     METHODS order_uuid_updates
@@ -73,11 +76,22 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_features.
-    result = VALUE #( FOR component IN components
-                      ( component   = component
-                        master_data = COND #( WHEN component-ComponentId IS INITIAL
-                                              THEN if_abap_behv=>fc-f-unrestricted
-                                              ELSE if_abap_behv=>fc-f-read_only ) ) ).
+    LOOP AT components INTO DATA(component).
+      DATA(confirmed) = xsdbool( line_exists( operations[ %is_draft     = component-%is_draft
+                                                          OperationUuid = component-OperationUuid
+                                                          Confirmed     = abap_true ] ) ).
+
+      APPEND VALUE #( component   = component
+                      master_data = COND #( WHEN component-ComponentId IS INITIAL AND confirmed = abap_false
+                                            THEN if_abap_behv=>fc-f-unrestricted
+                                            ELSE if_abap_behv=>fc-f-read_only )
+                      details     = COND #( WHEN confirmed = abap_true
+                                            THEN if_abap_behv=>fc-f-read_only
+                                            ELSE if_abap_behv=>fc-f-unrestricted )
+                      delete      = COND #( WHEN confirmed = abap_true
+                                            THEN if_abap_behv=>fc-o-disabled
+                                            ELSE if_abap_behv=>fc-o-enabled ) ) TO result.
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD order_uuid_updates.
@@ -207,6 +221,7 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

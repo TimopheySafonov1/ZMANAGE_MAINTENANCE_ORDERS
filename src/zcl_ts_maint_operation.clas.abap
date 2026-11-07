@@ -15,6 +15,7 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
              stage     TYPE zcl_ts_maint_order=>field_control,
              confirm   TYPE zcl_ts_maint_order=>operation_control,
              delete    TYPE zcl_ts_maint_order=>operation_control,
+             items     TYPE zcl_ts_maint_order=>operation_control,
            END OF feature,
            features TYPE STANDARD TABLE OF feature WITH EMPTY KEY.
     TYPES: BEGIN OF blocker,
@@ -241,7 +242,9 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                                 AND blocking_operations( operation = operation siblings = siblings ) IS INITIAL ).
 
       APPEND VALUE #( operation = operation
-                      planned   = COND #( WHEN allows_planning = abap_true OR is_new = abap_true
+                      planned   = COND #( WHEN operation-Confirmed = abap_true
+                                          THEN if_abap_behv=>fc-f-read_only
+                                          WHEN allows_planning = abap_true OR is_new = abap_true
                                           THEN if_abap_behv=>fc-f-unrestricted
                                           ELSE if_abap_behv=>fc-f-read_only )
                       actuals   = COND #( WHEN can_work = abap_true
@@ -254,6 +257,9 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                                           THEN if_abap_behv=>fc-o-enabled
                                           ELSE if_abap_behv=>fc-o-disabled )
                       delete    = COND #( WHEN operation-Confirmed = abap_true
+                                          THEN if_abap_behv=>fc-o-disabled
+                                          ELSE if_abap_behv=>fc-o-enabled )
+                      items     = COND #( WHEN operation-Confirmed = abap_true
                                           THEN if_abap_behv=>fc-o-disabled
                                           ELSE if_abap_behv=>fc-o-enabled ) ) TO result.
     ENDLOOP.
