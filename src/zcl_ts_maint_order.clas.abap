@@ -393,6 +393,16 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                      CHANGING  failed  = failed reported = reported ).
         ENDIF.
       ENDIF.
+
+      IF     order-MaintOrdFinalDueDateTime    IS NOT INITIAL
+         AND order-MaintOrdBasicFinishDateTime IS NOT INITIAL
+         AND order-MaintOrdBasicFinishDateTime > order-MaintOrdFinalDueDateTime.
+        add_error( EXPORTING order   = order
+                             element = `MaintOrdBasicFinishDateTime`
+                             message = zcx_ts_maint_message=>create( number   = '031'
+                                                                     severity = if_abap_behv_message=>severity-warning )
+                   CHANGING  failed  = failed reported = reported ).
+      ENDIF.
     ENDLOOP.
   ENDMETHOD.
 
@@ -448,7 +458,9 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD add_error.
-    APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+    IF message->if_abap_behv_message~m_severity = if_abap_behv_message=>severity-error.
+      APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
+    ENDIF.
     APPEND VALUE #( %tky        = order-%tky
                     %state_area = state_area
                     %msg        = message ) TO reported-maintenanceorder ASSIGNING FIELD-SYMBOL(<reported>).
@@ -458,6 +470,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

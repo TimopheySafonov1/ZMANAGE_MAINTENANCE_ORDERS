@@ -53,6 +53,9 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       MaintOrdBasicStartDateTime,
       MaintOrdBasicFinishDateTime,
       MaintOrdFinalDueDateTime,
+      MaintOrdActualStartDateTime,
+      MaintOrdActualFinishDateTime,
+      MaintOrdDelayHours,
       Currency,
       @Semantics.amount.currencyCode: 'Currency'
       TotalPlannedCosts,
@@ -67,3 +70,4 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       _Attachments : redirected to composition child ZC_TS_MAINTENANCE_ATTACH,
       _Status
 }
+

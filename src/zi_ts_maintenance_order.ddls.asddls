@@ -23,6 +23,9 @@ define root view entity ZI_TS_MAINTENANCE_ORDER
       maint_revision        as MaintRevision,
       basic_start_datetime  as MaintOrdBasicStartDateTime,
       basic_finish_datetime as MaintOrdBasicFinishDateTime,
+      actual_start_datetime  as MaintOrdActualStartDateTime,
+      actual_finish_datetime as MaintOrdActualFinishDateTime,
+      delay_hours           as MaintOrdDelayHours,
       currency              as Currency,
       @Semantics.amount.currencyCode: 'Currency'
       total_planned_costs   as TotalPlannedCosts,
@@ -38,3 +41,4 @@ define root view entity ZI_TS_MAINTENANCE_ORDER
       _Costs,
       _Attachments
 }
+

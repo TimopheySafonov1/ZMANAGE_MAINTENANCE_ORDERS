@@ -65,6 +65,7 @@ define view entity ZC_TS_TECH_OBJ_HIER_VH
       _PlanningPlant.PlantName                                                          as PlanningPlantName,
       @UI.lineItem: [{ position: 55 }]
       @UI.selectionField: [{ position: 45 }]
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_WORK_CENTER_VH', element: 'WorkCenter' } }]
       @EndUserText.label: 'Główne stanowisko robocze'
       WorkCenter,
       @UI.lineItem: [{ position: 60 }]
@@ -90,5 +91,6 @@ define view entity ZC_TS_TECH_OBJ_HIER_VH
       _Superior,
       _PlanningPlant
 }
+
 
 

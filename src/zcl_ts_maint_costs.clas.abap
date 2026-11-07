@@ -246,7 +246,7 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
 
       LOOP AT cost_items INTO DATA(cost_item)
            WHERE is_draft = order-%is_draft AND order_uuid = order-OrderUuid.
-        IF cost_item-planned IS INITIAL AND cost_item-actual IS INITIAL.
+        IF cost_item-planned IS INITIAL AND cost_item-actual IS INITIAL AND cost_item-operation_desc IS INITIAL.
           CONTINUE.
         ENDIF.
 
@@ -377,5 +377,6 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 

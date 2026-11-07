@@ -36,10 +36,16 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       @EndUserText.label: 'Final Due Date/Time'
       MaintOrdFinalDueDateTime,
       MaintRevision,
-      @EndUserText.label: 'Basic Start Date/Time'
+      @EndUserText.label: 'Planned Start Date/Time'
       MaintOrdBasicStartDateTime,
-      @EndUserText.label: 'Basic Finish Date/Time'
+      @EndUserText.label: 'Planned Finish Date/Time'
       MaintOrdBasicFinishDateTime,
+      @EndUserText.label: 'Actual Start Date/Time'
+      MaintOrdActualStartDateTime,
+      @EndUserText.label: 'Actual Finish Date/Time'
+      MaintOrdActualFinishDateTime,
+      @EndUserText.label: 'Delay (Hours)'
+      MaintOrdDelayHours,
       Currency,
       @Semantics.amount.currencyCode: 'Currency'
       TotalPlannedCosts,
@@ -65,3 +71,4 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       _Status,
       _OrderStatus
 }
+

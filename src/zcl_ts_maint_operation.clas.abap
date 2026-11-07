@@ -22,6 +22,11 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
              message TYPE REF TO zcx_ts_maint_message,
            END OF blocker,
            blockers TYPE STANDARD TABLE OF blocker WITH EMPTY KEY.
+    TYPES: BEGIN OF confirm_blocker,
+             operation TYPE operation,
+             message   TYPE REF TO zcx_ts_maint_message,
+           END OF confirm_blocker,
+           confirm_blockers TYPE STANDARD TABLE OF confirm_blocker WITH EMPTY KEY.
     TYPES order_links       TYPE TABLE FOR READ LINK zr_ts_maintenance_order\\MaintenanceOperation\_MaintenanceOrder.
     TYPES operations_of     TYPE TABLE FOR READ IMPORT zr_ts_maintenance_order\\MaintenanceOrder\_Operations.
     TYPES component_creates TYPE TABLE FOR CREATE zr_ts_maintenance_order\\MaintenanceOperation\_Components.
@@ -49,6 +54,7 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
                 orders        TYPE zcl_ts_maint_order=>orders
                 links         TYPE order_links
                 siblings      TYPE operations
+                saved         TYPE operations OPTIONAL
       RETURNING VALUE(result) TYPE features.
 
     METHODS first_operations
@@ -101,6 +107,15 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
                 operations    TYPE operations
       RETURNING VALUE(result) TYPE updates.
 
+    METHODS empty_row_updates
+      IMPORTING orders        TYPE zcl_ts_maint_order=>orders
+                operations    TYPE operations
+      RETURNING VALUE(result) TYPE updates.
+
+    METHODS confirm_check
+      IMPORTING operations    TYPE operations
+      RETURNING VALUE(result) TYPE confirm_blockers.
+
     METHODS confirm
       IMPORTING operations    TYPE operations
       RETURNING VALUE(result) TYPE updates.
@@ -110,6 +125,11 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING VALUE(result) TYPE updates.
 
     METHODS basic_finish_updates
+      IMPORTING orders        TYPE zcl_ts_maint_order=>orders
+                operations    TYPE operations
+      RETURNING VALUE(result) TYPE order_updates.
+
+    METHODS actual_dates_updates
       IMPORTING orders        TYPE zcl_ts_maint_order=>orders
                 operations    TYPE operations
       RETURNING VALUE(result) TYPE order_updates.
@@ -158,6 +178,10 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
       IMPORTING !operation    TYPE operation
                 time_units    TYPE zif_ts_maint_data_provider=>time_units
       RETURNING VALUE(result) TYPE decfloat34.
+
+    METHODS to_utclong
+      IMPORTING !timestamp    TYPE zts_maint_operat-planned_finish
+      RETURNING VALUE(result) TYPE utclong.
 
     METHODS is_working_day
       IMPORTING check_date    TYPE d
@@ -209,12 +233,15 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
         ENDIF.
       ENDLOOP.
 
+      DATA(is_new) = xsdbool(     operation-%is_draft = if_abap_behv=>mk-on
+                              AND NOT line_exists( saved[ OperationUuid = operation-OperationUuid ] ) ).
+
       DATA(can_work) = xsdbool(     allows_actuals = abap_true
                                 AND operation-Confirmed = abap_false
                                 AND blocking_operations( operation = operation siblings = siblings ) IS INITIAL ).
 
       APPEND VALUE #( operation = operation
-                      planned   = COND #( WHEN allows_planning = abap_true
+                      planned   = COND #( WHEN allows_planning = abap_true OR is_new = abap_true
                                           THEN if_abap_behv=>fc-f-unrestricted
                                           ELSE if_abap_behv=>fc-f-read_only )
                       actuals   = COND #( WHEN can_work = abap_true
@@ -441,6 +468,47 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+  METHOD empty_row_updates.
+    LOOP AT orders INTO DATA(order) WHERE %is_draft = if_abap_behv=>mk-on.
+      DATA(last_id) = 0.
+      DATA(last_stage) = 0.
+      DATA(empty_rows) = VALUE operations( ).
+
+      LOOP AT operations INTO DATA(operation)
+           WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid.
+        IF is_empty( operation ) = abap_true.
+          APPEND operation TO empty_rows.
+        ELSE.
+          last_id = nmax( val1 = last_id val2 = CONV i( operation-OperationId ) ).
+          last_stage = nmax( val1 = last_stage val2 = CONV i( operation-Stage ) ).
+        ENDIF.
+      ENDLOOP.
+
+      SORT empty_rows BY OperationId.
+      LOOP AT empty_rows INTO DATA(empty_row).
+        last_id += 1.
+        last_stage += 1.
+        IF CONV i( empty_row-OperationId ) > last_id.
+          APPEND VALUE #( %tky                 = empty_row-%tky
+                          OperationId          = last_id
+                          Stage                = last_stage
+                          %control-OperationId = if_abap_behv=>mk-on
+                          %control-Stage       = if_abap_behv=>mk-on ) TO result.
+        ENDIF.
+      ENDLOOP.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD confirm_check.
+    LOOP AT operations INTO DATA(operation)
+         WHERE Confirmed = abap_false AND ( ActualStart IS INITIAL OR ActualFinish IS INITIAL ).
+      APPEND VALUE #( operation = operation
+                      message   = zcx_ts_maint_message=>create( number = '030'
+                                                                v1     = |{ CONV i( operation-OperationId ) }| ) )
+             TO result.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD confirm.
     LOOP AT operations INTO DATA(operation) WHERE Confirmed = abap_false.
       DATA(update) = VALUE update( %tky               = operation-%tky
@@ -522,6 +590,58 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
         APPEND VALUE #( %tky                                 = order-%tky
                         MaintOrdBasicFinishDateTime          = finish
                         %control-MaintOrdBasicFinishDateTime = if_abap_behv=>mk-on ) TO result.
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD actual_dates_updates.
+    LOOP AT orders INTO DATA(order).
+      DATA(earliest) = VALUE zts_maint_operat-actual_start( ).
+      DATA(latest) = VALUE zts_maint_operat-actual_finish( ).
+      DATA(has_work) = abap_false.
+      DATA(all_confirmed) = abap_true.
+
+      LOOP AT operations INTO DATA(operation)
+           WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid.
+        IF is_empty( operation ) = abap_true.
+          CONTINUE.
+        ENDIF.
+
+        has_work = abap_true.
+        IF operation-Confirmed = abap_false.
+          all_confirmed = abap_false.
+        ENDIF.
+        IF operation-ActualStart IS NOT INITIAL AND ( earliest IS INITIAL OR operation-ActualStart < earliest ).
+          earliest = operation-ActualStart.
+        ENDIF.
+        IF operation-ActualFinish > latest.
+          latest = operation-ActualFinish.
+        ENDIF.
+      ENDLOOP.
+
+      DATA(actual_start) = to_utclong( earliest ).
+      DATA(actual_finish) = COND utclong( WHEN has_work = abap_true AND all_confirmed = abap_true
+                                          THEN to_utclong( latest ) ).
+      DATA(delay) = VALUE zts_maint_order-delay_hours( ).
+      IF     actual_finish IS NOT INITIAL
+         AND order-MaintOrdBasicFinishDateTime IS NOT INITIAL
+         AND actual_finish > order-MaintOrdBasicFinishDateTime.
+        delay = round( val = utclong_diff( high = actual_finish
+                                           low  = order-MaintOrdBasicFinishDateTime ) / 3600
+                       dec = 2 ).
+      ENDIF.
+
+      IF    actual_start  <> order-MaintOrdActualStartDateTime
+         OR actual_finish <> order-MaintOrdActualFinishDateTime
+         OR delay         <> order-MaintOrdDelayHours.
+        APPEND VALUE #( %tky                         = order-%tky
+                        MaintOrdActualStartDateTime  = actual_start
+                        MaintOrdActualFinishDateTime = actual_finish
+                        MaintOrdDelayHours           = delay
+                        %control                     = VALUE #( MaintOrdActualStartDateTime  = if_abap_behv=>mk-on
+                                                                MaintOrdActualFinishDateTime = if_abap_behv=>mk-on
+                                                                MaintOrdDelayHours           = if_abap_behv=>mk-on ) )
+               TO result.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
@@ -692,6 +812,15 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+  METHOD to_utclong.
+    IF timestamp IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    CONVERT TIME STAMP timestamp TIME ZONE 'UTC' INTO DATE DATA(utc_date) TIME DATA(utc_time).
+    CONVERT DATE utc_date TIME utc_time TIME ZONE 'UTC' INTO UTCLONG result.
+  ENDMETHOD.
+
   METHOD is_working_day.
     result = xsdbool(     ( check_date - CONV d( '19000101' ) ) MOD 7 < 5
                       AND data_provider->get_holiday_name( check_date ) IS INITIAL ).
@@ -745,6 +874,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

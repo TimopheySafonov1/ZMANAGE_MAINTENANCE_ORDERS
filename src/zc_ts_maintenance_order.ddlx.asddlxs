@@ -85,8 +85,9 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   OrderStatusCriticality;
 
   @EndUserText.label: 'Opis zlecenia'
-  @UI: { lineItem:   [{ position: 30, importance: #HIGH }],
-         fieldGroup: [{ qualifier: 'OrderInformation', position: 20 }] }
+  @UI: { lineItem:       [{ position: 30, importance: #HIGH }],
+         fieldGroup:     [{ qualifier: 'OrderInformation', position: 20 }],
+         selectionField: [{ position: 18 }] }
   Description;
 
   @EndUserText.label: 'Tekst długi'
@@ -98,20 +99,20 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_TECH_OBJ_VH', element: 'TechObject' },
                                        additionalBinding: [{ localElement: 'PlanningPlant',
                                                              element: 'PlanningPlant',
-                                                             usage: #FILTER },
+                                                             usage: #FILTER_AND_RESULT },
                                                            { localElement: 'WorkCenter',
                                                              element: 'WorkCenter',
-                                                             usage: #FILTER }],
+                                                             usage: #FILTER_AND_RESULT }],
                                        label: 'Wyszukiwanie wg danych obiektu',
                                        useForValidation: true },
                                      { qualifier: 'Hierarchy',
                                        entity: { name: 'ZC_TS_TECH_OBJ_HIER_VH', element: 'TechObject' },
                                        additionalBinding: [{ localElement: 'PlanningPlant',
                                                              element: 'PlanningPlant',
-                                                             usage: #FILTER },
+                                                             usage: #FILTER_AND_RESULT },
                                                            { localElement: 'WorkCenter',
                                                              element: 'WorkCenter',
-                                                             usage: #FILTER }],
+                                                             usage: #FILTER_AND_RESULT }],
                                        presentationVariantQualifier: 'Hierarchy',
                                        label: 'Wyszukiwanie wg hierarchii' }]
   @UI: { lineItem:       [{ position: 40, importance: #MEDIUM }],
@@ -159,12 +160,12 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @UI.fieldGroup: [{ qualifier: 'Scheduling', position: 20 }]
   MaintRevision;
 
-  @EndUserText.label: 'Podstawowa data rozpoczęcia'
+  @EndUserText.label: 'Planowany początek'
   @UI: { lineItem:   [{ position: 90, importance: #MEDIUM }],
          fieldGroup: [{ qualifier: 'Scheduling', position: 30 }] }
   MaintOrdBasicStartDateTime;
 
-  @EndUserText.label: 'Podstawowa data zakończenia'
+  @EndUserText.label: 'Planowany koniec'
   @UI: { lineItem:   [{ position: 100, importance: #MEDIUM }],
          fieldGroup: [{ qualifier: 'Scheduling', position: 40 }] }
   MaintOrdBasicFinishDateTime;
@@ -174,6 +175,18 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
          fieldGroup: [{ qualifier: 'Scheduling', position: 50 },
                       { qualifier: 'HeaderGeneral', position: 30 }] }
   MaintOrdFinalDueDateTime;
+
+  @EndUserText.label: 'Rzeczywisty początek'
+  @UI.fieldGroup: [{ qualifier: 'Scheduling', position: 60 }]
+  MaintOrdActualStartDateTime;
+
+  @EndUserText.label: 'Rzeczywisty koniec'
+  @UI.fieldGroup: [{ qualifier: 'Scheduling', position: 70 }]
+  MaintOrdActualFinishDateTime;
+
+  @EndUserText.label: 'Opóźnienie (h)'
+  @UI.fieldGroup: [{ qualifier: 'Scheduling', position: 80 }]
+  MaintOrdDelayHours;
 
   @EndUserText.label: 'Waluta'
   @UI.hidden: true
@@ -203,4 +216,5 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @UI.hidden: true
   LastChangedAt;
 }
+
 

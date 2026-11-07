@@ -19,7 +19,8 @@ authorization master ( global )
 
   field ( numbering : managed, readonly ) OrderUuid;
   field ( readonly ) OrderId, OrderStatus, TechObjType, LocalLastChangedAt, LastChangedAt, TotalPlannedCosts, TotalActualCosts,
-                     TotalPlannedHours, TotalActualHours;
+                     TotalPlannedHours, TotalActualHours, MaintOrdActualStartDateTime, MaintOrdActualFinishDateTime,
+                     MaintOrdDelayHours;
   field ( features : instance ) OrderType, MaintRevision, TechObject, LongText, PlanningPlant, WorkCenter,
                                 MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime;
 
@@ -50,7 +51,10 @@ authorization master ( global )
     field MaintOrdBasicStartDateTime affects field MaintOrdFinalDueDateTime, field MaintOrdBasicFinishDateTime,
                                          entity _Operations;
     field TechObject affects field TechObjType;
-    entity _Operations affects entity _Operations;
+    entity _Operations affects field TotalPlannedCosts, field TotalActualCosts, field TotalPlannedHours,
+                               field TotalActualHours, field MaintOrdBasicFinishDateTime,
+                               field MaintOrdActualStartDateTime, field MaintOrdActualFinishDateTime,
+                               field MaintOrdDelayHours, entity _Operations, entity _Costs;
     action releaseOrder affects entity _Status, entity _Operations;
     action completeOrder affects entity _Status, entity _Operations;
   }
@@ -81,6 +85,9 @@ authorization master ( global )
       MaintRevision               = maint_revision;
       MaintOrdBasicStartDateTime  = basic_start_datetime;
       MaintOrdBasicFinishDateTime = basic_finish_datetime;
+      MaintOrdActualStartDateTime  = actual_start_datetime;
+      MaintOrdActualFinishDateTime = actual_finish_datetime;
+      MaintOrdDelayHours          = delay_hours;
       Currency                    = currency;
       TotalPlannedCosts           = total_planned_costs;
       TotalActualCosts            = total_actual_costs;
@@ -134,11 +141,15 @@ authorization dependent by _MaintenanceOrder
   {
     field Description affects entity _MaintenanceOrder;
     field PersonResp affects entity _MaintenanceOrder;
-    field PlannedWork affects entity _MaintenanceOrder;
-    field PlannedWorkUnit affects entity _MaintenanceOrder;
-    field PlannedWorkDuration affects entity _MaintenanceOrder;
-    field PlannedDurationUnit affects entity _MaintenanceOrder;
-    field ActualStart affects field ActualFinish;
+    field PlannedWork affects field PlannedStart, field PlannedFinish, entity _MaintenanceOrder,
+                              entity _MaintenanceOrder._Operations;
+    field PlannedWorkUnit affects field PlannedStart, field PlannedFinish, entity _MaintenanceOrder,
+                                  entity _MaintenanceOrder._Operations;
+    field PlannedWorkDuration affects field PlannedStart, field PlannedFinish, entity _MaintenanceOrder,
+                                      entity _MaintenanceOrder._Operations;
+    field PlannedDurationUnit affects field PlannedStart, field PlannedFinish, entity _MaintenanceOrder,
+                                      entity _MaintenanceOrder._Operations;
+    field ActualStart affects field ActualFinish, entity _MaintenanceOrder;
     field ActualWork affects field ActualFinish, entity _MaintenanceOrder;
     field ActualWorkUnit affects field ActualFinish, entity _MaintenanceOrder;
     field ActualWorkDuration affects field ActualFinish, entity _MaintenanceOrder;

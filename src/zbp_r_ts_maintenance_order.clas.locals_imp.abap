@@ -105,14 +105,32 @@ CLASS lcl_schedule IMPLEMENTATION.
         UPDATE FROM operation->plan( orders     = order_data
                                      operations = operations ).
 
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        UPDATE FROM operation->empty_row_updates( orders     = order_data
+                                                  operations = operations ).
+
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder BY \_Operations
-        FIELDS ( OrderUuid PlannedFinish ) WITH CORRESPONDING #( all_orders )
+        FIELDS ( OrderUuid PlannedFinish Confirmed Description PersonResp PlannedWork PlannedWorkDuration
+                 ActualWork ActualWorkDuration ActualStart ActualFinish )
+        WITH CORRESPONDING #( all_orders )
         RESULT operations.
 
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         UPDATE FROM operation->basic_finish_updates( orders     = order_data
+                                                     operations = operations ).
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        FIELDS ( MaintOrdBasicFinishDateTime MaintOrdActualStartDateTime MaintOrdActualFinishDateTime MaintOrdDelayHours )
+        WITH CORRESPONDING #( all_orders )
+        RESULT order_data.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FROM operation->actual_dates_updates( orders     = order_data
                                                      operations = operations ).
   ENDMETHOD.
 ENDCLASS.
@@ -364,6 +382,8 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
     DATA orders TYPE zcl_ts_maint_order=>orders.
     DATA links TYPE zcl_ts_maint_operation=>order_links.
     DATA siblings TYPE zcl_ts_maint_operation=>operations.
+    DATA saved TYPE zcl_ts_maint_operation=>operations.
+    DATA saved_keys TYPE zcl_ts_maint_operation=>keys.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
@@ -383,10 +403,18 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
         WITH CORRESPONDING #( orders )
         RESULT siblings.
 
+    saved_keys = VALUE #( FOR draft IN operations WHERE ( %is_draft = if_abap_behv=>mk-on )
+                          ( %is_draft = if_abap_behv=>mk-off OperationUuid = draft-OperationUuid ) ).
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        FIELDS ( OperationId ) WITH saved_keys
+        RESULT saved.
+
     result = VALUE #( FOR feature IN zcl_ts_maint_factory=>operation( )->get_features( operations = operations
                                                                                        orders     = orders
                                                                                        links      = links
-                                                                                       siblings   = siblings )
+                                                                                       siblings   = siblings
+                                                                                       saved      = saved )
                       ( %tky                      = feature-operation-%tky
                         %delete                   = feature-delete
                         %action-confirmOperation  = feature-confirm
@@ -576,13 +604,23 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
         ALL FIELDS WITH CORRESPONDING #( keys )
         RESULT DATA(current).
 
+    LOOP AT zcl_ts_maint_factory=>operation( )->confirm_check( current ) INTO DATA(blocker).
+      APPEND VALUE #( %tky = blocker-operation-%tky ) TO failed-maintenanceoperation.
+      APPEND VALUE #( %tky  = blocker-operation-%tky
+                      %msg  = blocker-message
+                      %path = VALUE #( MaintenanceOrder-%is_draft = blocker-operation-%is_draft
+                                       MaintenanceOrder-OrderUuid = blocker-operation-OrderUuid ) )
+             TO reported-maintenanceoperation.
+      DELETE current WHERE %tky = blocker-operation-%tky.
+    ENDLOOP.
+
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
         UPDATE FROM zcl_ts_maint_factory=>operation( )->confirm( current ).
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
-        ALL FIELDS WITH CORRESPONDING #( keys )
+        ALL FIELDS WITH CORRESPONDING #( current )
         RESULT DATA(operations).
 
     result = VALUE #( FOR operation IN operations ( %tky = operation-%tky %param = operation ) ).
@@ -992,6 +1030,7 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

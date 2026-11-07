@@ -60,12 +60,15 @@ define view entity ZC_TS_TECH_OBJ_VH
       IsInactive,
       @UI.lineItem: [{ position: 34 }]
       @UI.selectionField: [{ position: 34 }]
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PLANT_VH', element: 'Plant' } }]
       @EndUserText.label: 'Zakład planowania'
       PlanningPlant,
       @UI.lineItem: [{ position: 36 }]
       @UI.selectionField: [{ position: 36 }]
+      @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_WORK_CENTER_VH', element: 'WorkCenter' } }]
       @EndUserText.label: 'Główne stanowisko robocze'
       WorkCenter
 }
+
 
 

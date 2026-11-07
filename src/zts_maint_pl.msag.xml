@@ -51,12 +51,12 @@
     <item>
      <SPRSL>L</SPRSL>
      <MSGNR>007</MSGNR>
-     <TEXT>Podaj podstawową datę rozpoczęcia.</TEXT>
+     <TEXT>Podaj planowany początek.</TEXT>
     </item>
     <item>
      <SPRSL>L</SPRSL>
      <MSGNR>008</MSGNR>
-     <TEXT>Podaj podstawową datę zakończenia.</TEXT>
+     <TEXT>Podaj planowany koniec.</TEXT>
     </item>
     <item>
      <SPRSL>L</SPRSL>
@@ -71,7 +71,7 @@
     <item>
      <SPRSL>L</SPRSL>
      <MSGNR>011</MSGNR>
-     <TEXT>Podstawowa data zakończenia przypada na &amp;1.</TEXT>
+     <TEXT>Planowany koniec przypada na &amp;1.</TEXT>
     </item>
     <item>
      <SPRSL>L</SPRSL>
@@ -111,7 +111,7 @@
     <item>
      <SPRSL>L</SPRSL>
      <MSGNR>019</MSGNR>
-     <TEXT>Operacja &amp;1 kończy się po podstawowej dacie zakończenia zlecenia.</TEXT>
+     <TEXT>Operacja &amp;1 kończy się po planowanym końcu zlecenia.</TEXT>
     </item>
     <item>
      <SPRSL>L</SPRSL>
@@ -162,6 +162,16 @@
      <SPRSL>L</SPRSL>
      <MSGNR>029</MSGNR>
      <TEXT>Obiekt techniczny nie należy do stanowiska roboczego &amp;1.</TEXT>
+    </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>030</MSGNR>
+     <TEXT>Operacja &amp;1: podaj rzeczywisty początek i pracę przed potwierdzeniem.</TEXT>
+    </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>031</MSGNR>
+     <TEXT>Planowany koniec zlecenia przypada po terminie ostatecznym.</TEXT>
     </item>
    </T100_TEXTS>
   </asx:values>
