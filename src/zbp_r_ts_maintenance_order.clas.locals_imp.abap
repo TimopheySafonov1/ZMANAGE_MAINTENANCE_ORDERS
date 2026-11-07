@@ -603,6 +603,9 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD confirmoperation.
+    DATA components TYPE zcl_ts_maint_component=>components.
+    DATA prts TYPE zcl_ts_maint_prt=>prts.
+
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
         ALL FIELDS WITH CORRESPONDING #( keys )
@@ -623,6 +626,20 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
         UPDATE FROM zcl_ts_maint_factory=>operation( )->confirm( current ).
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_Components
+        FIELDS ( ComponentId Description ReqQuantity ) WITH CORRESPONDING #( current )
+        RESULT components
+      ENTITY MaintenanceOperation BY \_PRTs
+        FIELDS ( PrtId Description ReqQuantity PlannedUsage ActualUsage ) WITH CORRESPONDING #( current )
+        RESULT prts.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceComponent
+        DELETE FROM zcl_ts_maint_factory=>component( )->empty_components( components )
+      ENTITY MaintenancePrt
+        DELETE FROM zcl_ts_maint_factory=>prt( )->empty_prts( prts ).
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation BY \_MaintenanceOrder

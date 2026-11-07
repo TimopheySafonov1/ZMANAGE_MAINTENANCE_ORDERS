@@ -155,7 +155,7 @@ authorization dependent by _MaintenanceOrder
     field ActualWorkDuration affects field ActualFinish, entity _MaintenanceOrder;
     field ActualDurationUnit affects field ActualFinish, entity _MaintenanceOrder;
     field Stage affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations;
-    action confirmOperation affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations,
+    action confirmOperation affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations, entity _Components, entity _PRTs,
                                     entity _MaintenanceOrder._Costs;
     entity _Components affects entity _MaintenanceOrder, entity _Components, entity _MaintenanceOrder._Costs;
     entity _PRTs affects entity _MaintenanceOrder, entity _PRTs, entity _MaintenanceOrder._Costs;
