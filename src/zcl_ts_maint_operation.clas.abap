@@ -121,6 +121,10 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
       IMPORTING operations    TYPE operations
       RETURNING VALUE(result) TYPE updates.
 
+    METHODS next_stage_start_updates
+      IMPORTING operations    TYPE operations
+      RETURNING VALUE(result) TYPE updates.
+
     METHODS actual_finish_updates
       IMPORTING operations    TYPE operations
       RETURNING VALUE(result) TYPE updates.
@@ -546,6 +550,39 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
         GET TIME STAMP FIELD update-ActualFinish.
       ENDIF.
       APPEND update TO result.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD next_stage_start_updates.
+    DATA(time_zone) = data_provider->get_time_zone( ).
+
+    LOOP AT operations INTO DATA(operation) WHERE Confirmed = abap_false AND ActualStart IS INITIAL.
+      IF    is_empty( operation ) = abap_true
+         OR blocking_operations( operation = operation siblings = operations ) IS NOT INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      DATA(latest) = VALUE zts_maint_operat-actual_finish( ).
+      LOOP AT same_order( operation = operation siblings = operations ) INTO DATA(previous)
+           WHERE Stage < operation-Stage.
+        IF previous-ActualFinish > latest.
+          latest = previous-ActualFinish.
+        ENDIF.
+      ENDLOOP.
+
+      IF latest IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      CONVERT TIME STAMP latest TIME ZONE time_zone INTO DATE DATA(start_date) TIME DATA(start_time).
+      next_working_time( CHANGING date = start_date time = start_time ).
+
+      DATA(start) = VALUE zts_maint_operat-actual_start( ).
+      CONVERT DATE start_date TIME start_time INTO TIME STAMP start TIME ZONE time_zone.
+
+      APPEND VALUE #( %tky                 = operation-%tky
+                      ActualStart          = start
+                      %control-ActualStart = if_abap_behv=>mk-on ) TO result.
     ENDLOOP.
   ENDMETHOD.
 

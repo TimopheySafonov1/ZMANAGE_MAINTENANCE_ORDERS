@@ -625,6 +625,20 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
         UPDATE FROM zcl_ts_maint_factory=>operation( )->confirm( current ).
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_MaintenanceOrder
+        FIELDS ( OrderStatus ) WITH CORRESPONDING #( current )
+        RESULT DATA(orders).
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder BY \_Operations
+        ALL FIELDS WITH CORRESPONDING #( orders )
+        RESULT DATA(siblings).
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        UPDATE FROM zcl_ts_maint_factory=>operation( )->next_stage_start_updates( siblings ).
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
         ALL FIELDS WITH CORRESPONDING #( current )
         RESULT DATA(operations).
