@@ -121,7 +121,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_ts_maint_data_provider~get_time_zone.
-    result = xco_cp_time=>time_zone->user->value.
+    result = 'CET'.
   ENDMETHOD.
 
   METHOD zif_ts_maint_data_provider~get_status_history.
@@ -147,6 +147,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 
