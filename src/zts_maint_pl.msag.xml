@@ -178,6 +178,16 @@
      <MSGNR>032</MSGNR>
      <TEXT>Operacja &amp;1: podaj pracę rzeczywistą przed potwierdzeniem.</TEXT>
     </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>033</MSGNR>
+     <TEXT>Operacja &amp;1: planowana praca i czas trwania mają tę samą jednostkę.</TEXT>
+    </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>034</MSGNR>
+     <TEXT>Operacja &amp;1: rzeczywista praca i czas trwania mają tę samą jednostkę.</TEXT>
+    </item>
    </T100_TEXTS>
   </asx:values>
  </asx:abap>

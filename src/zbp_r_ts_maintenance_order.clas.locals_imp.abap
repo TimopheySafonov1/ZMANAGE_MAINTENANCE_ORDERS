@@ -641,7 +641,7 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
         ALL FIELDS WITH CORRESPONDING #( keys )
         RESULT DATA(operations)
       ENTITY MaintenanceOperation BY \_MaintenanceOrder
-        FIELDS ( MaintOrdBasicFinishDateTime ) WITH CORRESPONDING #( keys )
+        FIELDS ( MaintOrdBasicFinishDateTime OrderStatus ) WITH CORRESPONDING #( keys )
         RESULT orders.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE

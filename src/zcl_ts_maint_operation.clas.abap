@@ -730,6 +730,28 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
         ENDIF.
       ENDIF.
 
+      DATA(order_status) = VALUE #( orders[ %is_draft = operation-%is_draft
+                                            OrderUuid = operation-OrderUuid ]-OrderStatus OPTIONAL ).
+
+      IF     operation-Confirmed = abap_false
+         AND zcl_ts_maint_order_state=>for_status( order_status )->allows_planning( ) = abap_true
+         AND operation-PlannedWorkDuration IS NOT INITIAL
+         AND operation-PlannedDurationUnit = operation-PlannedWorkUnit.
+        add_message( EXPORTING operation = operation
+                               element   = `PlannedDurationUnit`
+                               message   = zcx_ts_maint_message=>create( number = '033' v1 = |{ number }| )
+                     CHANGING  failed    = failed reported = reported ).
+      ENDIF.
+
+      IF     operation-Confirmed = abap_false
+         AND operation-ActualWorkDuration IS NOT INITIAL
+         AND operation-ActualDurationUnit = operation-ActualWorkUnit.
+        add_message( EXPORTING operation = operation
+                               element   = `ActualDurationUnit`
+                               message   = zcx_ts_maint_message=>create( number = '034' v1 = |{ number }| )
+                     CHANGING  failed    = failed reported = reported ).
+      ENDIF.
+
       IF operation-PlannedWork IS INITIAL.
         add_message( EXPORTING operation = operation
                                element   = `PlannedWork`

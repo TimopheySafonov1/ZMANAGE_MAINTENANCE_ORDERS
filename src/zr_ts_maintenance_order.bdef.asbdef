@@ -134,7 +134,8 @@ authorization dependent by _MaintenanceOrder
                                            ActualWorkDuration, ActualDurationUnit; }
 
   validation validateExecution on save { create; field Stage, Confirmed, ActualStart, ActualFinish, Description,
-                                         PlannedWork, PlannedWorkDuration, PlannedDurationUnit; }
+                                         PlannedWork, PlannedWorkUnit, PlannedWorkDuration, PlannedDurationUnit,
+                                         ActualWork, ActualWorkUnit, ActualWorkDuration, ActualDurationUnit; }
 
   side effects
   {
