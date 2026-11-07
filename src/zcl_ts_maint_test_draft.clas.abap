@@ -125,15 +125,13 @@ CLASS zcl_ts_maint_test_draft IMPLEMENTATION.
 
     MODIFY ENTITIES OF zr_ts_maintenance_order
       ENTITY MaintenanceOperation
-        UPDATE FIELDS ( Stage Description PersonResp PlannedWork PlannedWorkUnit PlannedWorkDuration PlannedDurationUnit )
+        UPDATE FIELDS ( Stage Description PersonResp PlannedWork PlannedWorkUnit )
         WITH VALUE #( ( %tky                = empty_row-%tky
                         Stage               = data-stage
                         Description         = data-description
                         PersonResp          = data-person
                         PlannedWork         = data-hours
-                        PlannedWorkUnit     = 'H'
-                        PlannedWorkDuration = data-hours
-                        PlannedDurationUnit = 'H' ) )
+                        PlannedWorkUnit     = 'H' ) )
       FAILED DATA(failed).
 
     result = xsdbool(     failed IS INITIAL
