@@ -157,8 +157,8 @@ authorization dependent by _MaintenanceOrder
     field Stage affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations;
     action confirmOperation affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations,
                                     entity _MaintenanceOrder._Costs;
-    entity _Components affects entity _MaintenanceOrder, entity _Components;
-    entity _PRTs affects entity _MaintenanceOrder, entity _PRTs;
+    entity _Components affects entity _MaintenanceOrder, entity _Components, entity _MaintenanceOrder._Costs;
+    entity _PRTs affects entity _MaintenanceOrder, entity _PRTs, entity _MaintenanceOrder._Costs;
   }
 
   mapping for zts_maint_operat
@@ -249,8 +249,8 @@ authorization dependent by _MaintenanceOrder
   {
     field ComponentId affects field Description, field Uom,
                               permissions ( field Description, field Uom ),
-                              entity _MaintenanceOrder;
-    field ReqQuantity affects entity _MaintenanceOrder;
+                              entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
+    field ReqQuantity affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
   }
 
   mapping for zts_maint_compon
@@ -294,12 +294,12 @@ authorization dependent by _MaintenanceOrder
   {
     field PrtId affects field Description, field Uom,
                         permissions ( field Description, field Uom ),
-                        entity _MaintenanceOrder;
-    field ReqQuantity affects entity _MaintenanceOrder;
-    field PlannedUsage affects entity _MaintenanceOrder;
-    field PlannedUsageUnit affects entity _MaintenanceOrder;
-    field ActualUsage affects entity _MaintenanceOrder;
-    field ActualUsageUnit affects entity _MaintenanceOrder;
+                        entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
+    field ReqQuantity affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
+    field PlannedUsage affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
+    field PlannedUsageUnit affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
+    field ActualUsage affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
+    field ActualUsageUnit affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
   }
 
   mapping for zts_maint_prt
