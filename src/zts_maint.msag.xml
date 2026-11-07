@@ -186,13 +186,19 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZTS_MAINT</ARBGB>
      <MSGNR>030</MSGNR>
-     <TEXT>Operation &amp;1: enter the actual start and work before confirming.</TEXT>
+     <TEXT>Operation &amp;1: enter the actual start before confirming.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>ZTS_MAINT</ARBGB>
      <MSGNR>031</MSGNR>
      <TEXT>The planned finish of the order is after the final due date.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>032</MSGNR>
+     <TEXT>Operation &amp;1: enter the actual work before confirming.</TEXT>
     </T100>
    </T100>
   </asx:values>

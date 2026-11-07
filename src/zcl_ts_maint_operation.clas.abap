@@ -500,12 +500,16 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD confirm_check.
-    LOOP AT operations INTO DATA(operation)
-         WHERE Confirmed = abap_false AND ( ActualStart IS INITIAL OR ActualFinish IS INITIAL ).
-      APPEND VALUE #( operation = operation
-                      message   = zcx_ts_maint_message=>create( number = '030'
-                                                                v1     = |{ CONV i( operation-OperationId ) }| ) )
-             TO result.
+    LOOP AT operations INTO DATA(operation) WHERE Confirmed = abap_false.
+      DATA(number) = |{ CONV i( operation-OperationId ) }|.
+      IF operation-ActualStart IS INITIAL.
+        APPEND VALUE #( operation = operation
+                        message   = zcx_ts_maint_message=>create( number = '030' v1 = number ) ) TO result.
+      ENDIF.
+      IF operation-ActualWork IS INITIAL AND operation-ActualWorkDuration IS INITIAL.
+        APPEND VALUE #( operation = operation
+                        message   = zcx_ts_maint_message=>create( number = '032' v1 = number ) ) TO result.
+      ENDIF.
     ENDLOOP.
   ENDMETHOD.
 

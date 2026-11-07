@@ -166,12 +166,17 @@
     <item>
      <SPRSL>L</SPRSL>
      <MSGNR>030</MSGNR>
-     <TEXT>Operacja &amp;1: podaj rzeczywisty początek i pracę przed potwierdzeniem.</TEXT>
+     <TEXT>Operacja &amp;1: podaj rzeczywisty początek przed potwierdzeniem.</TEXT>
     </item>
     <item>
      <SPRSL>L</SPRSL>
      <MSGNR>031</MSGNR>
      <TEXT>Planowany koniec zlecenia przypada po terminie ostatecznym.</TEXT>
+    </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>032</MSGNR>
+     <TEXT>Operacja &amp;1: podaj pracę rzeczywistą przed potwierdzeniem.</TEXT>
     </item>
    </T100_TEXTS>
   </asx:values>

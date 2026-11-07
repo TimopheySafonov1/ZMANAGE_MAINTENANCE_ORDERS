@@ -532,7 +532,7 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
-        FIELDS ( OrderUuid OperationId ) WITH CORRESPONDING #( keys )
+        FIELDS ( OrderUuid OperationId Stage ) WITH CORRESPONDING #( keys )
         RESULT DATA(new_operations).
 
     DATA(orders) = operation->orders_of_new_operations( new_operations ).
@@ -542,7 +542,7 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder BY \_Operations
-        FIELDS ( OrderUuid OperationId ) WITH orders
+        FIELDS ( OrderUuid OperationId Stage ) WITH orders
         RESULT all_operations.
 
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
@@ -605,13 +605,15 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
         RESULT DATA(current).
 
     LOOP AT zcl_ts_maint_factory=>operation( )->confirm_check( current ) INTO DATA(blocker).
-      APPEND VALUE #( %tky = blocker-operation-%tky ) TO failed-maintenanceoperation.
       APPEND VALUE #( %tky  = blocker-operation-%tky
                       %msg  = blocker-message
                       %path = VALUE #( MaintenanceOrder-%is_draft = blocker-operation-%is_draft
                                        MaintenanceOrder-OrderUuid = blocker-operation-OrderUuid ) )
              TO reported-maintenanceoperation.
-      DELETE current WHERE %tky = blocker-operation-%tky.
+      IF line_exists( current[ %tky = blocker-operation-%tky ] ).
+        APPEND VALUE #( %tky = blocker-operation-%tky ) TO failed-maintenanceoperation.
+        DELETE current WHERE %tky = blocker-operation-%tky.
+      ENDIF.
     ENDLOOP.
 
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE

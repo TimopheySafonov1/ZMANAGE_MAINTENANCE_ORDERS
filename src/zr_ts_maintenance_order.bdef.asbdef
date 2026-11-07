@@ -122,8 +122,7 @@ authorization dependent by _MaintenanceOrder
 
   determination setOperationId on modify { create; }
   determination createComponentAndPrt on modify { create; }
-  determination addEmptyOperation on modify { field Description, PersonResp, PlannedWork, PlannedWorkDuration,
-                                              ActualWork, ActualWorkDuration, ActualStart, ActualFinish; }
+  determination addEmptyOperation on modify { field Description, PersonResp, PlannedWork, PlannedWorkDuration; }
   determination scheduleOperations on modify { create; delete; field Stage, Confirmed, Description, PersonResp,
                                                PlannedWork, PlannedWorkUnit, PlannedWorkDuration, PlannedDurationUnit,
                                                ActualWork, ActualWorkDuration, ActualStart, ActualFinish; }

@@ -15,6 +15,12 @@ define view entity ZI_TS_OPER_STATUS_T
       @Semantics.text: true
       @EndUserText.label: 'Status Description'
       description as StatusDescription,
+      case status
+        when 'CONF' then cast( 3 as abap.int1 )
+        when 'WAIT' then cast( 2 as abap.int1 )
+        else cast( 0 as abap.int1 )
+      end         as StatusCriticality,
 
       _Language
 }
+
