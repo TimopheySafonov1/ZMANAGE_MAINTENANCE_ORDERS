@@ -18,7 +18,8 @@ define service ZUI_TS_MAINTENANCE_ORDER {
   expose ZC_TS_TECH_OBJ_HIER_VH      as TechObjectHierarchyVH;
   expose ZC_TS_TECH_OBJ_TYPE_VH      as TechObjectTypeVH;
   expose ZC_TS_FILE_TYPE_VH          as FileTypeVH;
-  expose ZC_TS_STOR_LOC_VH           as StorageLocationVH;
-  expose ZC_TS_PRT_STOR_LOC_VH       as PrtStorageLocationVH;
+  expose ZC_TS_COMP_STOCK_VH         as StorageLocationVH;
+  expose ZC_TS_PRT_STOCK_VH          as PrtStorageLocationVH;
 }
+
 

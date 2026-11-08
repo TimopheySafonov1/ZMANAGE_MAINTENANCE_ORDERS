@@ -22,7 +22,7 @@ CLASS lcl_costs IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( Currency TotalPlannedCosts TotalActualCosts TotalPlannedHours TotalActualHours )
+        FIELDS ( Currency OrderStatus TotalPlannedCosts TotalActualCosts TotalPlannedHours TotalActualHours )
         WITH CORRESPONDING #( all_orders )
         RESULT order_data
       ENTITY MaintenanceOrder BY \_Operations
@@ -91,7 +91,7 @@ CLASS lcl_schedule IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime ) WITH CORRESPONDING #( all_orders )
+        FIELDS ( MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime MaintRevision ) WITH CORRESPONDING #( all_orders )
         RESULT order_data
       ENTITY MaintenanceOrder BY \_Operations
         FIELDS ( OrderUuid OperationId Stage Description PersonResp PlannedWork PlannedWorkUnit PlannedWorkDuration

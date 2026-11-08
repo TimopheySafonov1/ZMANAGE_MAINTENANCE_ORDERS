@@ -196,6 +196,28 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
                                         components = components
                                         prts       = prts ).
 
+    LOOP AT orders INTO DATA(frozen_order)
+         WHERE OrderStatus IS NOT INITIAL.
+      IF zcl_ts_maint_order_state=>for_status( frozen_order-OrderStatus )->allows_planning( ) = abap_true.
+        CONTINUE.
+      ENDIF.
+
+      LOOP AT cost_items REFERENCE INTO DATA(frozen_item)
+           WHERE is_draft = frozen_order-%is_draft AND order_uuid = frozen_order-OrderUuid.
+        DATA(frozen) = VALUE #( existing_costs[ %is_draft     = frozen_item->is_draft
+                                                OperationUuid = frozen_item->operation_uuid ] OPTIONAL ).
+        IF frozen_item->material_actual IS INITIAL.
+          frozen_item->material_actual = nmax( val1 = CONV zts_maint_costs-material_actual_costs( 0 )
+                                               val2 = frozen_item->material_planned - frozen-MaterialPlannedCosts ).
+        ENDIF.
+        frozen_item->labor_planned = frozen-LaborPlannedCosts.
+        frozen_item->material_planned = frozen-MaterialPlannedCosts.
+        frozen_item->prt_planned = frozen-PrtPlannedCosts.
+        frozen_item->planned = frozen_item->labor_planned + frozen_item->material_planned + frozen_item->prt_planned.
+        frozen_item->actual = frozen_item->labor_actual + frozen_item->material_actual + frozen_item->prt_actual.
+      ENDLOOP.
+    ENDLOOP.
+
     LOOP AT orders INTO DATA(order).
       DATA(currency) = currency_of( order ).
 

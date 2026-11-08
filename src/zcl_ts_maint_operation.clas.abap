@@ -618,6 +618,10 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
 
   METHOD basic_finish_updates.
     LOOP AT orders INTO DATA(order).
+      IF order-MaintRevision IS NOT INITIAL AND order-MaintOrdBasicFinishDateTime IS NOT INITIAL.
+        CONTINUE.
+      ENDIF.
+
       DATA(latest) = VALUE zts_maint_operat-planned_finish( ).
       LOOP AT operations INTO DATA(operation)
            WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid.
