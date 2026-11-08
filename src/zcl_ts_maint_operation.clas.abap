@@ -126,6 +126,11 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
                 orders        TYPE zcl_ts_maint_order=>orders OPTIONAL
       RETURNING VALUE(result) TYPE updates.
 
+    METHODS unplanned_start_updates
+      IMPORTING orders        TYPE zcl_ts_maint_order=>orders
+                operations    TYPE operations
+      RETURNING VALUE(result) TYPE updates.
+
     METHODS working_time_after
       IMPORTING !start        TYPE utclong
                 hours         TYPE decfloat34
@@ -262,17 +267,26 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       DATA(is_new) = xsdbool(     operation-%is_draft = if_abap_behv=>mk-on
                               AND NOT line_exists( saved[ OperationUuid = operation-OperationUuid ] ) ).
 
+      DATA(unplanned) = xsdbool(     allows_planning = abap_false
+                                 AND operation-PlannedWork IS INITIAL
+                                 AND operation-PlannedWorkDuration IS INITIAL ).
+
       DATA(can_work) = xsdbool(     allows_actuals = abap_true
                                 AND operation-Confirmed = abap_false
                                 AND blocking_operations( operation = operation siblings = siblings ) IS INITIAL ).
 
+      DATA(can_enter_actuals) = xsdbool(    can_work = abap_true
+                                         OR (     unplanned = abap_true
+                                              AND allows_actuals = abap_true
+                                              AND operation-Confirmed = abap_false ) ).
+
       APPEND VALUE #( operation = operation
                       planned   = COND #( WHEN operation-Confirmed = abap_true
                                           THEN if_abap_behv=>fc-f-read_only
-                                          WHEN allows_planning = abap_true OR is_new = abap_true
+                                          WHEN allows_planning = abap_true
                                           THEN if_abap_behv=>fc-f-unrestricted
                                           ELSE if_abap_behv=>fc-f-read_only )
-                      actuals   = COND #( WHEN can_work = abap_true
+                      actuals   = COND #( WHEN can_enter_actuals = abap_true
                                           THEN if_abap_behv=>fc-f-unrestricted
                                           ELSE if_abap_behv=>fc-f-read_only )
                       stage     = COND #( WHEN operation-Confirmed = abap_true
@@ -456,9 +470,14 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
             next_working_time( EXPORTING around_the_clock = clock CHANGING date = stage_date time = stage_time ).
           ENDIF.
 
+          DATA(planned_hours) = duration_hours( operation = <planned> time_units = time_units ).
+          IF planned_hours <= 0.
+            CONTINUE.
+          ENDIF.
+
           DATA(finish_date) = stage_date.
           DATA(finish_time) = stage_time.
-          add_working_hours( EXPORTING hours            = duration_hours( operation = <planned> time_units = time_units )
+          add_working_hours( EXPORTING hours            = planned_hours
                                        around_the_clock = clock
                              CHANGING  date             = finish_date
                                        time             = finish_time ).
@@ -564,13 +583,13 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                                                                  ActualWorkDuration = if_abap_behv=>mk-on
                                                                  ActualDurationUnit = if_abap_behv=>mk-on
                                                                  ActualFinish       = if_abap_behv=>mk-on ) ).
+      IF update-ActualWorkDuration IS INITIAL AND update-ActualWork IS INITIAL.
+        update-ActualWorkDuration = operation-PlannedWorkDuration.
+        update-ActualDurationUnit = operation-PlannedDurationUnit.
+      ENDIF.
       IF update-ActualWork IS INITIAL.
         update-ActualWork = operation-PlannedWork.
         update-ActualWorkUnit = operation-PlannedWorkUnit.
-      ENDIF.
-      IF update-ActualWorkDuration IS INITIAL.
-        update-ActualWorkDuration = operation-PlannedWorkDuration.
-        update-ActualDurationUnit = operation-PlannedDurationUnit.
       ENDIF.
       IF update-ActualFinish IS INITIAL.
         GET TIME STAMP FIELD update-ActualFinish.
@@ -614,6 +633,59 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       APPEND VALUE #( %tky                 = operation-%tky
                       ActualStart          = start
                       %control-ActualStart = if_abap_behv=>mk-on ) TO result.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD unplanned_start_updates.
+    DATA(time_zone) = data_provider->get_time_zone( ).
+    DATA(clock_orders) = around_the_clock_orders( orders ).
+
+    LOOP AT orders INTO DATA(order).
+      DATA(state) = zcl_ts_maint_order_state=>for_status( order-OrderStatus ).
+      IF state->allows_planning( ) = abap_true OR state->allows_actuals( ) = abap_false.
+        CONTINUE.
+      ENDIF.
+
+      LOOP AT operations INTO DATA(operation)
+           WHERE     %is_draft            = order-%is_draft
+                 AND OrderUuid            = order-OrderUuid
+                 AND Confirmed            = abap_false
+                 AND ActualStart          IS INITIAL
+                 AND PlannedWork          IS INITIAL
+                 AND PlannedWorkDuration  IS INITIAL.
+        IF is_empty( operation ) = abap_true.
+          CONTINUE.
+        ENDIF.
+
+        DATA(latest) = VALUE zts_maint_operat-actual_finish( ).
+        LOOP AT operations INTO DATA(previous)
+             WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid AND Stage < operation-Stage.
+          DATA(previous_finish) = COND zts_maint_operat-actual_finish( WHEN previous-ActualFinish IS NOT INITIAL
+                                                                       THEN previous-ActualFinish
+                                                                       ELSE previous-PlannedFinish ).
+          IF previous_finish > latest.
+            latest = previous_finish.
+          ENDIF.
+        ENDLOOP.
+
+        IF latest IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        CONVERT TIME STAMP latest TIME ZONE time_zone INTO DATE DATA(start_date) TIME DATA(start_time).
+        next_working_time(
+          EXPORTING around_the_clock = xsdbool( line_exists( clock_orders[ %is_draft = order-%is_draft
+                                                                           OrderUuid = order-OrderUuid ] ) )
+          CHANGING  date             = start_date
+                    time             = start_time ).
+
+        DATA(start) = VALUE zts_maint_operat-actual_start( ).
+        CONVERT DATE start_date TIME start_time INTO TIME STAMP start TIME ZONE time_zone.
+
+        APPEND VALUE #( %tky                 = operation-%tky
+                        ActualStart          = start
+                        %control-ActualStart = if_abap_behv=>mk-on ) TO result.
+      ENDLOOP.
     ENDLOOP.
   ENDMETHOD.
 
@@ -828,7 +900,8 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                      CHANGING  failed    = failed reported = reported ).
       ENDIF.
 
-      IF operation-PlannedWork IS INITIAL.
+      IF     operation-PlannedWork IS INITIAL
+         AND zcl_ts_maint_order_state=>for_status( order_status )->allows_planning( ) = abap_true.
         add_message( EXPORTING operation = operation
                                element   = `PlannedWork`
                                message   = zcx_ts_maint_message=>create( number   = '028'

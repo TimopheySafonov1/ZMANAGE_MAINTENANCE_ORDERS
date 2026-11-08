@@ -150,11 +150,8 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
       WHERE operation~confirmed     = @abap_false
         AND component~storage_loc  <> ''
         AND maint_order~order_uuid <> @other_than
+        AND NOT EXISTS ( SELECT orderuuid FROM zts_d_maint_ord WHERE orderuuid = maint_order~order_uuid )
       INTO CORRESPONDING FIELDS OF TABLE @result.
-
-    IF viewer-is_draft = abap_false.
-      RETURN.
-    ENDIF.
 
     SELECT component~componentid AS item, maint_order~planningplant AS plant,
            component~storageloc AS storage_loc, component~reqquantity AS quantity,
@@ -162,8 +159,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
       FROM zts_d_maint_cmp AS component
         INNER JOIN zts_d_maint_opr AS operation ON operation~operationuuid = component~operationuuid
         INNER JOIN zts_d_maint_ord AS maint_order ON maint_order~orderuuid = operation~orderuuid
-      WHERE maint_order~orderuuid               = @viewer-order_uuid
-        AND operation~confirmed                 = @abap_false
+      WHERE operation~confirmed                 = @abap_false
         AND operation~draftentityoperationcode <> 'D'
         AND component~storageloc               <> ''
         AND component~draftentityoperationcode <> 'D'
@@ -182,22 +178,20 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
       WHERE operation~confirmed = @abap_false
         AND prt~storage_loc    <> ''
         AND maint_order~order_uuid <> @other_than
+        AND NOT EXISTS ( SELECT orderuuid FROM zts_d_maint_ord WHERE orderuuid = maint_order~order_uuid )
       INTO CORRESPONDING FIELDS OF TABLE @result.
 
-    IF viewer-is_draft = abap_true.
-      SELECT prt~prtid AS item, maint_order~planningplant AS plant,
-             prt~storageloc AS storage_loc, prt~reqquantity AS quantity,
-             operation~plannedstart AS planned_start, operation~plannedfinish AS planned_finish
-        FROM zts_d_maint_prt AS prt
-          INNER JOIN zts_d_maint_opr AS operation ON operation~operationuuid = prt~operationuuid
-          INNER JOIN zts_d_maint_ord AS maint_order ON maint_order~orderuuid = operation~orderuuid
-        WHERE maint_order~orderuuid               = @viewer-order_uuid
-          AND operation~confirmed                 = @abap_false
-          AND operation~draftentityoperationcode <> 'D'
-          AND prt~storageloc                     <> ''
-          AND prt~draftentityoperationcode       <> 'D'
-        APPENDING CORRESPONDING FIELDS OF TABLE @result.
-    ENDIF.
+    SELECT prt~prtid AS item, maint_order~planningplant AS plant,
+           prt~storageloc AS storage_loc, prt~reqquantity AS quantity,
+           operation~plannedstart AS planned_start, operation~plannedfinish AS planned_finish
+      FROM zts_d_maint_prt AS prt
+        INNER JOIN zts_d_maint_opr AS operation ON operation~operationuuid = prt~operationuuid
+        INNER JOIN zts_d_maint_ord AS maint_order ON maint_order~orderuuid = operation~orderuuid
+      WHERE operation~confirmed                 = @abap_false
+        AND operation~draftentityoperationcode <> 'D'
+        AND prt~storageloc                     <> ''
+        AND prt~draftentityoperationcode       <> 'D'
+      APPENDING CORRESPONDING FIELDS OF TABLE @result.
 
     LOOP AT result INTO DATA(usage).
       IF overlaps( viewer = viewer usage = usage ) = abap_false.

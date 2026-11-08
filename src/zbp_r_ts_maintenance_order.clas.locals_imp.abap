@@ -91,7 +91,8 @@ CLASS lcl_schedule IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( OrderType MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime MaintRevision ) WITH CORRESPONDING #( all_orders )
+        FIELDS ( OrderType OrderStatus MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime MaintRevision )
+        WITH CORRESPONDING #( all_orders )
         RESULT order_data
       ENTITY MaintenanceOrder BY \_Operations
         FIELDS ( OrderUuid OperationId Stage Description PersonResp PlannedWork PlannedWorkUnit PlannedWorkDuration
@@ -109,6 +110,11 @@ CLASS lcl_schedule IMPLEMENTATION.
       ENTITY MaintenanceOperation
         UPDATE FROM operation->empty_row_updates( orders     = order_data
                                                   operations = operations ).
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        UPDATE FROM operation->unplanned_start_updates( orders     = order_data
+                                                        operations = operations ).
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder BY \_Operations

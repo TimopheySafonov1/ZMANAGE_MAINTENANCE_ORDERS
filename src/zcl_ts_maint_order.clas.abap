@@ -132,7 +132,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                       order_type  = COND #( WHEN line_exists( saved_orders[ order_uuid = order-OrderUuid ] )
                                             THEN if_abap_behv=>fc-f-read_only
                                             ELSE if_abap_behv=>fc-f-mandatory )
-                      revision    = COND #( WHEN rules-revision_allowed = abap_true
+                      revision    = COND #( WHEN state->allows_planning( ) = abap_true AND rules-revision_allowed = abap_true
                                             THEN if_abap_behv=>fc-f-unrestricted
                                             ELSE if_abap_behv=>fc-f-read_only )
                       assignment  = COND #( WHEN state->allows_planning( ) = abap_true
@@ -418,8 +418,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
-      IF     rules-immediate_start = abap_true
-         AND order-MaintOrdFinalDueDateTime IS NOT INITIAL
+      IF     order-MaintOrdFinalDueDateTime IS NOT INITIAL
          AND zcl_ts_maint_factory=>operation( )->is_working_time( order-MaintOrdFinalDueDateTime ) = abap_false.
         add_error( EXPORTING order   = order
                              element = `MaintOrdFinalDueDateTime`
