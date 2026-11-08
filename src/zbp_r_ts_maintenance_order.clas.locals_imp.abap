@@ -912,8 +912,8 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
                         %field-PrtId            = feature-details
                         %field-ReqQuantity      = feature-details
                         %field-StorageLoc       = feature-details
-                        %field-PlannedUsage     = feature-details
-                        %field-PlannedUsageUnit = feature-details ) ).
+                        %field-PlannedUsage     = feature-planned
+                        %field-PlannedUsageUnit = feature-planned ) ).
   ENDMETHOD.
 
   METHOD setorderuuid.

@@ -413,9 +413,17 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
          AND order-MaintOrdBasicFinishDateTime IS NOT INITIAL
          AND order-MaintOrdBasicFinishDateTime > order-MaintOrdFinalDueDateTime.
         add_error( EXPORTING order   = order
-                             element = `MaintOrdBasicFinishDateTime`
-                             message = zcx_ts_maint_message=>create( number   = '031'
-                                                                     severity = if_abap_behv_message=>severity-warning )
+                             element = `MaintOrdFinalDueDateTime`
+                             message = zcx_ts_maint_message=>create( number = '031' )
+                   CHANGING  failed  = failed reported = reported ).
+      ENDIF.
+
+      IF     rules-immediate_start = abap_true
+         AND order-MaintOrdFinalDueDateTime IS NOT INITIAL
+         AND zcl_ts_maint_factory=>operation( )->is_working_time( order-MaintOrdFinalDueDateTime ) = abap_false.
+        add_error( EXPORTING order   = order
+                             element = `MaintOrdFinalDueDateTime`
+                             message = zcx_ts_maint_message=>create( number = '036' )
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
     ENDLOOP.
@@ -462,7 +470,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     IF rules-working_days_only = abap_true.
       result = zcl_ts_maint_factory=>operation( )->working_time_after( start = start hours = CONV #( due_hours ) ).
     ELSE.
-      result = utclong_add( val = start hours = due_hours ).
+      result = zcl_ts_maint_factory=>operation( )->next_working_moment( utclong_add( val = start hours = due_hours ) ).
     ENDIF.
   ENDMETHOD.
 

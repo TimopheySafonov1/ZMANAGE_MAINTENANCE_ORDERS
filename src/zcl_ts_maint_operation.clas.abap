@@ -130,6 +130,14 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
                 hours         TYPE decfloat34
       RETURNING VALUE(result) TYPE utclong.
 
+    METHODS is_working_time
+      IMPORTING moment        TYPE utclong
+      RETURNING VALUE(result) TYPE abap_bool.
+
+    METHODS next_working_moment
+      IMPORTING moment        TYPE utclong
+      RETURNING VALUE(result) TYPE utclong.
+
     METHODS actual_finish_updates
       IMPORTING operations    TYPE operations
       RETURNING VALUE(result) TYPE updates.
@@ -911,6 +919,27 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     add_working_hours( EXPORTING hours = hours
                        CHANGING  date  = date
                                  time  = time ).
+    CONVERT DATE date TIME time TIME ZONE time_zone INTO UTCLONG result.
+  ENDMETHOD.
+
+  METHOD is_working_time.
+    IF moment IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    CONVERT UTCLONG moment TIME ZONE data_provider->get_time_zone( ) INTO DATE DATA(date) TIME DATA(time).
+    result = xsdbool( is_working_day( date ) = abap_true AND time >= workday_start AND time <= workday_end ).
+  ENDMETHOD.
+
+  METHOD next_working_moment.
+    result = moment.
+    IF moment IS INITIAL OR is_working_time( moment ) = abap_true.
+      RETURN.
+    ENDIF.
+
+    DATA(time_zone) = data_provider->get_time_zone( ).
+    CONVERT UTCLONG moment TIME ZONE time_zone INTO DATE DATA(date) TIME DATA(time).
+    next_working_time( CHANGING date = date time = time ).
     CONVERT DATE date TIME time TIME ZONE time_zone INTO UTCLONG result.
   ENDMETHOD.
 

@@ -193,6 +193,11 @@
      <MSGNR>035</MSGNR>
      <TEXT>Priorytet &amp;1 jest niedozwolony dla rodzaju zlecenia &amp;2.</TEXT>
     </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>036</MSGNR>
+     <TEXT>Termin ostateczny musi przypadać w godzinach pracy (pn–pt 07:00–15:00).</TEXT>
+    </item>
    </T100_TEXTS>
   </asx:values>
  </asx:abap>

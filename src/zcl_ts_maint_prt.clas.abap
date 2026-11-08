@@ -11,6 +11,7 @@ CLASS zcl_ts_maint_prt DEFINITION PUBLIC FINAL CREATE PUBLIC.
              master_data TYPE zcl_ts_maint_order=>field_control,
              actuals     TYPE zcl_ts_maint_order=>field_control,
              details     TYPE zcl_ts_maint_order=>field_control,
+             planned     TYPE zcl_ts_maint_order=>field_control,
              delete      TYPE zcl_ts_maint_order=>operation_control,
            END OF feature,
            features TYPE STANDARD TABLE OF feature WITH EMPTY KEY.
@@ -92,18 +93,27 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
                                     ELSE if_abap_behv=>fc-f-read_only ).
 
       DATA(actual_control) = if_abap_behv=>fc-f-read_only.
+      DATA(planned_control) = COND zcl_ts_maint_order=>field_control( WHEN confirmed = abap_true
+                                                                      THEN if_abap_behv=>fc-f-read_only
+                                                                      ELSE if_abap_behv=>fc-f-unrestricted ).
       LOOP AT links INTO DATA(link) WHERE source-%tky = prt-%tky.
         READ TABLE orders WITH KEY %tky = link-target-%tky INTO DATA(order).
-        IF     sy-subrc = 0
-           AND confirmed = abap_false
-           AND zcl_ts_maint_order_state=>for_status( order-OrderStatus )->allows_actuals( ) = abap_true.
+        IF sy-subrc <> 0.
+          CONTINUE.
+        ENDIF.
+        DATA(state) = zcl_ts_maint_order_state=>for_status( order-OrderStatus ).
+        IF confirmed = abap_false AND state->allows_actuals( ) = abap_true.
           actual_control = if_abap_behv=>fc-f-unrestricted.
+        ENDIF.
+        IF state->allows_planning( ) = abap_false.
+          planned_control = if_abap_behv=>fc-f-read_only.
         ENDIF.
       ENDLOOP.
 
       APPEND VALUE #( prt         = prt
                       master_data = field_control
                       actuals     = actual_control
+                      planned     = planned_control
                       details     = COND #( WHEN confirmed = abap_true
                                             THEN if_abap_behv=>fc-f-read_only
                                             ELSE if_abap_behv=>fc-f-unrestricted )
@@ -239,6 +249,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 
