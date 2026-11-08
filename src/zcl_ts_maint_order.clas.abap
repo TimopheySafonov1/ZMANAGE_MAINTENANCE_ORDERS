@@ -84,6 +84,7 @@ CLASS zcl_ts_maint_order DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS due_date
       IMPORTING !start        TYPE utclong
                 priority      TYPE zts_priority-priority
+                rules         TYPE zts_ord_type
       RETURNING VALUE(result) TYPE utclong.
 
     METHODS non_working_day
@@ -189,15 +190,15 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
         update-Priority = rules-default_priority.
       ENDIF.
 
-      IF rules-immediate_start = abap_true.
-        IF update-MaintOrdBasicStartDateTime IS INITIAL.
-          update-MaintOrdBasicStartDateTime = utclong_current( ).
-        ENDIF.
-        DATA(due_date) = due_date( start    = update-MaintOrdBasicStartDateTime
-                                   priority = update-Priority ).
-        IF due_date IS NOT INITIAL.
-          update-MaintOrdFinalDueDateTime = due_date.
-        ENDIF.
+      IF rules-immediate_start = abap_true AND update-MaintOrdBasicStartDateTime IS INITIAL.
+        update-MaintOrdBasicStartDateTime = utclong_current( ).
+      ENDIF.
+
+      DATA(due_date) = due_date( start    = update-MaintOrdBasicStartDateTime
+                                 priority = update-Priority
+                                 rules    = rules ).
+      IF due_date IS NOT INITIAL.
+        update-MaintOrdFinalDueDateTime = due_date.
       ENDIF.
 
       IF rules-revision_allowed = abap_false.
@@ -212,12 +213,14 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     DATA(types) = read_types( orders ).
 
     LOOP AT orders INTO DATA(order).
-      IF VALUE abap_boolean( types[ order_type = order-OrderType ]-immediate_start OPTIONAL ) = abap_false.
+      DATA(rules) = VALUE #( types[ order_type = order-OrderType ] OPTIONAL ).
+      IF rules IS INITIAL.
         CONTINUE.
       ENDIF.
 
       DATA(due_date) = due_date( start    = order-MaintOrdBasicStartDateTime
-                                 priority = order-Priority ).
+                                 priority = order-Priority
+                                 rules    = rules ).
       IF due_date IS NOT INITIAL AND due_date <> order-MaintOrdFinalDueDateTime.
         APPEND VALUE #( %tky                              = order-%tky
                         MaintOrdFinalDueDateTime          = due_date
@@ -332,6 +335,16 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
+      IF     order-Priority IS NOT INITIAL
+         AND data_provider->get_due_hours( priority = order-Priority order_type = order-OrderType ) <= 0.
+        add_error( EXPORTING order   = order
+                             element = `Priority`
+                             message = zcx_ts_maint_message=>create( number = '035'
+                                                                     v1     = |{ order-Priority }|
+                                                                     v2     = |{ order-OrderType }| )
+                   CHANGING  failed  = failed reported = reported ).
+      ENDIF.
+
       IF rules-long_text_req = abap_true AND order-LongText IS INITIAL.
         add_error( EXPORTING order   = order
                              element = `LongText`
@@ -441,8 +454,14 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA(due_hours) = data_provider->get_due_hours( priority ).
-    IF due_hours > 0.
+    DATA(due_hours) = data_provider->get_due_hours( priority = priority order_type = rules-order_type ).
+    IF due_hours <= 0.
+      RETURN.
+    ENDIF.
+
+    IF rules-working_days_only = abap_true.
+      result = zcl_ts_maint_factory=>operation( )->working_time_after( start = start hours = CONV #( due_hours ) ).
+    ELSE.
       result = utclong_add( val = start hours = due_hours ).
     ENDIF.
   ENDMETHOD.

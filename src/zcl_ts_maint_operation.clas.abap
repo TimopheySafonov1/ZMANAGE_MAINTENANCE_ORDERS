@@ -125,6 +125,11 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
       IMPORTING operations    TYPE operations
       RETURNING VALUE(result) TYPE updates.
 
+    METHODS working_time_after
+      IMPORTING !start        TYPE utclong
+                hours         TYPE decfloat34
+      RETURNING VALUE(result) TYPE utclong.
+
     METHODS actual_finish_updates
       IMPORTING operations    TYPE operations
       RETURNING VALUE(result) TYPE updates.
@@ -894,6 +899,19 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
 
     CONVERT TIME STAMP timestamp TIME ZONE 'UTC' INTO DATE DATA(utc_date) TIME DATA(utc_time).
     CONVERT DATE utc_date TIME utc_time TIME ZONE 'UTC' INTO UTCLONG result.
+  ENDMETHOD.
+
+  METHOD working_time_after.
+    IF start IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DATA(time_zone) = data_provider->get_time_zone( ).
+    CONVERT UTCLONG start TIME ZONE time_zone INTO DATE DATA(date) TIME DATA(time).
+    add_working_hours( EXPORTING hours = hours
+                       CHANGING  date  = date
+                                 time  = time ).
+    CONVERT DATE date TIME time TIME ZONE time_zone INTO UTCLONG result.
   ENDMETHOD.
 
   METHOD is_working_day.

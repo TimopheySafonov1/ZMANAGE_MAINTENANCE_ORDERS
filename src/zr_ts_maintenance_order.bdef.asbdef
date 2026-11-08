@@ -36,7 +36,7 @@ authorization master ( global )
   action ( features : instance ) releaseOrder result [1] $self;
   action ( features : instance ) completeOrder result [1] $self;
 
-  validation validateTypeRules on save { create; field OrderType, TechObject, LongText,
+  validation validateTypeRules on save { create; field OrderType, Priority, TechObject, LongText,
                                          MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime,
                                          MaintOrdFinalDueDateTime, PlanningPlant, WorkCenter; }
 

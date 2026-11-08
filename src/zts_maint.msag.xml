@@ -212,6 +212,12 @@
      <MSGNR>034</MSGNR>
      <TEXT>Operation &amp;1: actual work and duration have the same unit.</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>035</MSGNR>
+     <TEXT>Priority &amp;1 is not allowed for order type &amp;2.</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

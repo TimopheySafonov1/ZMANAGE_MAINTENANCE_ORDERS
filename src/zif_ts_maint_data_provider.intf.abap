@@ -54,6 +54,7 @@ INTERFACE zif_ts_maint_data_provider PUBLIC.
 
   METHODS get_due_hours
     IMPORTING priority      TYPE zts_priority-priority
+              order_type    TYPE zts_ord_type-order_type OPTIONAL
     RETURNING VALUE(result) TYPE zts_priority-due_hours.
 
   METHODS get_holiday_name

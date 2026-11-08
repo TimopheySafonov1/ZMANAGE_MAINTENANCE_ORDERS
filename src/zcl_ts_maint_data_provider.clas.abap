@@ -16,6 +16,15 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_ts_maint_data_provider~get_due_hours.
+    IF order_type IS SUPPLIED.
+      SELECT SINGLE FROM zts_ord_prio
+        FIELDS due_hours
+        WHERE order_type = @order_type
+          AND priority   = @priority
+        INTO @result.
+      RETURN.
+    ENDIF.
+
     SELECT SINGLE FROM zts_priority
       FIELDS due_hours
       WHERE priority = @priority

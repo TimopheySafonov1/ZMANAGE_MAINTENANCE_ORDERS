@@ -11,6 +11,7 @@ define service ZUI_TS_MAINTENANCE_ORDER {
   expose ZC_TS_PLANT_VH              as PlantVH;
   expose ZC_TS_WORK_CENTER_VH        as WorkCenterVH;
   expose ZC_TS_PRIORITY_VH           as PriorityVH;
+  expose ZC_TS_ORD_PRIO_VH           as OrderPriorityVH;
   expose ZC_TS_REVISION_VH           as MaintenanceRevisionVH;
   expose ZC_TS_RESPONSIBLE_PERSON_VH as ResponsiblePersonVH;
   expose ZC_TS_TIME_UNIT_VH          as TimeUnitVH;
@@ -21,5 +22,6 @@ define service ZUI_TS_MAINTENANCE_ORDER {
   expose ZC_TS_COMP_STOCK_VH         as StorageLocationVH;
   expose ZC_TS_PRT_STOCK_VH          as PrtStorageLocationVH;
 }
+
 
 

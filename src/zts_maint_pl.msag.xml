@@ -188,6 +188,11 @@
      <MSGNR>034</MSGNR>
      <TEXT>Operacja &amp;1: rzeczywista praca i czas trwania mają tę samą jednostkę.</TEXT>
     </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>035</MSGNR>
+     <TEXT>Priorytet &amp;1 jest niedozwolony dla rodzaju zlecenia &amp;2.</TEXT>
+    </item>
    </T100_TEXTS>
   </asx:values>
  </asx:abap>

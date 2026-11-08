@@ -36,6 +36,7 @@ CLASS ltc_demo_data IMPLEMENTATION.
                         ( 'ZTS_ORD_TYPE_T' )
                         ( 'ZTS_PLANT' )
                         ( 'ZTS_PLANT_T' )
+                        ( 'ZTS_ORD_PRIO' )
                         ( 'ZTS_PRIORITY' )
                         ( 'ZTS_PRIORITY_T' )
                         ( 'ZTS_PRT' )
@@ -160,6 +161,7 @@ CLASS ltc_demo_data IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = order_types exp = 2 ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

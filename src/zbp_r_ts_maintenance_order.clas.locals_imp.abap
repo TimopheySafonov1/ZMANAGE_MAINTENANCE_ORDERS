@@ -330,7 +330,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   METHOD validatetyperules.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( OrderType TechObject LongText MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime
+        FIELDS ( OrderType Priority TechObject LongText MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime
                  MaintOrdFinalDueDateTime PlanningPlant WorkCenter )
         WITH CORRESPONDING #( keys )
         RESULT DATA(orders).

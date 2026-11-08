@@ -431,6 +431,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
   METHOD fill_priorities.
     DATA priorities TYPE STANDARD TABLE OF zts_priority WITH EMPTY KEY.
     DATA texts      TYPE STANDARD TABLE OF zts_priority_t WITH EMPTY KEY.
+    DATA by_type    TYPE STANDARD TABLE OF zts_ord_prio WITH EMPTY KEY.
 
     priorities = VALUE #( ( priority = '1' due_hours = 8 )
                           ( priority = '2' due_hours = 24 )
@@ -446,13 +447,23 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
                      ( language = 'E' priority = '4' priority_name = 'Low' )
                      ( language = 'L' priority = '4' priority_name = 'Niski' ) ).
 
+    by_type = VALUE #( ( order_type = 'PM01' priority = '1' due_hours = 24 )
+                       ( order_type = 'PM01' priority = '2' due_hours = 48 )
+                       ( order_type = 'PM02' priority = '1' due_hours = 8 )
+                       ( order_type = 'PM02' priority = '2' due_hours = 16 )
+                       ( order_type = 'PM02' priority = '3' due_hours = 24 )
+                       ( order_type = 'PM02' priority = '4' due_hours = 32 ) ).
+
     MODIFY zts_priority FROM TABLE @priorities.
     MODIFY zts_priority_t FROM TABLE @texts.
+    MODIFY zts_ord_prio FROM TABLE @by_type.
 
-    result = |Priorities filled: { lines( priorities ) } priorities, { lines( texts ) } texts|.
+    result = |Priorities filled: { lines( priorities ) } priorities, { lines( texts ) } texts, { lines( by_type ) } per order type|.
   ENDMETHOD.
 
   METHOD delete_priorities.
+    DELETE FROM zts_ord_prio.
+
     DELETE FROM zts_priority_t.
     DATA(deleted_texts) = sy-dbcnt.
 
@@ -481,21 +492,21 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     DATA revision_end   TYPE utclong.
 
     DATA(templates) = VALUE revision_templates(
-        ( revision = '00000001' revision_type = 'SD'
-          start_date = '20260302' start_time = '060000' end_date = '20260309' end_time = '180000'
-          text_en = 'Spring shutdown 2026'   text_pl = 'Postój wiosenny 2026' )
-        ( revision = '00000002' revision_type = 'IN'
-          start_date = '20260615' start_time = '070000' end_date = '20260617' end_time = '150000'
-          text_en = 'Summer inspection 2026' text_pl = 'Przegląd letni 2026' )
-        ( revision = '00000003' revision_type = 'OH'
-          start_date = '20260907' start_time = '060000' end_date = '20260920' end_time = '180000'
-          text_en = 'Annual overhaul 2026'   text_pl = 'Remont roczny 2026' )
-        ( revision = '00000004' revision_type = 'SD'
-          start_date = '20261123' start_time = '060000' end_date = '20261127' end_time = '180000'
-          text_en = 'Autumn shutdown 2026'   text_pl = 'Postój jesienny 2026' )
-        ( revision = '00000005' revision_type = 'IN'
-          start_date = '20270208' start_time = '070000' end_date = '20270210' end_time = '150000'
-          text_en = 'Winter inspection 2027' text_pl = 'Przegląd zimowy 2027' ) ).
+        ( revision = '00000001' revision_type = 'IN'
+          start_date = '20270208' start_time = '060000' end_date = '20270210' end_time = '140000'
+          text_en = 'Winter inspection 2027' text_pl = 'Przegląd zimowy 2027' )
+        ( revision = '00000002' revision_type = 'SD'
+          start_date = '20270315' start_time = '060000' end_date = '20270319' end_time = '140000'
+          text_en = 'Spring shutdown 2027'   text_pl = 'Postój wiosenny 2027' )
+        ( revision = '00000003' revision_type = 'IN'
+          start_date = '20270614' start_time = '050000' end_date = '20270616' end_time = '130000'
+          text_en = 'Summer inspection 2027' text_pl = 'Przegląd letni 2027' )
+        ( revision = '00000004' revision_type = 'OH'
+          start_date = '20270906' start_time = '050000' end_date = '20270917' end_time = '130000'
+          text_en = 'Annual overhaul 2027'   text_pl = 'Remont roczny 2027' )
+        ( revision = '00000005' revision_type = 'SD'
+          start_date = '20271122' start_time = '060000' end_date = '20271126' end_time = '140000'
+          text_en = 'Autumn shutdown 2027'   text_pl = 'Postój jesienny 2027' ) ).
 
     SELECT plant FROM zts_plant INTO TABLE @DATA(plants).
 
@@ -1255,6 +1266,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     result = |{ holiday_year }{ month WIDTH = 2 ALIGN = RIGHT PAD = '0' }{ day WIDTH = 2 ALIGN = RIGHT PAD = '0' }|.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 
