@@ -123,6 +123,7 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
 
     METHODS next_stage_start_updates
       IMPORTING operations    TYPE operations
+                orders        TYPE zcl_ts_maint_order=>orders OPTIONAL
       RETURNING VALUE(result) TYPE updates.
 
     METHODS working_time_after
@@ -140,6 +141,7 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
 
     METHODS actual_finish_updates
       IMPORTING operations    TYPE operations
+                orders        TYPE zcl_ts_maint_order=>orders OPTIONAL
       RETURNING VALUE(result) TYPE updates.
 
     METHODS basic_finish_updates
@@ -206,13 +208,19 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING VALUE(result) TYPE abap_bool.
 
     METHODS next_working_time
-      CHANGING !date TYPE d
-               !time TYPE t.
+      IMPORTING around_the_clock TYPE abap_bool DEFAULT abap_false
+      CHANGING  !date            TYPE d
+                !time            TYPE t.
 
     METHODS add_working_hours
-      IMPORTING hours TYPE decfloat34
-      CHANGING  !date TYPE d
-                !time TYPE t.
+      IMPORTING hours            TYPE decfloat34
+                around_the_clock TYPE abap_bool DEFAULT abap_false
+      CHANGING  !date            TYPE d
+                !time            TYPE t.
+
+    METHODS around_the_clock_orders
+      IMPORTING orders        TYPE zcl_ts_maint_order=>orders
+      RETURNING VALUE(result) TYPE zcl_ts_maint_order=>keys.
 
     METHODS add_message
       IMPORTING !operation TYPE operation
@@ -419,8 +427,10 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     DATA(time_zone) = data_provider->get_time_zone( ).
     DATA(persons) = data_provider->get_persons( VALUE #( FOR o IN operations WHERE ( PersonResp IS NOT INITIAL )
                                                          ( o-PersonResp ) ) ).
+    DATA(clock_orders) = around_the_clock_orders( orders ).
 
     LOOP AT orders INTO DATA(order).
+      DATA(clock) = xsdbool( line_exists( clock_orders[ %is_draft = order-%is_draft OrderUuid = order-OrderUuid ] ) ).
       DATA(order_operations) = VALUE operations( FOR o IN operations
                                                  WHERE ( %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid )
                                                  ( o ) ).
@@ -433,7 +443,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
 
       IF order-MaintOrdBasicStartDateTime IS NOT INITIAL AND planned IS NOT INITIAL.
         CONVERT UTCLONG order-MaintOrdBasicStartDateTime TIME ZONE time_zone INTO DATE DATA(stage_date) TIME DATA(stage_time).
-        next_working_time( CHANGING date = stage_date time = stage_time ).
+        next_working_time( EXPORTING around_the_clock = clock CHANGING date = stage_date time = stage_time ).
         DATA(end_date) = stage_date.
         DATA(end_time) = stage_time.
         DATA(current_stage) = planned[ 1 ]-Stage.
@@ -443,14 +453,15 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
             current_stage = <planned>-Stage.
             stage_date = end_date.
             stage_time = end_time.
-            next_working_time( CHANGING date = stage_date time = stage_time ).
+            next_working_time( EXPORTING around_the_clock = clock CHANGING date = stage_date time = stage_time ).
           ENDIF.
 
           DATA(finish_date) = stage_date.
           DATA(finish_time) = stage_time.
-          add_working_hours( EXPORTING hours = duration_hours( operation = <planned> time_units = time_units )
-                             CHANGING  date  = finish_date
-                                       time  = finish_time ).
+          add_working_hours( EXPORTING hours            = duration_hours( operation = <planned> time_units = time_units )
+                                       around_the_clock = clock
+                             CHANGING  date             = finish_date
+                                       time             = finish_time ).
 
           CONVERT DATE stage_date TIME stage_time INTO TIME STAMP <planned>-PlannedStart TIME ZONE time_zone.
           CONVERT DATE finish_date TIME finish_time INTO TIME STAMP <planned>-PlannedFinish TIME ZONE time_zone.
@@ -570,6 +581,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
 
   METHOD next_stage_start_updates.
     DATA(time_zone) = data_provider->get_time_zone( ).
+    DATA(clock_orders) = around_the_clock_orders( orders ).
 
     LOOP AT operations INTO DATA(operation) WHERE Confirmed = abap_false AND ActualStart IS INITIAL.
       IF    is_empty( operation ) = abap_true
@@ -590,7 +602,11 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       ENDIF.
 
       CONVERT TIME STAMP latest TIME ZONE time_zone INTO DATE DATA(start_date) TIME DATA(start_time).
-      next_working_time( CHANGING date = start_date time = start_time ).
+      next_working_time(
+        EXPORTING around_the_clock = xsdbool( line_exists( clock_orders[ %is_draft = operation-%is_draft
+                                                                         OrderUuid = operation-OrderUuid ] ) )
+        CHANGING  date             = start_date
+                  time             = start_time ).
 
       DATA(start) = VALUE zts_maint_operat-actual_start( ).
       CONVERT DATE start_date TIME start_time INTO TIME STAMP start TIME ZONE time_zone.
@@ -608,6 +624,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
 
     DATA(time_units) = data_provider->get_time_units( ).
     DATA(time_zone) = data_provider->get_time_zone( ).
+    DATA(clock_orders) = around_the_clock_orders( orders ).
 
     LOOP AT operations INTO DATA(operation).
       DATA(hours) = actual_hours( operation = operation time_units = time_units ).
@@ -615,9 +632,12 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
 
       IF operation-ActualStart IS NOT INITIAL AND hours > 0.
         CONVERT TIME STAMP operation-ActualStart TIME ZONE time_zone INTO DATE DATA(finish_date) TIME DATA(finish_time).
-        add_working_hours( EXPORTING hours = hours
-                           CHANGING  date  = finish_date
-                                     time  = finish_time ).
+        add_working_hours(
+          EXPORTING hours            = hours
+                    around_the_clock = xsdbool( line_exists( clock_orders[ %is_draft = operation-%is_draft
+                                                                           OrderUuid = operation-OrderUuid ] ) )
+          CHANGING  date             = finish_date
+                    time             = finish_time ).
         CONVERT DATE finish_date TIME finish_time INTO TIME STAMP finish TIME ZONE time_zone.
       ELSEIF operation-Confirmed = abap_true.
         CONTINUE.
@@ -948,7 +968,25 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                       AND data_provider->get_holiday_name( check_date ) IS INITIAL ).
   ENDMETHOD.
 
+  METHOD around_the_clock_orders.
+    IF orders IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DATA(types) = data_provider->get_order_types( VALUE #( FOR o IN orders WHERE ( OrderType IS NOT INITIAL )
+                                                           ( o-OrderType ) ) ).
+    LOOP AT orders INTO DATA(order).
+      IF VALUE #( types[ order_type = order-OrderType ]-immediate_start OPTIONAL ) = abap_true.
+        APPEND VALUE #( %is_draft = order-%is_draft OrderUuid = order-OrderUuid ) TO result.
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD next_working_time.
+    IF around_the_clock = abap_true.
+      RETURN.
+    ENDIF.
+
     IF time >= workday_end.
       date += 1.
       time = workday_start.
@@ -964,6 +1002,14 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
 
   METHOD add_working_hours.
     DATA(remaining) = CONV i( round( val = hours * 3600 dec = 0 ) ).
+
+    IF around_the_clock = abap_true.
+      DATA(seconds) = CONV i( time ) + remaining.
+      date += seconds DIV 86400.
+      time = seconds MOD 86400.
+      RETURN.
+    ENDIF.
+
     next_working_time( CHANGING date = date time = time ).
 
     WHILE remaining > 0.

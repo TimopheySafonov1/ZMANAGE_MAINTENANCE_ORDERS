@@ -91,7 +91,7 @@ CLASS lcl_schedule IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime MaintRevision ) WITH CORRESPONDING #( all_orders )
+        FIELDS ( OrderType MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime MaintRevision ) WITH CORRESPONDING #( all_orders )
         RESULT order_data
       ENTITY MaintenanceOrder BY \_Operations
         FIELDS ( OrderUuid OperationId Stage Description PersonResp PlannedWork PlannedWorkUnit PlannedWorkDuration
@@ -593,13 +593,18 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
   METHOD setactualfinish.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
-        FIELDS ( ActualStart ActualFinish ActualWork ActualWorkUnit ActualWorkDuration ActualDurationUnit Confirmed )
+        FIELDS ( OrderUuid ActualStart ActualFinish ActualWork ActualWorkUnit ActualWorkDuration ActualDurationUnit
+                 Confirmed )
         WITH CORRESPONDING #( keys )
-        RESULT DATA(operations).
+        RESULT DATA(operations)
+      ENTITY MaintenanceOperation BY \_MaintenanceOrder
+        FIELDS ( OrderType ) WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
 
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
-        UPDATE FROM zcl_ts_maint_factory=>operation( )->actual_finish_updates( operations ).
+        UPDATE FROM zcl_ts_maint_factory=>operation( )->actual_finish_updates( operations = operations
+                                                                                 orders     = orders ).
   ENDMETHOD.
 
   METHOD confirmoperation.
@@ -643,7 +648,7 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation BY \_MaintenanceOrder
-        FIELDS ( OrderStatus ) WITH CORRESPONDING #( current )
+        FIELDS ( OrderStatus OrderType ) WITH CORRESPONDING #( current )
         RESULT DATA(orders).
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
@@ -653,7 +658,8 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
 
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
-        UPDATE FROM zcl_ts_maint_factory=>operation( )->next_stage_start_updates( siblings ).
+        UPDATE FROM zcl_ts_maint_factory=>operation( )->next_stage_start_updates( operations = siblings
+                                                                                    orders     = orders ).
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
