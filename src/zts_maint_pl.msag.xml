@@ -181,12 +181,12 @@
     <item>
      <SPRSL>L</SPRSL>
      <MSGNR>033</MSGNR>
-     <TEXT>Operacja &amp;1: planowana praca i czas trwania mają tę samą jednostkę.</TEXT>
+     <TEXT>Op. &amp;1: jednostka czasu trwania musi być większa niż jednostka pracy.</TEXT>
     </item>
     <item>
      <SPRSL>L</SPRSL>
      <MSGNR>034</MSGNR>
-     <TEXT>Operacja &amp;1: rzeczywista praca i czas trwania mają tę samą jednostkę.</TEXT>
+     <TEXT>Op. &amp;1: rzecz. czas trwania musi mieć większą jednostkę niż praca.</TEXT>
     </item>
     <item>
      <SPRSL>L</SPRSL>

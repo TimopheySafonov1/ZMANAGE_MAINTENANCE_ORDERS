@@ -806,6 +806,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
 
   METHOD validate.
     DATA(time_zone) = data_provider->get_time_zone( ).
+    DATA(time_units) = data_provider->get_time_units( ).
 
     LOOP AT operations INTO DATA(operation).
       APPEND VALUE #( %tky = operation-%tky %state_area = state_area ) TO reported-maintenanceoperation.
@@ -884,7 +885,9 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       IF     operation-Confirmed = abap_false
          AND zcl_ts_maint_order_state=>for_status( order_status )->allows_planning( ) = abap_true
          AND operation-PlannedWorkDuration IS NOT INITIAL
-         AND operation-PlannedDurationUnit = operation-PlannedWorkUnit.
+         AND operation-PlannedWork IS NOT INITIAL
+         AND   VALUE #( time_units[ time_unit = operation-PlannedDurationUnit ]-work_hours DEFAULT 1 )
+            <= VALUE #( time_units[ time_unit = operation-PlannedWorkUnit ]-work_hours DEFAULT 1 ).
         add_message( EXPORTING operation = operation
                                element   = `PlannedDurationUnit`
                                message   = zcx_ts_maint_message=>create( number = '033' v1 = |{ number }| )
@@ -893,7 +896,9 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
 
       IF     operation-Confirmed = abap_false
          AND operation-ActualWorkDuration IS NOT INITIAL
-         AND operation-ActualDurationUnit = operation-ActualWorkUnit.
+         AND operation-ActualWork IS NOT INITIAL
+         AND   VALUE #( time_units[ time_unit = operation-ActualDurationUnit ]-work_hours DEFAULT 1 )
+            <= VALUE #( time_units[ time_unit = operation-ActualWorkUnit ]-work_hours DEFAULT 1 ).
         add_message( EXPORTING operation = operation
                                element   = `ActualDurationUnit`
                                message   = zcx_ts_maint_message=>create( number = '034' v1 = |{ number }| )
