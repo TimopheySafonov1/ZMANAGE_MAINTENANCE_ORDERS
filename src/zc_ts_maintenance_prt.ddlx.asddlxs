@@ -47,13 +47,13 @@ annotate entity ZC_TS_MAINTENANCE_PRT with
   @UI.hidden: true
   Uom;
 
-  @EndUserText.label: 'Skład'
-  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PRT_STOR_LOC_VH', element: 'StorageLoc' },
-                                       additionalBinding: [{ localElement: 'PrtId',
-                                                             element: 'Prt',
-                                                             usage: #FILTER }] }]
-  @UI: { lineItem:   [{ position: 40, importance: #HIGH, cssDefault.width: '8rem' }],
-         fieldGroup: [{ qualifier: 'PrtData', position: 40 }] }
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PRT_STOCK_VH', element: 'StorageLoc' },
+                                     additionalBinding: [{ localElement: 'PrtId',
+                                                           element: 'Prt',
+                                                           usage: #FILTER },
+                                                         { localElement: 'OperationUuid',
+                                                           element: 'OperationUuid',
+                                                           usage: #FILTER }] }]
   StorageLoc;
 
   @EndUserText.label: 'Planowany czas użycia'
