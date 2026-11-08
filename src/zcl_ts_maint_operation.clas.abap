@@ -262,6 +262,8 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                                           ELSE if_abap_behv=>fc-o-disabled )
                       delete    = COND #( WHEN operation-Confirmed = abap_true
                                           THEN if_abap_behv=>fc-o-disabled
+                                          WHEN allows_planning = abap_false AND is_new = abap_false
+                                          THEN if_abap_behv=>fc-o-disabled
                                           ELSE if_abap_behv=>fc-o-enabled )
                       items     = COND #( WHEN operation-Confirmed = abap_true
                                           THEN if_abap_behv=>fc-o-disabled
