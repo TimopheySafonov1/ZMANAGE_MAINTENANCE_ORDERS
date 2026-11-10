@@ -11,6 +11,7 @@ CLASS zcl_ts_maint_prt DEFINITION PUBLIC FINAL CREATE PUBLIC.
              master_data TYPE zcl_ts_maint_order=>field_control,
              actuals     TYPE zcl_ts_maint_order=>field_control,
              details     TYPE zcl_ts_maint_order=>field_control,
+             item_id     TYPE zcl_ts_maint_order=>field_control,
              planned     TYPE zcl_ts_maint_order=>field_control,
              delete      TYPE zcl_ts_maint_order=>operation_control,
            END OF feature,
@@ -115,6 +116,11 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
                       actuals     = actual_control
                       planned     = planned_control
                       details     = COND #( WHEN confirmed = abap_true
+                                            THEN if_abap_behv=>fc-f-read_only
+                                            ELSE if_abap_behv=>fc-f-unrestricted )
+                      item_id     = COND #( WHEN    confirmed = abap_true
+                                                 OR (     prt-PrtId IS INITIAL
+                                                      AND prt-Description IS NOT INITIAL )
                                             THEN if_abap_behv=>fc-f-read_only
                                             ELSE if_abap_behv=>fc-f-unrestricted )
                       delete      = COND #( WHEN confirmed = abap_true
@@ -249,6 +255,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

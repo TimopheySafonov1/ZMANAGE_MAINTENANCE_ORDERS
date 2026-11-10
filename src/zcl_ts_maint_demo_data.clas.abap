@@ -595,22 +595,23 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
              uom           TYPE zts_component-uom,
              price         TYPE zts_component-price,
              name          TYPE zts_component_t-component_text,
+             name_en         TYPE zts_component_t-component_text,
            END OF component_template,
            component_templates TYPE STANDARD TABLE OF component_template WITH EMPTY KEY.
 
     DATA components TYPE STANDARD TABLE OF zts_component WITH EMPTY KEY.
     DATA texts      TYPE STANDARD TABLE OF zts_component_t WITH EMPTY KEY.
 
-    DATA(templates) = VALUE component_templates( ( uom = 'ST'  price = '85.00'  name = 'Łożysko' )
-                                                 ( uom = 'ST'  price = '12.50'  name = 'Uszczelka' )
-                                                 ( uom = 'ST'  price = '45.00'  name = 'Pasek klinowy' )
-                                                 ( uom = 'ST'  price = '60.00'  name = 'Filtr oleju' )
-                                                 ( uom = 'L'   price = '18.00'  name = 'Olej hydrauliczny' )
-                                                 ( uom = 'PAK' price = '25.00'  name = 'Bezpiecznik' )
-                                                 ( uom = 'ST'  price = '220.00' name = 'Stycznik' )
-                                                 ( uom = 'ST'  price = '480.00' name = 'Czujnik ciśnienia' )
-                                                 ( uom = 'L'   price = '25.00'  name = 'Olej transformatorowy' )
-                                                 ( uom = 'KG'  price = '40.00'  name = 'Silikażel do odwilżacza' ) ).
+    DATA(templates) = VALUE component_templates( ( uom = 'ST'  price = '85.00'  name = 'Łożysko' name_en = 'Bearing' )
+                                                 ( uom = 'ST'  price = '12.50'  name = 'Uszczelka' name_en = 'Gasket' )
+                                                 ( uom = 'ST'  price = '45.00'  name = 'Pasek klinowy' name_en = 'V-belt' )
+                                                 ( uom = 'ST'  price = '60.00'  name = 'Filtr oleju' name_en = 'Oil filter' )
+                                                 ( uom = 'L'   price = '18.00'  name = 'Olej hydrauliczny' name_en = 'Hydraulic oil' )
+                                                 ( uom = 'PAK' price = '25.00'  name = 'Bezpiecznik' name_en = 'Fuse' )
+                                                 ( uom = 'ST'  price = '220.00' name = 'Stycznik' name_en = 'Contactor' )
+                                                 ( uom = 'ST'  price = '480.00' name = 'Czujnik ciśnienia' name_en = 'Pressure sensor' )
+                                                 ( uom = 'L'   price = '25.00'  name = 'Olej transformatorowy' name_en = 'Transformer oil' )
+                                                 ( uom = 'KG'  price = '40.00'  name = 'Silikażel do odwilżacza' name_en = 'Silica gel for breather' ) ).
 
     LOOP AT templates INTO DATA(template).
       DATA(component) = CONV zts_component-component( |SP{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
@@ -619,7 +620,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
                       price         = template-price
                       currency      = 'PLN' ) TO components.
 
-      APPEND VALUE #( language = 'E' component = component component_text = template-name ) TO texts.
+      APPEND VALUE #( language = 'E' component = component component_text = template-name_en ) TO texts.
       APPEND VALUE #( language = 'L' component = component component_text = template-name ) TO texts.
     ENDLOOP.
 
@@ -643,12 +644,14 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     TYPES: BEGIN OF dimension_template,
              dimension TYPE zts_uom_dim-dimension,
              name      TYPE zts_uom_dim_t-dimension_text,
+             name_en     TYPE zts_uom_dim_t-dimension_text,
            END OF dimension_template,
            dimension_templates TYPE STANDARD TABLE OF dimension_template WITH EMPTY KEY,
            BEGIN OF uom_template,
              uom       TYPE zts_uom-uom,
              dimension TYPE zts_uom-dimension,
              name      TYPE zts_uom_t-uom_text,
+             name_en     TYPE zts_uom_t-uom_text,
            END OF uom_template,
            uom_templates TYPE STANDARD TABLE OF uom_template WITH EMPTY KEY.
 
@@ -657,32 +660,32 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     DATA units           TYPE STANDARD TABLE OF zts_uom WITH EMPTY KEY.
     DATA unit_texts      TYPE STANDARD TABLE OF zts_uom_t WITH EMPTY KEY.
 
-    DATA(dimension_templates) = VALUE dimension_templates( ( dimension = 'AAAADL' name = 'Bez wymiaru' )
-                                                           ( dimension = 'MASS'   name = 'Masa' )
-                                                           ( dimension = 'VOLUME' name = 'Objętość' )
-                                                           ( dimension = 'LENGTH' name = 'Długość' )
-                                                           ( dimension = 'SURFAC' name = 'Powierzchnia' ) ).
+    DATA(dimension_templates) = VALUE dimension_templates( ( dimension = 'AAAADL' name = 'Bez wymiaru' name_en = 'Dimensionless' )
+                                                           ( dimension = 'MASS'   name = 'Masa' name_en = 'Mass' )
+                                                           ( dimension = 'VOLUME' name = 'Objętość' name_en = 'Volume' )
+                                                           ( dimension = 'LENGTH' name = 'Długość' name_en = 'Length' )
+                                                           ( dimension = 'SURFAC' name = 'Powierzchnia' name_en = 'Area' ) ).
 
-    DATA(uom_templates) = VALUE uom_templates( ( uom = 'ST'  dimension = 'AAAADL' name = 'Sztuka' )
-                                               ( uom = 'PAA' dimension = 'AAAADL' name = 'Para' )
-                                               ( uom = 'PAK' dimension = 'AAAADL' name = 'Opakowanie' )
-                                               ( uom = 'KG'  dimension = 'MASS'   name = 'Kilogram' )
-                                               ( uom = 'G'   dimension = 'MASS'   name = 'Gram' )
-                                               ( uom = 'L'   dimension = 'VOLUME' name = 'Litr' )
-                                               ( uom = 'ML'  dimension = 'VOLUME' name = 'Mililitr' )
-                                               ( uom = 'M'   dimension = 'LENGTH' name = 'Metr' )
-                                               ( uom = 'MM'  dimension = 'LENGTH' name = 'Milimetr' )
-                                               ( uom = 'M2'  dimension = 'SURFAC' name = 'Metr kwadratowy' ) ).
+    DATA(uom_templates) = VALUE uom_templates( ( uom = 'ST'  dimension = 'AAAADL' name = 'Sztuka' name_en = 'Piece' )
+                                               ( uom = 'PAA' dimension = 'AAAADL' name = 'Para' name_en = 'Pair' )
+                                               ( uom = 'PAK' dimension = 'AAAADL' name = 'Opakowanie' name_en = 'Package' )
+                                               ( uom = 'KG'  dimension = 'MASS'   name = 'Kilogram' name_en = 'Kilogram' )
+                                               ( uom = 'G'   dimension = 'MASS'   name = 'Gram' name_en = 'Gram' )
+                                               ( uom = 'L'   dimension = 'VOLUME' name = 'Litr' name_en = 'Liter' )
+                                               ( uom = 'ML'  dimension = 'VOLUME' name = 'Mililitr' name_en = 'Milliliter' )
+                                               ( uom = 'M'   dimension = 'LENGTH' name = 'Metr' name_en = 'Meter' )
+                                               ( uom = 'MM'  dimension = 'LENGTH' name = 'Milimetr' name_en = 'Millimeter' )
+                                               ( uom = 'M2'  dimension = 'SURFAC' name = 'Metr kwadratowy' name_en = 'Square meter' ) ).
 
     LOOP AT dimension_templates INTO DATA(dimension).
       APPEND VALUE #( dimension = dimension-dimension ) TO dimensions.
-      APPEND VALUE #( language = 'E' dimension = dimension-dimension dimension_text = dimension-name ) TO dimension_texts.
+      APPEND VALUE #( language = 'E' dimension = dimension-dimension dimension_text = dimension-name_en ) TO dimension_texts.
       APPEND VALUE #( language = 'L' dimension = dimension-dimension dimension_text = dimension-name ) TO dimension_texts.
     ENDLOOP.
 
     LOOP AT uom_templates INTO DATA(unit).
       APPEND VALUE #( uom = unit-uom dimension = unit-dimension ) TO units.
-      APPEND VALUE #( language = 'E' uom = unit-uom uom_text = unit-name ) TO unit_texts.
+      APPEND VALUE #( language = 'E' uom = unit-uom uom_text = unit-name_en ) TO unit_texts.
       APPEND VALUE #( language = 'L' uom = unit-uom uom_text = unit-name ) TO unit_texts.
     ENDLOOP.
 
@@ -715,16 +718,17 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     TYPES: BEGIN OF storage_loc_template,
              storage_loc TYPE zts_stor_loc-storage_loc,
              name        TYPE zts_stor_loc_t-storage_loc_name,
+             name_en       TYPE zts_stor_loc_t-storage_loc_name,
            END OF storage_loc_template,
            storage_loc_templates TYPE STANDARD TABLE OF storage_loc_template WITH EMPTY KEY.
 
     DATA storage_locs TYPE STANDARD TABLE OF zts_stor_loc WITH EMPTY KEY.
     DATA texts        TYPE STANDARD TABLE OF zts_stor_loc_t WITH EMPTY KEY.
 
-    DATA(templates) = VALUE storage_loc_templates( ( storage_loc = '0001' name = 'Magazyn główny' )
-                                                   ( storage_loc = '0002' name = 'Magazyn części zamiennych' )
-                                                   ( storage_loc = '0003' name = 'Magazyn olejów i smarów' )
-                                                   ( storage_loc = '0004' name = 'Magazyn warsztatowy' ) ).
+    DATA(templates) = VALUE storage_loc_templates( ( storage_loc = '0001' name = 'Magazyn główny' name_en = 'Main warehouse' )
+                                                   ( storage_loc = '0002' name = 'Magazyn części zamiennych' name_en = 'Spare parts warehouse' )
+                                                   ( storage_loc = '0003' name = 'Magazyn olejów i smarów' name_en = 'Oil and lubricant store' )
+                                                   ( storage_loc = '0004' name = 'Magazyn warsztatowy' name_en = 'Workshop store' ) ).
 
     SELECT plant FROM zts_plant INTO TABLE @DATA(plants).
 
@@ -733,7 +737,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
         APPEND VALUE #( plant = plant-plant storage_loc = template-storage_loc ) TO storage_locs.
 
         APPEND VALUE #( language = 'E' plant = plant-plant storage_loc = template-storage_loc
-                        storage_loc_name = template-name ) TO texts.
+                        storage_loc_name = template-name_en ) TO texts.
         APPEND VALUE #( language = 'L' plant = plant-plant storage_loc = template-storage_loc
                         storage_loc_name = template-name ) TO texts.
       ENDLOOP.
@@ -800,6 +804,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
              purchase_price    TYPE zts_prt-purchase_price,
              useful_life_hours TYPE zts_prt-useful_life_hours,
              name              TYPE zts_prt_t-prt_text,
+             name_en             TYPE zts_prt_t-prt_text,
            END OF prt_template,
            prt_templates TYPE STANDARD TABLE OF prt_template WITH EMPTY KEY.
 
@@ -807,24 +812,24 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     DATA texts TYPE STANDARD TABLE OF zts_prt_t WITH EMPTY KEY.
 
     DATA(templates) = VALUE prt_templates(
-        ( uom = 'ST'  purchase_price = '1200.00'  useful_life_hours = 4000  name = 'Klucz dynamometryczny' )
-        ( uom = 'ST'  purchase_price = '350.00'   useful_life_hours = 8000  name = 'Zestaw kluczy płaskich' )
-        ( uom = 'ST'  purchase_price = '900.00'   useful_life_hours = 2000  name = 'Wkrętarka akumulatorowa' )
-        ( uom = 'ST'  purchase_price = '600.00'   useful_life_hours = 5000  name = 'Ściągacz do łożysk' )
-        ( uom = 'ST'  purchase_price = '450.00'   useful_life_hours = 6000  name = 'Multimetr cyfrowy' )
-        ( uom = 'ST'  purchase_price = '12000.00' useful_life_hours = 5000  name = 'Kamera termowizyjna' )
-        ( uom = 'ST'  purchase_price = '25000.00' useful_life_hours = 6000  name = 'Analizator drgań' )
-        ( uom = 'ST'  purchase_price = '3500.00'  useful_life_hours = 10000 name = 'Podnośnik hydrauliczny' )
-        ( uom = 'ST'  purchase_price = '2800.00'  useful_life_hours = 8000  name = 'Wciągnik łańcuchowy' )
-        ( uom = 'ST'  purchase_price = '9000.00'  useful_life_hours = 15000 name = 'Rusztowanie jezdne' )
-        ( uom = 'ST'  purchase_price = '80.00'    useful_life_hours = 2000  name = 'Kask ochronny' )
-        ( uom = 'ST'  purchase_price = '40.00'    useful_life_hours = 500   name = 'Okulary ochronne' )
-        ( uom = 'PAA' purchase_price = '300.00'   useful_life_hours = 400   name = 'Rękawice dielektryczne' )
-        ( uom = 'ST'  purchase_price = '650.00'   useful_life_hours = 1500  name = 'Szelki bezpieczeństwa' )
-        ( uom = 'ST'  purchase_price = '1500.00'  useful_life_hours = 5000  name = 'Zestaw blokad LOTO' )
-        ( uom = 'ST'  purchase_price = '4200.00'  useful_life_hours = 8000  name = 'Detektor wielogazowy' )
-        ( uom = 'ST'  purchase_price = '120.00'   useful_life_hours = 2000  name = 'Nauszniki przeciwhałasowe' )
-        ( uom = 'ST'  purchase_price = '150.00'   useful_life_hours = 300   name = 'Półmaska z filtrem' ) ).
+        ( uom = 'ST'  purchase_price = '1200.00'  useful_life_hours = 4000  name = 'Klucz dynamometryczny' name_en = 'Torque wrench' )
+        ( uom = 'ST'  purchase_price = '350.00'   useful_life_hours = 8000  name = 'Zestaw kluczy płaskich' name_en = 'Open-end wrench set' )
+        ( uom = 'ST'  purchase_price = '900.00'   useful_life_hours = 2000  name = 'Wkrętarka akumulatorowa' name_en = 'Cordless screwdriver' )
+        ( uom = 'ST'  purchase_price = '600.00'   useful_life_hours = 5000  name = 'Ściągacz do łożysk' name_en = 'Bearing puller' )
+        ( uom = 'ST'  purchase_price = '450.00'   useful_life_hours = 6000  name = 'Multimetr cyfrowy' name_en = 'Digital multimeter' )
+        ( uom = 'ST'  purchase_price = '12000.00' useful_life_hours = 5000  name = 'Kamera termowizyjna' name_en = 'Thermal imaging camera' )
+        ( uom = 'ST'  purchase_price = '25000.00' useful_life_hours = 6000  name = 'Analizator drgań' name_en = 'Vibration analyzer' )
+        ( uom = 'ST'  purchase_price = '3500.00'  useful_life_hours = 10000 name = 'Podnośnik hydrauliczny' name_en = 'Hydraulic jack' )
+        ( uom = 'ST'  purchase_price = '2800.00'  useful_life_hours = 8000  name = 'Wciągnik łańcuchowy' name_en = 'Chain hoist' )
+        ( uom = 'ST'  purchase_price = '9000.00'  useful_life_hours = 15000 name = 'Rusztowanie jezdne' name_en = 'Mobile scaffold' )
+        ( uom = 'ST'  purchase_price = '80.00'    useful_life_hours = 2000  name = 'Kask ochronny' name_en = 'Safety helmet' )
+        ( uom = 'ST'  purchase_price = '40.00'    useful_life_hours = 500   name = 'Okulary ochronne' name_en = 'Safety goggles' )
+        ( uom = 'PAA' purchase_price = '300.00'   useful_life_hours = 400   name = 'Rękawice dielektryczne' name_en = 'Dielectric gloves' )
+        ( uom = 'ST'  purchase_price = '650.00'   useful_life_hours = 1500  name = 'Szelki bezpieczeństwa' name_en = 'Safety harness' )
+        ( uom = 'ST'  purchase_price = '1500.00'  useful_life_hours = 5000  name = 'Zestaw blokad LOTO' name_en = 'LOTO lockout kit' )
+        ( uom = 'ST'  purchase_price = '4200.00'  useful_life_hours = 8000  name = 'Detektor wielogazowy' name_en = 'Multi-gas detector' )
+        ( uom = 'ST'  purchase_price = '120.00'   useful_life_hours = 2000  name = 'Nauszniki przeciwhałasowe' name_en = 'Ear defenders' )
+        ( uom = 'ST'  purchase_price = '150.00'   useful_life_hours = 300   name = 'Półmaska z filtrem' name_en = 'Half mask with filter' ) ).
 
     LOOP AT templates INTO DATA(template).
       DATA(prt) = CONV zts_prt-prt( |PT{ sy-tabix WIDTH = 3 ALIGN = RIGHT PAD = '0' }| ).
@@ -834,7 +839,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
                       currency          = 'PLN'
                       useful_life_hours = template-useful_life_hours ) TO prts.
 
-      APPEND VALUE #( language = 'E' prt = prt prt_text = template-name ) TO texts.
+      APPEND VALUE #( language = 'E' prt = prt prt_text = template-name_en ) TO texts.
       APPEND VALUE #( language = 'L' prt = prt prt_text = template-name ) TO texts.
     ENDLOOP.
 
@@ -914,11 +919,11 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
   METHOD fill_cost_categories.
     DATA texts TYPE STANDARD TABLE OF zts_cost_cat_t WITH EMPTY KEY.
 
-    texts = VALUE #( ( language = 'E' cost_category = 'LA' category_name = 'Robocizna' )
+    texts = VALUE #( ( language = 'E' cost_category = 'LA' category_name = 'Labor' )
                      ( language = 'L' cost_category = 'LA' category_name = 'Robocizna' )
-                     ( language = 'E' cost_category = 'MA' category_name = 'Materiały' )
+                     ( language = 'E' cost_category = 'MA' category_name = 'Materials' )
                      ( language = 'L' cost_category = 'MA' category_name = 'Materiały' )
-                     ( language = 'E' cost_category = 'PR' category_name = 'Pomoce produkcyjne' )
+                     ( language = 'E' cost_category = 'PR' category_name = 'Production resources' )
                      ( language = 'L' cost_category = 'PR' category_name = 'Pomoce produkcyjne' ) ).
 
     MODIFY zts_cost_cat_t FROM TABLE @texts.
@@ -948,6 +953,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
              marked_for_del  TYPE zts_tech_obj-marked_for_del,
              inactive        TYPE zts_tech_obj-inactive,
              name            TYPE zts_tech_obj_t-tech_object_text,
+             name_en           TYPE zts_tech_obj_t-tech_object_text,
            END OF tech_object_template,
            tech_object_templates TYPE STANDARD TABLE OF tech_object_template WITH EMPTY KEY.
 
@@ -959,88 +965,88 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     types = VALUE #( ( tech_obj_type = 'FL' )
                      ( tech_obj_type = 'EQ' ) ).
 
-    type_texts = VALUE #( ( language = 'E' tech_obj_type = 'FL' type_text = 'Miejsce funkcjonowania' )
+    type_texts = VALUE #( ( language = 'E' tech_obj_type = 'FL' type_text = 'Functional location' )
                           ( language = 'L' tech_obj_type = 'FL' type_text = 'Miejsce funkcjonowania' )
-                          ( language = 'E' tech_obj_type = 'EQ' type_text = 'Urządzenie' )
+                          ( language = 'E' tech_obj_type = 'EQ' type_text = 'Equipment' )
                           ( language = 'L' tech_obj_type = 'EQ' type_text = 'Urządzenie' ) ).
 
     DATA(templates) = VALUE tech_object_templates(
         ( tech_object = 'PL01-WAW'           tech_obj_type = 'FL' planning_plant = '0001'
           work_center = 'MECH' sort_field = 'ZAKLAD'    object_type = 'ZAKLAD'     location = 'WAW'
-          name = 'Zakład Warszawa' )
+          name = 'Zakład Warszawa' name_en = 'Warsaw Plant' )
         ( tech_object = 'PL01-WAW-PROD'      tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW'
           work_center = 'MECH' sort_field = 'PRODUKCJA' object_type = 'HALA'       location = 'HALA-A'
-          name = 'Hala produkcyjna A' )
+          name = 'Hala produkcyjna A' name_en = 'Production hall A' )
         ( tech_object = 'PL01-WAW-PROD-L01'  tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-PROD'
           work_center = 'MECH' sort_field = 'LINIE'     object_type = 'LINIA'      location = 'HALA-A'
-          name = 'Linia rozlewnicza 1' )
+          name = 'Linia rozlewnicza 1' name_en = 'Bottling line 1' )
         ( tech_object = 'PL01-WAW-PROD-L02'  tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-PROD'
           work_center = 'MECH' sort_field = 'LINIE'     object_type = 'LINIA'      location = 'HALA-A'
-          name = 'Linia pakująca 2' )
+          name = 'Linia pakująca 2' name_en = 'Packaging line 2' )
         ( tech_object = 'PL01-WAW-UTIL'      tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW'
           work_center = 'MECH' sort_field = 'MEDIA'     object_type = 'BUDYNEK'    location = 'BUD-TECH'
-          name = 'Budynek techniczny - media' )
+          name = 'Budynek techniczny - media' name_en = 'Technical building - utilities' )
         ( tech_object = 'PL01-WAW-UTIL-SPR'  tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
           work_center = 'MECH' sort_field = 'MEDIA'     object_type = 'STACJA'     location = 'BUD-TECH'
-          name = 'Stacja sprężarek' )
+          name = 'Stacja sprężarek' name_en = 'Compressor station' )
         ( tech_object = 'PL01-WAW-UTIL-HVAC' tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
           work_center = 'HVAC' sort_field = 'MEDIA'     object_type = 'INSTALACJA' location = 'DACH'
-          name = 'Instalacja wentylacji i klimatyzacji' )
+          name = 'Instalacja wentylacji i klimatyzacji' name_en = 'Ventilation and air conditioning' )
         ( tech_object = 'PL01-WAW-MAG-OLD'   tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW'
           work_center = 'MECH' sort_field = 'MAGAZYN'   object_type = 'BUDYNEK'    location = 'MAG-STARY' marked_for_del = abap_true
-          name = 'Stary magazyn wyrobów gotowych' )
+          name = 'Stary magazyn wyrobów gotowych' name_en = 'Old finished goods warehouse' )
         ( tech_object = '10000001' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L01'
           work_center = 'MECH' sort_field = 'POMPY'      object_type = 'POMPA'      material = 'GRU-CR32-4'     serial_number = 'A965123P11945'
-          ident_number = 'P-2019-0451'  location = 'HALA-A'    name = 'Pompa odśrodkowa P-101' )
+          ident_number = 'P-2019-0451'  location = 'HALA-A'    name = 'Pompa odśrodkowa P-101' name_en = 'Centrifugal pump P-101' )
         ( tech_object = '10000002' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L02'
           work_center = 'MECH' sort_field = 'POMPY'      object_type = 'POMPA'      material = 'PRO-DDE-6-10'   serial_number = 'DDE20200112'
-          ident_number = 'P-2020-0112'  location = 'HALA-A'    name = 'Pompa dozująca P-102' )
+          ident_number = 'P-2020-0112'  location = 'HALA-A'    name = 'Pompa dozująca P-102' name_en = 'Dosing pump P-102' )
         ( tech_object = '10000003' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L01'
           work_center = 'ELEC' sort_field = 'SILNIKI'    object_type = 'SILNIK'     material = 'ABB-M3BP-160'   serial_number = '3GBP1614-77812'
-          ident_number = 'S-ABB-77812'  location = 'HALA-A'    name = 'Silnik napędu przenośnika M-201' )
+          ident_number = 'S-ABB-77812'  location = 'HALA-A'    name = 'Silnik napędu przenośnika M-201' name_en = 'Conveyor drive motor M-201' )
         ( tech_object = '10000004' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L01'
           work_center = 'MECH' sort_field = 'PRZENOSNIK' object_type = 'PRZENOSNIK' material = 'INT-PT-600'     serial_number = 'PT600-18-033'
-          ident_number = 'PT-2018-033'  location = 'HALA-A'    name = 'Przenośnik taśmowy PT-01' )
+          ident_number = 'PT-2018-033'  location = 'HALA-A'    name = 'Przenośnik taśmowy PT-01' name_en = 'Belt conveyor PT-01' )
         ( tech_object = '10000005' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL-SPR'
           work_center = 'MECH' sort_field = 'SPREZARKI'  object_type = 'SPREZARKA'  material = 'AC-GA37VSD'     serial_number = 'API625521'
-          ident_number = 'AC-GA37-5521' location = 'BUD-TECH'  name = 'Sprężarka śrubowa K-301' )
+          ident_number = 'AC-GA37-5521' location = 'BUD-TECH'  name = 'Sprężarka śrubowa K-301' name_en = 'Screw compressor K-301' )
         ( tech_object = '10000006' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL-SPR'
           work_center = 'MECH' sort_field = 'SPREZARKI'  object_type = 'OSUSZACZ'   material = 'AC-FD95'        serial_number = 'ITJ21118'
-          ident_number = 'OS-2021-118'  location = 'BUD-TECH'  name = 'Osuszacz powietrza OS-01' )
+          ident_number = 'OS-2021-118'  location = 'BUD-TECH'  name = 'Osuszacz powietrza OS-01' name_en = 'Air dryer OS-01' )
         ( tech_object = '10000007' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL-HVAC'
           work_center = 'HVAC' sort_field = 'HVAC'       object_type = 'CENTRALA'   material = 'KLI-CV-25'      serial_number = 'CV25-17-904'
-          ident_number = 'CW-2017-904'  location = 'DACH'      name = 'Centrala wentylacyjna CW-1' )
+          ident_number = 'CW-2017-904'  location = 'DACH'      name = 'Centrala wentylacyjna CW-1' name_en = 'Air handling unit CW-1' )
         ( tech_object = '10000008' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
           work_center = 'ELEC' sort_field = 'ELEKTRYKA'  object_type = 'ROZDZIELN'  material = 'SCH-PRISMA-G'   serial_number = 'PRG15001'
-          ident_number = 'RG-2015-001'  location = 'BUD-TECH'  name = 'Rozdzielnica główna RG 0,4 kV' )
+          ident_number = 'RG-2015-001'  location = 'BUD-TECH'  name = 'Rozdzielnica główna RG 0,4 kV' name_en = 'Main switchboard RG 0.4 kV' )
         ( tech_object = '10000009' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-MAG-OLD'
           work_center = 'MECH' sort_field = 'POMPY'      object_type = 'POMPA'      material = 'GRU-SEG-40'     serial_number = 'SEG12007'
           ident_number = 'P-2012-0007'  location = 'MAG-STARY' inactive = abap_true
-          name = 'Pompa zatapialna (wycofana)' )
+          name = 'Pompa zatapialna (wycofana)' name_en = 'Submersible pump (retired)' )
         ( tech_object = '10000010' tech_obj_type = 'EQ' planning_plant = '0001'
           work_center = 'MECH' sort_field = 'WOZKI'      object_type = 'WOZEK'      material = 'LIN-H25'        serial_number = 'H2X391T16552'
           ident_number = 'WW-2016-552'  location = 'HALA-B'    marked_for_del = abap_true
-          name = 'Wózek widłowy WW-03' )
+          name = 'Wózek widłowy WW-03' name_en = 'Forklift WW-03' )
         ( tech_object = 'PL02-KRK'           tech_obj_type = 'FL' planning_plant = '0002'
           work_center = 'MECH' sort_field = 'ZAKLAD'    object_type = 'ZAKLAD'     location = 'KRK'
-          name = 'Zakład Kraków' )
+          name = 'Zakład Kraków' name_en = 'Krakow Plant' )
         ( tech_object = 'PL02-KRK-TLOCZ'     tech_obj_type = 'FL' planning_plant = '0002' superior_object = 'PL02-KRK'
           work_center = 'MECH' sort_field = 'PRODUKCJA' object_type = 'HALA'       location = 'HALA-1'
-          name = 'Tłocznia' )
+          name = 'Tłocznia' name_en = 'Press shop' )
         ( tech_object = '10000011' tech_obj_type = 'EQ' planning_plant = '0002' superior_object = 'PL02-KRK-TLOCZ'
           work_center = 'MECH' sort_field = 'PRASY'      object_type = 'PRASA'      material = 'SCHU-HPX-400'   serial_number = 'HPX400-22-118'
-          ident_number = 'PR-2022-118'  location = 'HALA-1'    name = 'Prasa hydrauliczna PH-400' )
+          ident_number = 'PR-2022-118'  location = 'HALA-1'    name = 'Prasa hydrauliczna PH-400' name_en = 'Hydraulic press PH-400' )
         ( tech_object = '10000012' tech_obj_type = 'EQ' planning_plant = '0002' superior_object = 'PL02-KRK-TLOCZ'
           work_center = 'ELEC' sort_field = 'SILNIKI'    object_type = 'SILNIK'     material = 'SIE-1LE1-180'   serial_number = 'UD2203-0381'
-          ident_number = 'S-SIE-0381'   location = 'HALA-1'    name = 'Silnik pompy hydrauliki M-401' )
+          ident_number = 'S-SIE-0381'   location = 'HALA-1'    name = 'Silnik pompy hydrauliki M-401' name_en = 'Hydraulic pump motor M-401' )
         ( tech_object = '10000013' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-UTIL'
           work_center = 'ELEC' sort_field = 'ELEKTRYKA'  object_type = 'TRAFO'      material = 'ABB-DTR-1000'   serial_number = 'DTR1000-19-2241'
-          ident_number = 'TR-2019-001'  location = 'BUD-TECH'  name = 'Transformator TR-1 15/0,4 kV 1000 kVA' ) ).
+          ident_number = 'TR-2019-001'  location = 'BUD-TECH'  name = 'Transformator TR-1 15/0,4 kV 1000 kVA' name_en = 'Transformer TR-1 15/0.4 kV 1000 kVA' ) ).
 
     LOOP AT templates INTO DATA(template).
       APPEND CORRESPONDING #( template ) TO tech_objects.
 
-      APPEND VALUE #( language = 'E' tech_object = template-tech_object tech_object_text = template-name ) TO texts.
+      APPEND VALUE #( language = 'E' tech_object = template-tech_object tech_object_text = template-name_en ) TO texts.
       APPEND VALUE #( language = 'L' tech_object = template-tech_object tech_object_text = template-name ) TO texts.
     ENDLOOP.
 
@@ -1266,6 +1272,7 @@ CLASS zcl_ts_maint_demo_data IMPLEMENTATION.
     result = |{ holiday_year }{ month WIDTH = 2 ALIGN = RIGHT PAD = '0' }{ day WIDTH = 2 ALIGN = RIGHT PAD = '0' }|.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

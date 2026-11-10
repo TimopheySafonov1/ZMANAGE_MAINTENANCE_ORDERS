@@ -10,6 +10,7 @@ CLASS zcl_ts_maint_component DEFINITION PUBLIC FINAL CREATE PUBLIC.
              component   TYPE component,
              master_data TYPE zcl_ts_maint_order=>field_control,
              details     TYPE zcl_ts_maint_order=>field_control,
+             item_id     TYPE zcl_ts_maint_order=>field_control,
              delete      TYPE zcl_ts_maint_order=>operation_control,
            END OF feature,
            features TYPE STANDARD TABLE OF feature WITH EMPTY KEY.
@@ -86,6 +87,11 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
                                             THEN if_abap_behv=>fc-f-unrestricted
                                             ELSE if_abap_behv=>fc-f-read_only )
                       details     = COND #( WHEN confirmed = abap_true
+                                            THEN if_abap_behv=>fc-f-read_only
+                                            ELSE if_abap_behv=>fc-f-unrestricted )
+                      item_id     = COND #( WHEN    confirmed = abap_true
+                                                 OR (     component-ComponentId IS INITIAL
+                                                      AND component-Description IS NOT INITIAL )
                                             THEN if_abap_behv=>fc-f-read_only
                                             ELSE if_abap_behv=>fc-f-unrestricted )
                       delete      = COND #( WHEN confirmed = abap_true
@@ -221,6 +227,7 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

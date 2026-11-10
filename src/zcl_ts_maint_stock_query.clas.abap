@@ -18,6 +18,7 @@ CLASS zcl_ts_maint_stock_query DEFINITION PUBLIC FINAL CREATE PUBLIC.
         plant          TYPE zts_prt_stock-plant,
         storage_loc    TYPE zts_prt_stock-storage_loc,
         quantity       TYPE zts_maint_prt-req_quantity,
+        order_uuid     TYPE sysuuid_x16,
         planned_start  TYPE tzntstmpl,
         planned_finish TYPE tzntstmpl,
       END OF usage,
@@ -170,7 +171,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
     DATA(other_than) = COND sysuuid_x16( WHEN viewer-is_draft = abap_true THEN viewer-order_uuid ).
 
     SELECT prt~prt_id AS item, maint_order~planning_plant AS plant,
-           prt~storage_loc AS storage_loc, prt~req_quantity AS quantity,
+           prt~storage_loc AS storage_loc, prt~req_quantity AS quantity, maint_order~order_uuid AS order_uuid,
            operation~planned_start AS planned_start, operation~planned_finish AS planned_finish
       FROM zts_maint_prt AS prt
         INNER JOIN zts_maint_operat AS operation ON operation~operation_uuid = prt~operation_uuid
@@ -182,7 +183,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
       INTO CORRESPONDING FIELDS OF TABLE @result.
 
     SELECT prt~prtid AS item, maint_order~planningplant AS plant,
-           prt~storageloc AS storage_loc, prt~reqquantity AS quantity,
+           prt~storageloc AS storage_loc, prt~reqquantity AS quantity, maint_order~orderuuid AS order_uuid,
            operation~plannedstart AS planned_start, operation~plannedfinish AS planned_finish
       FROM zts_d_maint_prt AS prt
         INNER JOIN zts_d_maint_opr AS operation ON operation~operationuuid = prt~operationuuid
@@ -194,7 +195,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
       APPENDING CORRESPONDING FIELDS OF TABLE @result.
 
     LOOP AT result INTO DATA(usage).
-      IF overlaps( viewer = viewer usage = usage ) = abap_false.
+      IF usage-order_uuid <> viewer-order_uuid AND overlaps( viewer = viewer usage = usage ) = abap_false.
         DELETE result.
       ENDIF.
     ENDLOOP.
@@ -351,4 +352,5 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
     response->set_data( <page> ).
   ENDMETHOD.
 ENDCLASS.
+
 

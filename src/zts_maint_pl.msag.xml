@@ -198,6 +198,16 @@
      <MSGNR>036</MSGNR>
      <TEXT>Termin ostateczny musi przypadać w godzinach pracy (pn–pt 07:00–15:00).</TEXT>
     </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>037</MSGNR>
+     <TEXT>Komponent &amp;1 nie jest zarejestrowany i nie może zostać użyty.</TEXT>
+    </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>038</MSGNR>
+     <TEXT>Pomoc produkcyjna &amp;1 nie jest zarejestrowana i nie może być użyta.</TEXT>
+    </item>
    </T100_TEXTS>
   </asx:values>
  </asx:abap>

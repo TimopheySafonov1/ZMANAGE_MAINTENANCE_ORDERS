@@ -287,7 +287,46 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         FIELDS ( OrderStatus ) WITH CORRESPONDING #( keys )
-        RESULT DATA(current).
+        RESULT DATA(current)
+      ENTITY MaintenanceOrder BY \_Operations
+        FIELDS ( OperationUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(release_operations).
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_Components
+        FIELDS ( OrderUuid ComponentId Description ) WITH CORRESPONDING #( release_operations )
+        RESULT DATA(release_components)
+      ENTITY MaintenanceOperation BY \_PRTs
+        FIELDS ( OrderUuid PrtId Description ) WITH CORRESPONDING #( release_operations )
+        RESULT DATA(release_prts).
+
+    LOOP AT current INTO DATA(release_order).
+      DATA(unregistered) = abap_false.
+      LOOP AT release_components INTO DATA(component)
+           WHERE     %is_draft   = release_order-%is_draft
+                 AND OrderUuid   = release_order-OrderUuid
+                 AND ComponentId IS INITIAL
+                 AND Description IS NOT INITIAL.
+        unregistered = abap_true.
+        APPEND VALUE #( %tky = release_order-%tky
+                        %msg = zcx_ts_maint_message=>create( number = '037' v1 = |{ component-Description }| ) )
+          TO reported-maintenanceorder.
+      ENDLOOP.
+      LOOP AT release_prts INTO DATA(prt)
+           WHERE     %is_draft   = release_order-%is_draft
+                 AND OrderUuid   = release_order-OrderUuid
+                 AND PrtId       IS INITIAL
+                 AND Description IS NOT INITIAL.
+        unregistered = abap_true.
+        APPEND VALUE #( %tky = release_order-%tky
+                        %msg = zcx_ts_maint_message=>create( number = '038' v1 = |{ prt-Description }| ) )
+          TO reported-maintenanceorder.
+      ENDLOOP.
+      IF unregistered = abap_true.
+        APPEND VALUE #( %tky = release_order-%tky ) TO failed-maintenanceorder.
+        DELETE current.
+      ENDIF.
+    ENDLOOP.
 
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
@@ -733,7 +772,7 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
-        FIELDS ( ComponentId OperationUuid ) WITH CORRESPONDING #( keys )
+        FIELDS ( ComponentId Description OperationUuid ) WITH CORRESPONDING #( keys )
         RESULT DATA(components)
       ENTITY MaintenanceComponent BY \_MaintenanceOperation
         FIELDS ( Confirmed ) WITH CORRESPONDING #( keys )
@@ -745,7 +784,7 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
                         %delete             = feature-delete
                         %field-Description  = feature-master_data
                         %field-Uom          = feature-master_data
-                        %field-ComponentId  = feature-details
+                        %field-ComponentId  = feature-item_id
                         %field-ReqQuantity  = feature-details
                         %field-StorageLoc   = feature-details ) ).
   ENDMETHOD.
@@ -901,7 +940,7 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt
-        FIELDS ( PrtId OperationUuid ) WITH CORRESPONDING #( keys )
+        FIELDS ( PrtId Description OperationUuid ) WITH CORRESPONDING #( keys )
         RESULT DATA(prts)
       ENTITY MaintenancePrt BY \_MaintenanceOrder
         FIELDS ( OrderStatus ) WITH CORRESPONDING #( keys )
@@ -921,7 +960,7 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
                         %field-Uom              = feature-master_data
                         %field-ActualUsage      = feature-actuals
                         %field-ActualUsageUnit  = feature-actuals
-                        %field-PrtId            = feature-details
+                        %field-PrtId            = feature-item_id
                         %field-ReqQuantity      = feature-details
                         %field-StorageLoc       = feature-details
                         %field-PlannedUsage     = feature-planned
@@ -1100,6 +1139,7 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

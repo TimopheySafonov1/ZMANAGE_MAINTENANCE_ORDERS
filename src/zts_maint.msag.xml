@@ -224,6 +224,18 @@
      <MSGNR>036</MSGNR>
      <TEXT>The final due date must be in working time (Mon–Fri 07:00–15:00).</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>037</MSGNR>
+     <TEXT>Component &amp;1 is not registered and cannot be used.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>038</MSGNR>
+     <TEXT>Production resource/tool &amp;1 is not registered and cannot be used.</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

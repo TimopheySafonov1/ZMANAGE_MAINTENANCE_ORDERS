@@ -250,6 +250,7 @@ authorization dependent by _MaintenanceOrder
     field ComponentId affects field Description, field Uom,
                               permissions ( field Description, field Uom ),
                               entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
+    field Description affects permissions ( field ComponentId );
     field ReqQuantity affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
   }
 
@@ -295,6 +296,7 @@ authorization dependent by _MaintenanceOrder
     field PrtId affects field Description, field Uom,
                         permissions ( field Description, field Uom ),
                         entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
+    field Description affects permissions ( field PrtId );
     field ReqQuantity affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
     field PlannedUsage affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
     field PlannedUsageUnit affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
