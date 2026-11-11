@@ -420,7 +420,8 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
-      IF     order-MaintOrdFinalDueDateTime IS NOT INITIAL
+      IF     rules-immediate_start = abap_false
+         AND order-MaintOrdFinalDueDateTime IS NOT INITIAL
          AND zcl_ts_maint_factory=>operation( )->is_working_time( order-MaintOrdFinalDueDateTime ) = abap_false.
         add_error( EXPORTING order   = order
                              element = `MaintOrdFinalDueDateTime`
@@ -514,6 +515,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

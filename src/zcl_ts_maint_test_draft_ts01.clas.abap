@@ -56,7 +56,7 @@ CLASS zcl_ts_maint_test_draft_ts01 IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD create_draft.
-    CONVERT DATE CONV d( '20261110' ) TIME CONV t( '070000' ) TIME ZONE 'CET' INTO UTCLONG DATA(start).
+    CONVERT DATE CONV d( '20270105' ) TIME CONV t( '070000' ) TIME ZONE 'CET' INTO UTCLONG DATA(start).
 
     MODIFY ENTITIES OF zr_ts_maintenance_order
       ENTITY MaintenanceOrder
