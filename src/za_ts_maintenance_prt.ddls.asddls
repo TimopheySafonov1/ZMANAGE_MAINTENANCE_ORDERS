@@ -13,6 +13,7 @@ define view entity ZA_TS_MAINTENANCE_PRT
       @Semantics.quantity.unitOfMeasure: 'Uom'
       ReqQuantity,
       StorageLoc,
+      ItemNo,
       PlannedUsageUnit,
       @Semantics.quantity.unitOfMeasure: 'PlannedUsageUnit'
       PlannedUsage,
@@ -22,3 +23,4 @@ define view entity ZA_TS_MAINTENANCE_PRT
       _MaintenanceOperation : redirected to parent ZA_TS_MAINTENANCE_OPERATION,
       _MaintenanceOrder     : redirected to ZA_TS_MAINTENANCE_ORDER
 }
+

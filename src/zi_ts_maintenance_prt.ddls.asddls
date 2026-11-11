@@ -16,6 +16,7 @@ define view entity ZI_TS_MAINTENANCE_PRT
       @Semantics.quantity.unitOfMeasure: 'Uom'
       req_quantity                    as ReqQuantity,
       storage_loc                     as StorageLoc,
+      item_no                         as ItemNo,
       planned_usage_unit              as PlannedUsageUnit,
       @Semantics.quantity.unitOfMeasure: 'PlannedUsageUnit'
       planned_usage                   as PlannedUsage,
@@ -25,3 +26,4 @@ define view entity ZI_TS_MAINTENANCE_PRT
       _MaintenanceOperation,
       _MaintenanceOrder
 }
+

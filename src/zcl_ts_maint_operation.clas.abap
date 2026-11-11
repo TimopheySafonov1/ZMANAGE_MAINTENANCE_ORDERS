@@ -115,6 +115,7 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
 
     METHODS confirm_check
       IMPORTING operations    TYPE operations
+                siblings      TYPE operations OPTIONAL
       RETURNING VALUE(result) TYPE confirm_blockers.
 
     METHODS confirm
@@ -564,6 +565,30 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       IF operation-ActualWork IS INITIAL AND operation-ActualWorkDuration IS INITIAL.
         APPEND VALUE #( operation = operation
                         message   = zcx_ts_maint_message=>create( number = '032' v1 = number ) ) TO result.
+      ENDIF.
+      IF     operation-ActualStart  IS NOT INITIAL
+         AND operation-ActualFinish IS NOT INITIAL
+         AND operation-ActualFinish < operation-ActualStart.
+        APPEND VALUE #( operation = operation
+                        message   = zcx_ts_maint_message=>create( number = '017' v1 = number ) ) TO result.
+      ENDIF.
+      IF operation-ActualStart IS NOT INITIAL.
+        DATA(previous_finish) = VALUE tzntstmpl( ).
+        LOOP AT same_order( operation = operation siblings = siblings ) INTO DATA(previous)
+             WHERE Stage < operation-Stage.
+          IF previous-ActualFinish > previous_finish.
+            previous_finish = previous-ActualFinish.
+          ENDIF.
+        ENDLOOP.
+        IF previous_finish IS NOT INITIAL AND operation-ActualStart < previous_finish.
+          CONVERT TIME STAMP previous_finish TIME ZONE data_provider->get_time_zone( )
+                  INTO DATE DATA(finish_date) TIME DATA(finish_time).
+          APPEND VALUE #( operation = operation
+                          message   = zcx_ts_maint_message=>create( number = '018'
+                                                                     v1     = number
+                                                                     v2     = |{ finish_date DATE = ISO }|
+                                                                     v3     = |{ finish_time TIME = ISO }| ) ) TO result.
+        ENDIF.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
@@ -1120,6 +1145,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

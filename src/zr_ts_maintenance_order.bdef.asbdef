@@ -235,7 +235,7 @@ authorization dependent by _MaintenanceOrder
   association _MaintenanceOrder { with draft; }
 
   field ( numbering : managed, readonly ) ComponentUuid;
-  field ( readonly ) OperationUuid, OrderUuid;
+  field ( readonly ) OperationUuid, OrderUuid, ItemNo;
   field ( features : instance ) Description, Uom, ComponentId, ReqQuantity, StorageLoc;
 
   determination setOrderUuid on modify { create; }
@@ -248,9 +248,9 @@ authorization dependent by _MaintenanceOrder
   side effects
   {
     field ComponentId affects field Description, field Uom,
-                              permissions ( field Description, field Uom ),
+                              permissions ( field Description, field Uom, field StorageLoc ),
                               entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
-    field Description affects permissions ( field ComponentId );
+    field Description affects permissions ( field ComponentId, field StorageLoc );
     field ReqQuantity affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
   }
 
@@ -263,6 +263,7 @@ authorization dependent by _MaintenanceOrder
       Uom           = uom;
       ReqQuantity   = req_quantity;
       StorageLoc    = storage_loc;
+      ItemNo        = item_no;
     }
 }
 
@@ -279,7 +280,7 @@ authorization dependent by _MaintenanceOrder
   association _MaintenanceOrder { with draft; }
 
   field ( numbering : managed, readonly ) PrtUuid;
-  field ( readonly ) OperationUuid, OrderUuid;
+  field ( readonly ) OperationUuid, OrderUuid, ItemNo;
   field ( features : instance ) Description, Uom, ActualUsage, ActualUsageUnit, PrtId, ReqQuantity, StorageLoc,
                                 PlannedUsage, PlannedUsageUnit;
 
@@ -294,9 +295,9 @@ authorization dependent by _MaintenanceOrder
   side effects
   {
     field PrtId affects field Description, field Uom,
-                        permissions ( field Description, field Uom ),
+                        permissions ( field Description, field Uom, field StorageLoc ),
                         entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
-    field Description affects permissions ( field PrtId );
+    field Description affects permissions ( field PrtId, field StorageLoc );
     field ReqQuantity affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
     field PlannedUsage affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
     field PlannedUsageUnit affects entity _MaintenanceOrder, entity _MaintenanceOrder._Costs;
@@ -313,6 +314,7 @@ authorization dependent by _MaintenanceOrder
       Uom              = uom;
       ReqQuantity      = req_quantity;
       StorageLoc       = storage_loc;
+      ItemNo           = item_no;
       PlannedUsage     = planned_usage;
       PlannedUsageUnit = planned_usage_unit;
       ActualUsage      = actual_usage;

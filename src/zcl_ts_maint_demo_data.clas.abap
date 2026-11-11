@@ -9,7 +9,7 @@ CLASS zcl_ts_maint_demo_data DEFINITION PUBLIC FINAL CREATE PUBLIC.
            END OF steps.
 
     CONSTANTS: BEGIN OF run,
-                 clear_orders       TYPE abap_bool VALUE abap_true,
+                 clear_orders       TYPE abap_bool VALUE abap_false,
                  delete_customizing TYPE abap_bool VALUE abap_true,
                  fill_customizing   TYPE abap_bool VALUE abap_true,
                END OF run.

@@ -659,9 +659,19 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
         ALL FIELDS WITH CORRESPONDING #( keys )
-        RESULT DATA(current).
+        RESULT DATA(current)
+      ENTITY MaintenanceOperation BY \_MaintenanceOrder
+        FIELDS ( OrderUuid ) WITH CORRESPONDING #( keys )
+        RESULT DATA(confirm_orders).
 
-    LOOP AT zcl_ts_maint_factory=>operation( )->confirm_check( current ) INTO DATA(blocker).
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder BY \_Operations
+        FIELDS ( OrderUuid OperationId Stage ActualFinish ) WITH CORRESPONDING #( confirm_orders )
+        RESULT DATA(confirm_siblings).
+
+    LOOP AT zcl_ts_maint_factory=>operation( )->confirm_check( operations = current
+                                                               siblings   = CORRESPONDING #( confirm_siblings ) )
+         INTO DATA(blocker).
       APPEND VALUE #( %tky  = blocker-operation-%tky
                       %msg  = blocker-message
                       %path = VALUE #( MaintenanceOrder-%is_draft = blocker-operation-%is_draft
@@ -786,7 +796,7 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
                         %field-Uom          = feature-master_data
                         %field-ComponentId  = feature-item_id
                         %field-ReqQuantity  = feature-details
-                        %field-StorageLoc   = feature-details ) ).
+                        %field-StorageLoc   = feature-storage ) ).
   ENDMETHOD.
 
   METHOD setorderuuid.
@@ -799,9 +809,19 @@ CLASS lhc_maintenancecomponent IMPLEMENTATION.
         LINK links
         RESULT operations.
 
+    DATA(parents) = operations.
+    SORT parents BY %is_draft OperationUuid.
+    DELETE ADJACENT DUPLICATES FROM parents COMPARING %is_draft OperationUuid.
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_Components
+        FIELDS ( OperationUuid ItemNo ) WITH CORRESPONDING #( parents )
+        RESULT DATA(siblings).
+
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceComponent
-        UPDATE FROM zcl_ts_maint_factory=>component( )->order_uuid_updates( links      = links
+        UPDATE FROM zcl_ts_maint_factory=>component( )->order_uuid_updates( siblings   = siblings
+                                                                    links      = links
                                                                             operations = operations ).
   ENDMETHOD.
 
@@ -962,7 +982,7 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
                         %field-ActualUsageUnit  = feature-actuals
                         %field-PrtId            = feature-item_id
                         %field-ReqQuantity      = feature-details
-                        %field-StorageLoc       = feature-details
+                        %field-StorageLoc       = feature-storage
                         %field-PlannedUsage     = feature-planned
                         %field-PlannedUsageUnit = feature-planned ) ).
   ENDMETHOD.
@@ -977,9 +997,19 @@ CLASS lhc_maintenanceprt IMPLEMENTATION.
         LINK links
         RESULT operations.
 
+    DATA(parents) = operations.
+    SORT parents BY %is_draft OperationUuid.
+    DELETE ADJACENT DUPLICATES FROM parents COMPARING %is_draft OperationUuid.
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_PRTs
+        FIELDS ( OperationUuid ItemNo ) WITH CORRESPONDING #( parents )
+        RESULT DATA(siblings).
+
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenancePrt
-        UPDATE FROM zcl_ts_maint_factory=>prt( )->order_uuid_updates( links      = links
+        UPDATE FROM zcl_ts_maint_factory=>prt( )->order_uuid_updates( siblings   = siblings
+                                                                    links      = links
                                                                       operations = operations ).
   ENDMETHOD.
 
@@ -1139,6 +1169,7 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

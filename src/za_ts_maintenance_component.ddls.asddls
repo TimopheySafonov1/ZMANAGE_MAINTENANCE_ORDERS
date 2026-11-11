@@ -13,7 +13,9 @@ define view entity ZA_TS_MAINTENANCE_COMPONENT
       @Semantics.quantity.unitOfMeasure: 'Uom'
       ReqQuantity,
       StorageLoc,
+      ItemNo,
       _MaintenanceOperation : redirected to parent ZA_TS_MAINTENANCE_OPERATION,
       _MaintenanceOrder     : redirected to ZA_TS_MAINTENANCE_ORDER
 }
+
 

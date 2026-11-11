@@ -58,8 +58,8 @@ CLASS zcl_ts_maint_test_draft_ts02 IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD create_draft.
-    CONVERT DATE CONV d( '20261109' ) TIME CONV t( '070000' ) TIME ZONE 'CET' INTO UTCLONG DATA(start).
-    CONVERT DATE CONV d( '20261120' ) TIME CONV t( '150000' ) TIME ZONE 'CET' INTO UTCLONG DATA(finish).
+    CONVERT DATE CONV d( '20260310' ) TIME CONV t( '070000' ) TIME ZONE 'CET' INTO UTCLONG DATA(start).
+    CONVERT DATE CONV d( '20260323' ) TIME CONV t( '150000' ) TIME ZONE 'CET' INTO UTCLONG DATA(finish).
 
     MODIFY ENTITIES OF zr_ts_maintenance_order
       ENTITY MaintenanceOrder
@@ -247,4 +247,5 @@ CLASS zcl_ts_maint_test_draft_ts02 IMPLEMENTATION.
     result = xsdbool( failed IS INITIAL ).
   ENDMETHOD.
 ENDCLASS.
+
 

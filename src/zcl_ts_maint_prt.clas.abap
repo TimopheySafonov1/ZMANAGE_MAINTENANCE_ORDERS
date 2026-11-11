@@ -12,6 +12,7 @@ CLASS zcl_ts_maint_prt DEFINITION PUBLIC FINAL CREATE PUBLIC.
              actuals     TYPE zcl_ts_maint_order=>field_control,
              details     TYPE zcl_ts_maint_order=>field_control,
              item_id     TYPE zcl_ts_maint_order=>field_control,
+             storage     TYPE zcl_ts_maint_order=>field_control,
              planned     TYPE zcl_ts_maint_order=>field_control,
              delete      TYPE zcl_ts_maint_order=>operation_control,
            END OF feature,
@@ -36,6 +37,7 @@ CLASS zcl_ts_maint_prt DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS order_uuid_updates
       IMPORTING links         TYPE operation_links
                 operations    TYPE zcl_ts_maint_operation=>operations
+                siblings      TYPE prts OPTIONAL
       RETURNING VALUE(result) TYPE updates.
 
     METHODS master_data_updates
@@ -123,6 +125,13 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
                                                       AND prt-Description IS NOT INITIAL )
                                             THEN if_abap_behv=>fc-f-read_only
                                             ELSE if_abap_behv=>fc-f-unrestricted )
+                      storage     = COND #( WHEN    confirmed = abap_true
+                                                 OR (     prt-PrtId IS INITIAL
+                                                      AND prt-Description IS NOT INITIAL )
+                                            THEN if_abap_behv=>fc-f-read_only
+                                            WHEN prt-PrtId IS NOT INITIAL
+                                            THEN if_abap_behv=>fc-f-mandatory
+                                            ELSE if_abap_behv=>fc-f-unrestricted )
                       delete      = COND #( WHEN confirmed = abap_true
                                             THEN if_abap_behv=>fc-o-disabled
                                             ELSE if_abap_behv=>fc-o-enabled ) ) TO result.
@@ -130,11 +139,37 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD order_uuid_updates.
+    TYPES: BEGIN OF counter,
+             is_draft       TYPE abp_behv_flag,
+             operation_uuid TYPE sysuuid_x16,
+             last           TYPE i,
+           END OF counter.
+    DATA counters TYPE SORTED TABLE OF counter WITH UNIQUE KEY is_draft operation_uuid.
+
+    LOOP AT siblings INTO DATA(sibling).
+      READ TABLE counters WITH TABLE KEY is_draft = sibling-%is_draft operation_uuid = sibling-OperationUuid
+           ASSIGNING FIELD-SYMBOL(<counter>).
+      IF sy-subrc <> 0.
+        INSERT VALUE #( is_draft = sibling-%is_draft operation_uuid = sibling-OperationUuid ) INTO TABLE counters
+               ASSIGNING <counter>.
+      ENDIF.
+      <counter>-last = nmax( val1 = <counter>-last val2 = CONV i( sibling-ItemNo ) ).
+    ENDLOOP.
+
     LOOP AT links INTO DATA(link).
       DATA(operation) = VALUE #( operations[ KEY entity OperationUuid = link-target-OperationUuid ] OPTIONAL ).
+      READ TABLE counters WITH TABLE KEY is_draft = link-source-%is_draft operation_uuid = link-target-OperationUuid
+           ASSIGNING <counter>.
+      IF sy-subrc <> 0.
+        INSERT VALUE #( is_draft = link-source-%is_draft operation_uuid = link-target-OperationUuid ) INTO TABLE counters
+               ASSIGNING <counter>.
+      ENDIF.
+      <counter>-last += 1.
       APPEND VALUE #( %tky               = link-source-%tky
                       OrderUuid          = operation-OrderUuid
-                      %control-OrderUuid = if_abap_behv=>mk-on ) TO result.
+                      ItemNo             = <counter>-last
+                      %control-OrderUuid = if_abap_behv=>mk-on
+                      %control-ItemNo    = if_abap_behv=>mk-on ) TO result.
     ENDLOOP.
   ENDMETHOD.
 
@@ -205,7 +240,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
         ENDLOOP.
       ENDIF.
 
-      IF prt-StorageLoc IS INITIAL.
+      IF prt-PrtId IS NOT INITIAL AND prt-StorageLoc IS INITIAL.
         add_error( EXPORTING prt = prt
                              element = `StorageLoc`
                              message = zcx_ts_maint_message=>create( number = '027' v1 = |{ name }| )
@@ -255,6 +290,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

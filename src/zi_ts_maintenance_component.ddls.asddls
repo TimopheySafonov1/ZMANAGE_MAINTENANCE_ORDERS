@@ -16,7 +16,9 @@ define view entity ZI_TS_MAINTENANCE_COMPONENT
       @Semantics.quantity.unitOfMeasure: 'Uom'
       req_quantity                    as ReqQuantity,
       storage_loc                     as StorageLoc,
+      item_no                         as ItemNo,
       _MaintenanceOperation,
       _MaintenanceOrder
 }
+
 

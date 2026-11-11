@@ -15,6 +15,7 @@ define view entity ZR_TS_MAINTENANCE_PRT
       @Semantics.quantity.unitOfMeasure: 'Uom'
       ReqQuantity,
       StorageLoc,
+      ItemNo,
       cast( PlannedUsageUnit as msehiunit preserving type ) as PlannedUsageUnit,
       @Semantics.quantity.unitOfMeasure: 'PlannedUsageUnit'
       PlannedUsage,
@@ -24,3 +25,4 @@ define view entity ZR_TS_MAINTENANCE_PRT
       _MaintenanceOperation,
       _MaintenanceOrder
 }
+
