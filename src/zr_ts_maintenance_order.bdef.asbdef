@@ -141,8 +141,8 @@ authorization dependent by _MaintenanceOrder
 
   side effects
   {
-    field Description affects entity _MaintenanceOrder;
-    field PersonResp affects entity _MaintenanceOrder;
+    field Description affects field ActualStart, field ActualFinish, entity _MaintenanceOrder;
+    field PersonResp affects field ActualStart, field ActualFinish, entity _MaintenanceOrder;
     field PlannedWork affects field PlannedStart, field PlannedFinish, entity _MaintenanceOrder,
                               entity _MaintenanceOrder._Operations;
     field PlannedWorkUnit affects field PlannedStart, field PlannedFinish, entity _MaintenanceOrder,
@@ -152,11 +152,11 @@ authorization dependent by _MaintenanceOrder
     field PlannedDurationUnit affects field PlannedStart, field PlannedFinish, entity _MaintenanceOrder,
                                       entity _MaintenanceOrder._Operations;
     field ActualStart affects field ActualFinish, entity _MaintenanceOrder;
-    field ActualWork affects field ActualFinish, entity _MaintenanceOrder;
-    field ActualWorkUnit affects field ActualFinish, entity _MaintenanceOrder;
-    field ActualWorkDuration affects field ActualFinish, entity _MaintenanceOrder;
-    field ActualDurationUnit affects field ActualFinish, entity _MaintenanceOrder;
-    field Stage affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations;
+    field ActualWork affects field ActualStart, field ActualFinish, entity _MaintenanceOrder;
+    field ActualWorkUnit affects field ActualStart, field ActualFinish, entity _MaintenanceOrder;
+    field ActualWorkDuration affects field ActualStart, field ActualFinish, entity _MaintenanceOrder;
+    field ActualDurationUnit affects field ActualStart, field ActualFinish, entity _MaintenanceOrder;
+    field Stage affects field ActualStart, field ActualFinish, entity _MaintenanceOrder, entity _MaintenanceOrder._Operations;
     action confirmOperation affects entity _MaintenanceOrder, entity _MaintenanceOrder._Operations, entity _Components, entity _PRTs,
                                     entity _MaintenanceOrder._Costs;
     entity _Components affects entity _MaintenanceOrder, entity _Components, entity _MaintenanceOrder._Costs;
