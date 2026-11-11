@@ -427,6 +427,20 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                              message = zcx_ts_maint_message=>create( number = '036' )
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
+
+      IF     zcl_ts_maint_order_state=>for_status( order-OrderStatus )->allows_actuals( ) = abap_true
+         AND order-MaintOrdActualFinishDateTime IS NOT INITIAL
+         AND order-MaintOrdFinalDueDateTime     IS NOT INITIAL
+         AND order-MaintOrdFinalDueDateTime < order-MaintOrdActualFinishDateTime.
+        CONVERT UTCLONG order-MaintOrdActualFinishDateTime TIME ZONE time_zone
+                INTO DATE DATA(actual_finish_date) TIME DATA(actual_finish_time).
+        add_error( EXPORTING order   = order
+                             element = `MaintOrdFinalDueDateTime`
+                             message = zcx_ts_maint_message=>create( number = '039'
+                                                                     v1     = |{ actual_finish_date DATE = ISO }|
+                                                                     v2     = |{ actual_finish_time TIME = ISO }| )
+                   CHANGING  failed  = failed reported = reported ).
+      ENDIF.
     ENDLOOP.
   ENDMETHOD.
 
@@ -500,6 +514,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

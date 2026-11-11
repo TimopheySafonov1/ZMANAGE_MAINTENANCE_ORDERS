@@ -236,6 +236,12 @@
      <MSGNR>038</MSGNR>
      <TEXT>Production resource/tool &amp;1 is not registered and cannot be used.</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>039</MSGNR>
+     <TEXT>The final due date cannot be before the actual finish (&amp;1 &amp;2).</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

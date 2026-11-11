@@ -208,6 +208,11 @@
      <MSGNR>038</MSGNR>
      <TEXT>Pomoc produkcyjna &amp;1 nie jest zarejestrowana i nie może być użyta.</TEXT>
     </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>039</MSGNR>
+     <TEXT>Termin ostateczny nie może być przed rzeczywistym końcem (&amp;1 &amp;2).</TEXT>
+    </item>
    </T100_TEXTS>
   </asx:values>
  </asx:abap>

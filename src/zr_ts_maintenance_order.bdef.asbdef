@@ -38,7 +38,8 @@ authorization master ( global )
 
   validation validateTypeRules on save { create; field OrderType, Priority, TechObject, LongText,
                                          MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime,
-                                         MaintOrdFinalDueDateTime, PlanningPlant, WorkCenter; }
+                                         MaintOrdFinalDueDateTime, PlanningPlant, WorkCenter,
+                                         MaintOrdActualFinishDateTime; }
 
   side effects
   {
