@@ -35,6 +35,13 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       Priority,
       @EndUserText.label: 'Final Due Date/Time'
       MaintOrdFinalDueDateTime,
+      @EndUserText.label: 'Planned Final Due Date/Time'
+      MaintOrdPlndFinalDueDateTime,
+      case OrderStatus
+        when 'REL'  then cast( ' ' as abap_boolean preserving type )
+        when 'TECO' then cast( ' ' as abap_boolean preserving type )
+        else cast( 'X' as abap_boolean preserving type )
+      end as PlndFinalDueHidden,
       MaintRevision,
       @EndUserText.label: 'Planned Start Date/Time'
       MaintOrdBasicStartDateTime,
@@ -71,4 +78,5 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       _Status,
       _OrderStatus
 }
+
 

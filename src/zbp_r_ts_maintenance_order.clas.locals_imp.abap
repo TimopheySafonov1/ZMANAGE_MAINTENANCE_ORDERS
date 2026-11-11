@@ -286,7 +286,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   METHOD releaseorder.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( OrderStatus ) WITH CORRESPONDING #( keys )
+        FIELDS ( OrderStatus MaintOrdFinalDueDateTime ) WITH CORRESPONDING #( keys )
         RESULT DATA(current)
       ENTITY MaintenanceOrder BY \_Operations
         FIELDS ( OperationUuid ) WITH CORRESPONDING #( keys )
@@ -1169,6 +1169,7 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

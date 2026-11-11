@@ -53,6 +53,9 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       MaintOrdBasicStartDateTime,
       MaintOrdBasicFinishDateTime,
       MaintOrdFinalDueDateTime,
+      MaintOrdPlndFinalDueDateTime,
+      @UI.hidden: true
+      PlndFinalDueHidden,
       MaintOrdActualStartDateTime,
       MaintOrdActualFinishDateTime,
       MaintOrdDelayHours,
@@ -70,4 +73,5 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       _Attachments : redirected to composition child ZC_TS_MAINTENANCE_ATTACH,
       _Status
 }
+
 

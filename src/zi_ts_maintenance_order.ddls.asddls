@@ -20,6 +20,7 @@ define root view entity ZI_TS_MAINTENANCE_ORDER
       work_center           as WorkCenter,
       priority              as Priority,
       final_due_datetime    as MaintOrdFinalDueDateTime,
+      planned_final_due     as MaintOrdPlndFinalDueDateTime,
       maint_revision        as MaintRevision,
       basic_start_datetime  as MaintOrdBasicStartDateTime,
       basic_finish_datetime as MaintOrdBasicFinishDateTime,
@@ -41,4 +42,5 @@ define root view entity ZI_TS_MAINTENANCE_ORDER
       _Costs,
       _Attachments
 }
+
 

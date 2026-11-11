@@ -20,7 +20,7 @@ authorization master ( global )
   field ( numbering : managed, readonly ) OrderUuid;
   field ( readonly ) OrderId, OrderStatus, TechObjType, LocalLastChangedAt, LastChangedAt, TotalPlannedCosts, TotalActualCosts,
                      TotalPlannedHours, TotalActualHours, MaintOrdActualStartDateTime, MaintOrdActualFinishDateTime,
-                     MaintOrdDelayHours;
+                     MaintOrdDelayHours, MaintOrdPlndFinalDueDateTime;
   field ( features : instance ) OrderType, MaintRevision, TechObject, LongText, PlanningPlant, WorkCenter,
                                 MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime;
 
@@ -82,6 +82,7 @@ authorization master ( global )
       WorkCenter                  = work_center;
       Priority                    = priority;
       MaintOrdFinalDueDateTime    = final_due_datetime;
+      MaintOrdPlndFinalDueDateTime = planned_final_due;
       MaintRevision               = maint_revision;
       MaintOrdBasicStartDateTime  = basic_start_datetime;
       MaintOrdBasicFinishDateTime = basic_finish_datetime;

@@ -255,9 +255,11 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     LOOP AT orders INTO DATA(order).
       DATA(state) = zcl_ts_maint_order_state=>for_status( order-OrderStatus ).
       IF state->can_release( ) = abap_true.
-        APPEND VALUE #( %tky                 = order-%tky
-                        OrderStatus          = state->release( )->status( )
-                        %control-OrderStatus = if_abap_behv=>mk-on ) TO result.
+        APPEND VALUE #( %tky                                  = order-%tky
+                        OrderStatus                           = state->release( )->status( )
+                        MaintOrdPlndFinalDueDateTime          = order-MaintOrdFinalDueDateTime
+                        %control-OrderStatus                  = if_abap_behv=>mk-on
+                        %control-MaintOrdPlndFinalDueDateTime = if_abap_behv=>mk-on ) TO result.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
@@ -498,6 +500,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

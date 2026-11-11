@@ -26,6 +26,7 @@ define root view entity ZA_TS_MAINTENANCE_ORDER
       MaintOrdBasicStartDateTime,
       MaintOrdBasicFinishDateTime,
       MaintOrdFinalDueDateTime,
+      MaintOrdPlndFinalDueDateTime,
       MaintOrdActualStartDateTime,
       MaintOrdActualFinishDateTime,
       MaintOrdDelayHours,
@@ -43,4 +44,5 @@ define root view entity ZA_TS_MAINTENANCE_ORDER
       _Attachments : redirected to composition child ZA_TS_MAINTENANCE_ATTACH,
       _Status
 }
+
 

@@ -682,14 +682,15 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
           CONTINUE.
         ENDIF.
 
+        IF blocking_operations( operation = operation siblings = operations ) IS NOT INITIAL.
+          CONTINUE.
+        ENDIF.
+
         DATA(latest) = VALUE zts_maint_operat-actual_finish( ).
         LOOP AT operations INTO DATA(previous)
              WHERE %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid AND Stage < operation-Stage.
-          DATA(previous_finish) = COND zts_maint_operat-actual_finish( WHEN previous-ActualFinish IS NOT INITIAL
-                                                                       THEN previous-ActualFinish
-                                                                       ELSE previous-PlannedFinish ).
-          IF previous_finish > latest.
-            latest = previous_finish.
+          IF previous-ActualFinish > latest.
+            latest = previous-ActualFinish.
           ENDIF.
         ENDLOOP.
 
@@ -1145,6 +1146,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 
