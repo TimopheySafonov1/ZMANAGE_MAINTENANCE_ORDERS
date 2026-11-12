@@ -40,6 +40,10 @@ authorization master ( global )
                                          MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime,
                                          MaintOrdFinalDueDateTime, PlanningPlant, WorkCenter,
                                          MaintOrdActualFinishDateTime; }
+  validation validateDueDate on save { create; field OrderType, MaintOrdBasicFinishDateTime, MaintOrdFinalDueDateTime,
+                                       MaintOrdActualFinishDateTime; }
+
+  determine action checkDueDate { validation validateDueDate; }
 
   side effects
   {
@@ -49,6 +53,9 @@ authorization master ( global )
                             permissions ( field MaintRevision, field TechObject, field LongText,
                                           field MaintOrdBasicStartDateTime, field MaintOrdBasicFinishDateTime );
     field Priority affects field MaintOrdFinalDueDateTime;
+    determine action checkDueDate executed on field MaintOrdFinalDueDateTime, field Priority, field OrderType,
+                                              field MaintOrdBasicStartDateTime, entity _Operations
+                                  affects messages;
     field MaintOrdBasicStartDateTime affects field MaintOrdFinalDueDateTime, field MaintOrdBasicFinishDateTime,
                                          entity _Operations;
     field TechObject affects field TechObjType;
@@ -64,7 +71,7 @@ authorization master ( global )
   draft action Discard;
   draft action ( features : instance ) Edit;
   draft action Resume;
-  draft determine action Prepare { validation validateTypeRules; validation MaintenanceOperation~validateExecution;
+  draft determine action Prepare { validation validateTypeRules; validation validateDueDate; validation MaintenanceOperation~validateExecution;
                                    validation MaintenanceAttachment~validateMimeType;
                                    validation MaintenanceComponent~validateQuantity;
                                    validation MaintenancePrt~validateQuantity; }

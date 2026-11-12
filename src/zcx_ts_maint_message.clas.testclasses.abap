@@ -3,6 +3,7 @@ CLASS ltc_message DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SHOR
     METHODS error_has_text_and_severity FOR TESTING.
     METHODS variables_go_to_message FOR TESTING.
     METHODS severity_can_be_set FOR TESTING.
+    METHODS text_of_message FOR TESTING.
 ENDCLASS.
 
 CLASS ltc_message IMPLEMENTATION.
@@ -31,6 +32,11 @@ CLASS ltc_message IMPLEMENTATION.
 
     cl_abap_unit_assert=>assert_equals( act = message->if_abap_behv_message~m_severity
                                         exp = if_abap_behv_message=>severity-warning ).
+  ENDMETHOD.
+
+  METHOD text_of_message.
+    cl_abap_unit_assert=>assert_equals( act = zcx_ts_maint_message=>text( number = '001' )
+                                        exp = zcx_ts_maint_message=>create( number = '001' )->get_message_text( ) ).
   ENDMETHOD.
 ENDCLASS.
 

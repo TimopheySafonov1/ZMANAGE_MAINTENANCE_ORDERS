@@ -84,6 +84,7 @@ CLASS lcl_schedule IMPLEMENTATION.
     DATA operations TYPE zcl_ts_maint_operation=>operations.
 
     DATA(operation) = zcl_ts_maint_factory=>operation( ).
+    DATA(deleted_from) = operation->orders_with_deletes( ).
     DATA(all_orders) = operation->take_orders( orders ).
     IF all_orders IS INITIAL.
       RETURN.
@@ -100,6 +101,34 @@ CLASS lcl_schedule IMPLEMENTATION.
                  Confirmed OperationStatus WaitingFor )
         WITH CORRESPONDING #( all_orders )
         RESULT operations.
+
+    DATA saved TYPE zcl_ts_maint_operation=>operations.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        FIELDS ( OperationId )
+        WITH VALUE #( FOR draft IN operations WHERE ( %is_draft = if_abap_behv=>mk-on )
+                      ( %is_draft = if_abap_behv=>mk-off OperationUuid = draft-OperationUuid ) )
+        RESULT saved.
+
+    DATA(renumbered) = operation->renumber_updates( orders       = order_data
+                                                    operations   = operations
+                                                    deleted_from = deleted_from
+                                                    saved        = saved ).
+    IF renumbered IS NOT INITIAL.
+      MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+        ENTITY MaintenanceOperation
+          UPDATE FROM renumbered.
+
+      READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+        ENTITY MaintenanceOrder BY \_Operations
+          FIELDS ( OrderUuid OperationId Stage Description PersonResp PlannedWork PlannedWorkUnit PlannedWorkDuration
+                   PlannedDurationUnit ActualWork ActualWorkDuration ActualStart ActualFinish PlannedStart PlannedFinish
+                   Confirmed OperationStatus WaitingFor )
+          WITH CORRESPONDING #( all_orders )
+          RESULT operations.
+
+      lcl_costs=>recalculate( deleted_from ).
+    ENDIF.
 
     MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation
@@ -181,6 +210,9 @@ CLASS lhc_maintenanceorder DEFINITION INHERITING FROM cl_abap_behavior_handler F
 
     METHODS validatetyperules FOR VALIDATE ON SAVE
       IMPORTING keys FOR MaintenanceOrder~validateTypeRules.
+
+    METHODS validateduedate FOR VALIDATE ON SAVE
+      IMPORTING keys FOR MaintenanceOrder~validateDueDate.
 ENDCLASS.
 
 CLASS lhc_maintenanceorder IMPLEMENTATION.
@@ -383,6 +415,19 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
     zcl_ts_maint_factory=>order( )->validate( EXPORTING orders   = orders
                                               CHANGING  failed   = failed
                                                         reported = reported ).
+  ENDMETHOD.
+
+  METHOD validateduedate.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        FIELDS ( OrderType MaintOrdBasicFinishDateTime MaintOrdFinalDueDateTime OrderStatus
+                 MaintOrdActualFinishDateTime )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+
+    zcl_ts_maint_factory=>order( )->validate_due_date( EXPORTING orders   = orders
+                                                       CHANGING  failed   = failed
+                                                                 reported = reported ).
   ENDMETHOD.
 ENDCLASS.
 
@@ -676,7 +721,12 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
                       %msg  = blocker-message
                       %path = VALUE #( MaintenanceOrder-%is_draft = blocker-operation-%is_draft
                                        MaintenanceOrder-OrderUuid = blocker-operation-OrderUuid ) )
-             TO reported-maintenanceoperation.
+             TO reported-maintenanceoperation ASSIGNING FIELD-SYMBOL(<blocker_report>).
+      ASSIGN COMPONENT to_upper( blocker-element ) OF STRUCTURE <blocker_report>-%element
+             TO FIELD-SYMBOL(<blocker_element>).
+      IF sy-subrc = 0.
+        <blocker_element> = if_abap_behv=>mk-on.
+      ENDIF.
       IF line_exists( current[ %tky = blocker-operation-%tky ] ).
         APPEND VALUE #( %tky = blocker-operation-%tky ) TO failed-maintenanceoperation.
         DELETE current WHERE %tky = blocker-operation-%tky.
@@ -1169,6 +1219,8 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
+
 
 
 

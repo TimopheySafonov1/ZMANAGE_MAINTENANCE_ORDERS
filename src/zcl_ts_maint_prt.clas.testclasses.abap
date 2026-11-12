@@ -4,6 +4,8 @@ CLASS ltc_prt DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
     CONSTANTS operation_uuid TYPE sysuuid_x16 VALUE '00000000000000000000000000000011'.
     CONSTANTS first_uuid     TYPE sysuuid_x16 VALUE '00000000000000000000000000000041'.
     CONSTANTS second_uuid    TYPE sysuuid_x16 VALUE '00000000000000000000000000000042'.
+    CONSTANTS third_uuid     TYPE sysuuid_x16 VALUE '00000000000000000000000000000043'.
+    CONSTANTS fourth_uuid    TYPE sysuuid_x16 VALUE '00000000000000000000000000000044'.
 
     DATA data_provider TYPE REF TO zif_ts_maint_data_provider.
     DATA cut           TYPE REF TO zcl_ts_maint_prt.
@@ -21,6 +23,9 @@ CLASS ltc_prt DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
       RETURNING VALUE(result) TYPE zcl_ts_maint_prt=>feature.
 
     METHODS empty_row_is_recognized FOR TESTING.
+    METHODS validation_reports_problems FOR TESTING.
+    METHODS item_numbers_continue FOR TESTING.
+    METHODS unknown_order_is_skipped FOR TESTING.
     METHODS fields_locked_with_id FOR TESTING.
     METHODS actuals_open_when_released FOR TESTING.
     METHODS actuals_locked_when_created FOR TESTING.
@@ -131,6 +136,61 @@ CLASS ltc_prt IMPLEMENTATION.
   METHOD no_prts_no_master_data.
     cl_abap_unit_assert=>assert_initial( cut->master_data_updates( VALUE #( ) ) ).
   ENDMETHOD.
-ENDCLASS.
 
+  METHOD validation_reports_problems.
+    DATA failed   TYPE zcl_ts_maint_order=>failed.
+    DATA reported TYPE zcl_ts_maint_order=>reported.
+    DATA(no_storage) = prt( uuid = second_uuid prt_id = 'PT006' ).
+    no_storage-ReqQuantity = 1.
+    DATA(duplicate) = prt( uuid = third_uuid prt_id = 'PT006' ).
+    DATA(manual) = prt( fourth_uuid ).
+    manual-Description = 'Pozycja spoza magazynu'.
+    manual-ReqQuantity = 1.
+
+    cut->validate( EXPORTING siblings = VALUE #( ( no_storage ) ( duplicate ) )
+                             prts      = VALUE #( ( prt( first_uuid ) ) ( no_storage ) ( duplicate ) ( manual ) )
+                   CHANGING  failed   = failed
+                             reported = reported ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenanceprt ) exp = 5 ).
+    cl_abap_unit_assert=>assert_false( xsdbool( line_exists( failed-maintenanceprt[ PrtUuid = fourth_uuid ] ) ) ).
+    DATA warnings TYPE i.
+    LOOP AT reported-maintenanceprt INTO DATA(message) WHERE PrtUuid = fourth_uuid AND %msg IS BOUND.
+      warnings += 1.
+      cl_abap_unit_assert=>assert_equals( act = message-%msg->m_severity exp = if_abap_behv_message=>severity-warning ).
+      cl_abap_unit_assert=>assert_equals( act = message-%element-Description exp = if_abap_behv=>mk-on ).
+    ENDLOOP.
+    cl_abap_unit_assert=>assert_equals( act = warnings exp = 1 ).
+  ENDMETHOD.
+
+  METHOD item_numbers_continue.
+    DATA(first) = prt( first_uuid ).
+    first-ItemNo = 1.
+    DATA(second) = prt( second_uuid ).
+    second-ItemNo = 2.
+
+    DATA(updates) = cut->order_uuid_updates(
+                        links      = VALUE #( ( source-%is_draft     = if_abap_behv=>mk-on
+                                                source-PrtUuid       = third_uuid
+                                                target-%is_draft     = if_abap_behv=>mk-on
+                                                target-OperationUuid = operation_uuid ) )
+                        operations = VALUE #( ( %is_draft     = if_abap_behv=>mk-on
+                                                OperationUuid = operation_uuid
+                                                OrderUuid     = order_uuid ) )
+                        siblings   = VALUE #( ( first ) ( second ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ItemNo exp = 3 ).
+  ENDMETHOD.
+
+  METHOD unknown_order_is_skipped.
+    DATA(features) = cut->get_features( prts   = VALUE #( ( prt( first_uuid ) ) )
+                                        orders = VALUE #( )
+                                        links  = VALUE #( ( source-%is_draft = if_abap_behv=>mk-on
+                                                            source-PrtUuid   = first_uuid
+                                                            target-%is_draft = if_abap_behv=>mk-on
+                                                            target-OrderUuid = order_uuid ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = features[ 1 ]-actuals exp = if_abap_behv=>fc-f-read_only ).
+  ENDMETHOD.
+ENDCLASS.
 

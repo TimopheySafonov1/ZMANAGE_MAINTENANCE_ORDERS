@@ -5,7 +5,9 @@ ENDCLASS.
 
 CLASS ltd_data_provider IMPLEMENTATION.
   METHOD zif_ts_maint_data_provider~get_order_types.
-    CLEAR result.
+    IF line_exists( order_types[ table_line = 'PM03' ] ).
+      result = VALUE #( ( order_type = 'PM03' immediate_start = abap_true ) ).
+    ENDIF.
   ENDMETHOD.
 
   METHOD zif_ts_maint_data_provider~get_due_hours.
@@ -83,6 +85,7 @@ CLASS ltc_operation DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SH
     CONSTANTS third_uuid  TYPE sysuuid_x16 VALUE '00000000000000000000000000000013'.
     CONSTANTS fourth_uuid TYPE sysuuid_x16 VALUE '00000000000000000000000000000014'.
     CONSTANTS fifth_uuid  TYPE sysuuid_x16 VALUE '00000000000000000000000000000015'.
+    CONSTANTS other_order TYPE sysuuid_x16 VALUE '00000000000000000000000000000002'.
 
     DATA cut TYPE REF TO zcl_ts_maint_operation.
 
@@ -155,6 +158,19 @@ CLASS ltc_operation DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SH
     METHODS valid_operation_passes FOR TESTING.
     METHODS open_operations_block_teco FOR TESTING.
     METHODS confirmed_order_can_complete FOR TESTING.
+    METHODS empty_rows_get_next_ids FOR TESTING.
+    METHODS confirm_check_lists_problems FOR TESTING.
+    METHODS next_stage_starts_after_finish FOR TESTING.
+    METHODS unplanned_start_follows_stage FOR TESTING.
+    METHODS actual_finish_from_work FOR TESTING.
+    METHODS basic_finish_from_latest FOR TESTING.
+    METHODS actual_dates_from_operations FOR TESTING.
+    METHODS working_time_helpers FOR TESTING.
+    METHODS unit_mismatch_fails FOR TESTING.
+    METHODS no_work_leaves_unplanned FOR TESTING.
+    METHODS renumber_closes_gaps FOR TESTING.
+    METHODS renumber_only_planned_drafts FOR TESTING.
+    METHODS renumber_new_after_release FOR TESTING.
 ENDCLASS.
 
 CLASS ltc_operation IMPLEMENTATION.
@@ -220,7 +236,7 @@ CLASS ltc_operation IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD waiting_operation_is_locked.
-    DATA(waiting) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 ).
+    DATA(waiting) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 duration = 2 ).
 
     DATA(features) = cut->get_features(
                          operations = VALUE #( ( waiting ) )
@@ -534,15 +550,25 @@ CLASS ltc_operation IMPLEMENTATION.
     DATA(open) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 duration = 1 ).
     open-PlannedWork = 2.
     open-PlannedWorkUnit = 'H'.
+    open-ActualWorkDuration = 1.
+    open-ActualDurationUnit = 'H'.
+    DATA(redundant) = operation( uuid = third_uuid operation_id = 2 description = `Próba` stage = 2 duration = 1 ).
+    redundant-PlannedWork = 2.
+    redundant-PlannedWorkUnit = 'H'.
+    redundant-ActualStart = stamp( date = '20261110' time = '090000' ).
 
     DATA(updates) = cut->confirm( VALUE #( ( open )
-                                           ( operation( uuid = second_uuid confirmed = abap_true ) ) ) ).
+                                           ( operation( uuid = second_uuid confirmed = abap_true ) )
+                                           ( redundant ) ) ).
 
-    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 2 ).
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-Confirmed exp = abap_true ).
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ActualWork exp = 2 ).
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ActualWorkDuration exp = 1 ).
     cl_abap_unit_assert=>assert_not_initial( updates[ 1 ]-ActualFinish ).
+    cl_abap_unit_assert=>assert_initial( updates[ 2 ]-ActualWork ).
+    cl_abap_unit_assert=>assert_initial( updates[ 2 ]-ActualWorkDuration ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 2 ]-ActualFinish exp = redundant-ActualStart ).
   ENDMETHOD.
 
   METHOD confirm_keeps_actuals.
@@ -638,6 +664,8 @@ CLASS ltc_operation IMPLEMENTATION.
     created-MaintOrdBasicFinishDateTime = utc( date = '20261110' time = '150000' ).
     DATA(checked) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 ).
     checked-PlannedFinish = stamp( date = '20261111' time = '090000' ).
+    checked-PlannedWork = 1.
+    checked-PlannedWorkUnit = 'H'.
 
     cut->validate( EXPORTING operations = VALUE #( ( checked ) )
                              siblings   = VALUE #( ( checked ) )
@@ -658,6 +686,8 @@ CLASS ltc_operation IMPLEMENTATION.
     created-MaintOrdBasicFinishDateTime = utc( date = '20261112' time = '150000' ).
     DATA(checked) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 ).
     checked-PlannedFinish = stamp( date = '20261111' time = '090000' ).
+    checked-PlannedWork = 1.
+    checked-PlannedWorkUnit = 'H'.
     checked-ActualStart = stamp( date = '20261110' time = '070000' ).
 
     cut->validate( EXPORTING operations = VALUE #( ( checked ) )
@@ -690,6 +720,282 @@ CLASS ltc_operation IMPLEMENTATION.
                                                             confirmed = abap_true ) ) ) ).
 
     cl_abap_unit_assert=>assert_initial( blockers ).
+  ENDMETHOD.
+
+  METHOD empty_rows_get_next_ids.
+    DATA(active) = order( zif_ts_maint_order_status=>created ).
+    active-%is_draft = if_abap_behv=>mk-off.
+
+    DATA(updates) = cut->empty_row_updates(
+                        orders     = VALUE #( ( order( zif_ts_maint_order_status=>created ) ) ( active ) )
+                        operations = VALUE #( ( operation( uuid = first_uuid operation_id = 1 description = `Pomiar`
+                                                           stage = 1 ) )
+                                              ( operation( uuid = second_uuid operation_id = 1 ) )
+                                              ( operation( uuid = third_uuid operation_id = 5 ) ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-OperationUuid exp = third_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-OperationId exp = 3 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-Stage exp = 3 ).
+  ENDMETHOD.
+
+  METHOD confirm_check_lists_problems.
+    DATA(missing) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 ).
+    DATA(reversed) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 ).
+    reversed-ActualStart = stamp( date = '20261102' time = '100000' ).
+    reversed-ActualFinish = stamp( date = '20261102' time = '090000' ).
+    reversed-ActualWork = 1.
+    reversed-ActualWorkUnit = 'H'.
+    DATA(done) = operation( uuid = third_uuid operation_id = 3 description = `Próbka` stage = 1 confirmed = abap_true ).
+    done-ActualFinish = stamp( date = '20261102' time = '120000' ).
+
+    DATA(blockers) = cut->confirm_check( operations = VALUE #( ( missing ) ( reversed ) ( done ) )
+                                         siblings   = VALUE #( ( missing ) ( reversed ) ( done ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( blockers ) exp = 3 ).
+    cl_abap_unit_assert=>assert_equals( act = blockers[ 1 ]-operation-OperationUuid exp = first_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = blockers[ 3 ]-operation-OperationUuid exp = second_uuid ).
+  ENDMETHOD.
+
+  METHOD next_stage_starts_after_finish.
+    DATA(done) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 confirmed = abap_true ).
+    done-ActualFinish = stamp( date = '20261102' time = '150000' ).
+    DATA(next) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 ).
+
+    DATA(updates) = cut->next_stage_start_updates(
+                        VALUE #( ( done )
+                                 ( next )
+                                 ( operation( uuid = third_uuid operation_id = 3 description = `Próbka` stage = 3 ) )
+                                 ( operation( fourth_uuid ) ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-OperationUuid exp = second_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ActualStart exp = stamp( date = '20261103' time = '070000' ) ).
+    cl_abap_unit_assert=>assert_initial( cut->next_stage_start_updates( VALUE #( ( next ) ) ) ).
+  ENDMETHOD.
+
+  METHOD unplanned_start_follows_stage.
+    DATA(released) = order( zif_ts_maint_order_status=>released ).
+    released-OrderType = 'PM03'.
+    DATA(created) = order( zif_ts_maint_order_status=>created ).
+    created-OrderUuid = other_order.
+    DATA(done) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 confirmed = abap_true ).
+    done-ActualFinish = stamp( date = '20261102' time = '160000' ).
+    DATA(next) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 ).
+
+    DATA(updates) = cut->unplanned_start_updates(
+                        orders     = VALUE #( ( released ) ( created ) )
+                        operations = VALUE #( ( done )
+                                              ( next )
+                                              ( operation( uuid = third_uuid operation_id = 3 description = `Próbka`
+                                                           stage = 3 ) )
+                                              ( operation( fourth_uuid ) ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ActualStart exp = stamp( date = '20261102' time = '160000' ) ).
+    cl_abap_unit_assert=>assert_initial( cut->unplanned_start_updates( orders     = VALUE #( ( released ) )
+                                                                       operations = VALUE #( ( next ) ) ) ).
+  ENDMETHOD.
+
+  METHOD actual_finish_from_work.
+    DATA(worked) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 ).
+    worked-ActualStart = stamp( date = '20261102' time = '130000' ).
+    worked-ActualWork = 4.
+    worked-ActualWorkUnit = 'H'.
+    DATA(cleared) = operation( uuid = third_uuid operation_id = 3 description = `Próbka` stage = 1 ).
+    cleared-ActualFinish = stamp( date = '20261102' time = '120000' ).
+    DATA(clock) = operation( uuid = fourth_uuid operation_id = 1 description = `Awaria` stage = 1 ).
+    clock-OrderUuid = other_order.
+    clock-ActualStart = stamp( date = '20261102' time = '130000' ).
+    clock-ActualWorkDuration = 1.
+    clock-ActualDurationUnit = 'TAG'.
+    DATA(emergency) = order( zif_ts_maint_order_status=>released ).
+    emergency-OrderUuid = other_order.
+    emergency-OrderType = 'PM03'.
+
+    DATA(updates) = cut->actual_finish_updates(
+                        operations = VALUE #( ( worked )
+                                              ( operation( uuid = second_uuid operation_id = 2 description = `LOTO`
+                                                           stage = 2 confirmed = abap_true ) )
+                                              ( cleared )
+                                              ( clock ) )
+                        orders     = VALUE #( ( emergency ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 3 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ActualFinish exp = stamp( date = '20261103' time = '090000' ) ).
+    cl_abap_unit_assert=>assert_initial( updates[ 2 ]-ActualFinish ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 3 ]-ActualFinish exp = stamp( date = '20261102' time = '210000' ) ).
+    cl_abap_unit_assert=>assert_initial( cut->actual_finish_updates( VALUE #( ) ) ).
+  ENDMETHOD.
+
+  METHOD basic_finish_from_latest.
+    DATA(revised) = order( zif_ts_maint_order_status=>created ).
+    revised-OrderUuid = other_order.
+    revised-MaintRevision = 'R1'.
+    revised-MaintOrdBasicFinishDateTime = utc( date = '20261110' time = '150000' ).
+    DATA(empty) = order( zif_ts_maint_order_status=>created ).
+    empty-OrderUuid = fifth_uuid.
+    DATA(first) = operation( uuid = first_uuid description = `Pomiar` ).
+    first-PlannedFinish = stamp( date = '20261103' time = '100000' ).
+    DATA(second) = operation( uuid = second_uuid description = `LOTO` ).
+    second-PlannedFinish = stamp( date = '20261104' time = '120000' ).
+
+    DATA(updates) = cut->basic_finish_updates(
+                        orders     = VALUE #( ( order( zif_ts_maint_order_status=>created ) ) ( revised ) ( empty ) )
+                        operations = VALUE #( ( first ) ( second ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-MaintOrdBasicFinishDateTime
+                                        exp = utc( date = '20261104' time = '120000' ) ).
+  ENDMETHOD.
+
+  METHOD actual_dates_from_operations.
+    DATA(released) = order( zif_ts_maint_order_status=>released ).
+    released-MaintOrdBasicFinishDateTime = utc( date = '20261103' time = '100000' ).
+    DATA(open) = order( zif_ts_maint_order_status=>released ).
+    open-OrderUuid = other_order.
+    DATA(late) = operation( uuid = first_uuid description = `Pomiar` stage = 1 confirmed = abap_true ).
+    late-ActualStart = stamp( date = '20261102' time = '080000' ).
+    late-ActualFinish = stamp( date = '20261103' time = '120000' ).
+    DATA(early) = operation( uuid = second_uuid description = `LOTO` stage = 1 confirmed = abap_true ).
+    early-ActualStart = stamp( date = '20261102' time = '070000' ).
+    early-ActualFinish = stamp( date = '20261102' time = '090000' ).
+    DATA(pending) = operation( uuid = fourth_uuid description = `Olej` stage = 1 ).
+    pending-OrderUuid = other_order.
+
+    DATA(updates) = cut->actual_dates_updates( orders     = VALUE #( ( released ) ( open ) )
+                                               operations = VALUE #( ( late ) ( early ) ( operation( third_uuid ) )
+                                                                     ( pending ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-MaintOrdActualStartDateTime
+                                        exp = utc( date = '20261102' time = '070000' ) ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-MaintOrdActualFinishDateTime
+                                        exp = utc( date = '20261103' time = '120000' ) ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-MaintOrdDelayHours exp = 2 ).
+  ENDMETHOD.
+
+  METHOD working_time_helpers.
+    cl_abap_unit_assert=>assert_initial( cut->working_time_after( start = VALUE #( ) hours = 1 ) ).
+    cl_abap_unit_assert=>assert_equals( act = cut->working_time_after( start = utc( date = '20261102' time = '130000' )
+                                                                       hours = 4 )
+                                        exp = utc( date = '20261103' time = '090000' ) ).
+    cl_abap_unit_assert=>assert_false( cut->is_working_time( VALUE #( ) ) ).
+    cl_abap_unit_assert=>assert_true( cut->is_working_time( utc( date = '20261102' time = '100000' ) ) ).
+    cl_abap_unit_assert=>assert_false( cut->is_working_time( utc( date = '20261111' time = '100000' ) ) ).
+    cl_abap_unit_assert=>assert_initial( cut->next_working_moment( VALUE #( ) ) ).
+    cl_abap_unit_assert=>assert_equals( act = cut->next_working_moment( utc( date = '20261102' time = '100000' ) )
+                                        exp = utc( date = '20261102' time = '100000' ) ).
+    cl_abap_unit_assert=>assert_equals( act = cut->next_working_moment( utc( date = '20261106' time = '160000' ) )
+                                        exp = utc( date = '20261109' time = '070000' ) ).
+  ENDMETHOD.
+
+  METHOD unit_mismatch_fails.
+    DATA failed   TYPE zcl_ts_maint_order=>failed.
+    DATA reported TYPE zcl_ts_maint_order=>reported.
+    DATA(checked) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 duration = 1 ).
+    checked-PlannedWork = 2.
+    checked-PlannedWorkUnit = 'H'.
+    checked-ActualWork = 2.
+    checked-ActualWorkUnit = 'H'.
+    checked-ActualWorkDuration = 1.
+    checked-ActualDurationUnit = 'H'.
+
+    cut->validate( EXPORTING operations = VALUE #( ( checked ) )
+                             siblings   = VALUE #( ( checked ) )
+                             orders     = VALUE #( ( order( zif_ts_maint_order_status=>created ) ) )
+                   CHANGING  failed     = failed
+                             reported   = reported ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenanceoperation ) exp = 2 ).
+    cl_abap_unit_assert=>assert_true( xsdbool( line_exists( reported-maintenanceoperation[
+                                                                %element-PlannedDurationUnit = if_abap_behv=>mk-on ] ) ) ).
+    cl_abap_unit_assert=>assert_true( xsdbool( line_exists( reported-maintenanceoperation[
+                                                                %element-ActualDurationUnit = if_abap_behv=>mk-on ] ) ) ).
+  ENDMETHOD.
+
+  METHOD no_work_leaves_unplanned.
+    DATA(created) = order( zif_ts_maint_order_status=>created ).
+    created-MaintOrdBasicStartDateTime = utc( date = '20261102' time = '070000' ).
+
+    DATA(updates) = cut->plan( orders     = VALUE #( ( created ) )
+                               operations = VALUE #( ( operation( uuid = first_uuid operation_id = 1
+                                                                  description = `Pomiar` stage = 1 ) ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 1 ).
+    cl_abap_unit_assert=>assert_initial( updates[ 1 ]-PlannedStart ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-OperationStatus exp = zcl_ts_maint_operation=>status-open ).
+  ENDMETHOD.
+
+  METHOD renumber_closes_gaps.
+    cut->remember_orders( VALUE #( ( %is_draft = if_abap_behv=>mk-on OrderUuid = order_uuid ) ) ).
+
+    DATA(updates) = cut->renumber_updates(
+                        orders       = VALUE #( ( order( zif_ts_maint_order_status=>created ) ) )
+                        operations   = VALUE #( ( operation( uuid = first_uuid operation_id = 1 description = `Demontaż`
+                                                             stage = 1 ) )
+                                                ( operation( uuid = second_uuid operation_id = 2 description = `Przegląd`
+                                                             stage = 2 ) )
+                                                ( operation( uuid = third_uuid operation_id = 4 description = `Kalibracja`
+                                                             stage = 2 ) )
+                                                ( operation( uuid = fourth_uuid operation_id = 6 description = `Próba`
+                                                             stage = 4 ) )
+                                                ( operation( uuid = fifth_uuid operation_id = 7 ) ) )
+                        deleted_from = cut->orders_with_deletes( ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 2 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-OperationUuid exp = third_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-OperationId exp = 3 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-Stage exp = 2 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 2 ]-OperationUuid exp = fourth_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 2 ]-OperationId exp = 4 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 2 ]-Stage exp = 3 ).
+    cl_abap_unit_assert=>assert_equals( act = lines( cut->take_orders( VALUE #( ) ) ) exp = 1 ).
+  ENDMETHOD.
+
+  METHOD renumber_only_planned_drafts.
+    DATA(released) = order( zif_ts_maint_order_status=>released ).
+    DATA(active) = order( status = zif_ts_maint_order_status=>created draft = if_abap_behv=>mk-off ).
+    active-OrderUuid = other_order.
+    DATA(untouched) = order( zif_ts_maint_order_status=>created ).
+    untouched-OrderUuid = fifth_uuid.
+    DATA(gap) = operation( uuid = first_uuid operation_id = 3 description = `Pomiar` stage = 3 ).
+    DATA(active_gap) = gap.
+    active_gap-%is_draft = if_abap_behv=>mk-off.
+    active_gap-OrderUuid = other_order.
+    DATA(other_gap) = gap.
+    other_gap-OrderUuid = fifth_uuid.
+
+    cl_abap_unit_assert=>assert_initial(
+        cut->renumber_updates( orders       = VALUE #( ( released ) ( active ) ( untouched ) )
+                               operations   = VALUE #( ( gap ) ( active_gap ) ( other_gap ) )
+                               deleted_from = VALUE #( ( %is_draft = if_abap_behv=>mk-on OrderUuid = order_uuid )
+                                                       ( %is_draft = if_abap_behv=>mk-off OrderUuid = other_order ) )
+                               saved        = VALUE #( ( gap ) ) ) ).
+  ENDMETHOD.
+
+  METHOD renumber_new_after_release.
+    DATA(first) = operation( uuid = first_uuid operation_id = 1 description = `Demontaż` stage = 1 ).
+    DATA(second) = operation( uuid = second_uuid operation_id = 2 description = `Przegląd` stage = 2 ).
+
+    DATA(updates) = cut->renumber_updates(
+                        orders       = VALUE #( ( order( zif_ts_maint_order_status=>released ) ) )
+                        operations   = VALUE #( ( second )
+                                                ( operation( uuid = fourth_uuid operation_id = 4 description = `Próba`
+                                                             stage = 4 ) )
+                                                ( first )
+                                                ( operation( uuid = fifth_uuid operation_id = 5 description = `Pomiar`
+                                                             stage = 2 ) ) )
+                        deleted_from = VALUE #( ( %is_draft = if_abap_behv=>mk-on OrderUuid = order_uuid ) )
+                        saved        = VALUE #( ( first ) ( second ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 2 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-OperationUuid exp = fourth_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-OperationId exp = 3 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-Stage exp = 3 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 2 ]-OperationUuid exp = fifth_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 2 ]-OperationId exp = 4 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 2 ]-Stage exp = 2 ).
   ENDMETHOD.
 ENDCLASS.
 

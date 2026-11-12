@@ -19,6 +19,7 @@ CLASS ltc_released IMPLEMENTATION.
     cl_abap_unit_assert=>assert_false( cut->can_release( ) ).
     cl_abap_unit_assert=>assert_true( cut->can_complete( ) ).
     cl_abap_unit_assert=>assert_true( cut->allows_actuals( ) ).
+    cl_abap_unit_assert=>assert_false( cut->allows_planning( ) ).
   ENDMETHOD.
 
   METHOD complete_leads_to_completed.
@@ -29,4 +30,5 @@ CLASS ltc_released IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = cut->release( ) exp = cut ).
   ENDMETHOD.
 ENDCLASS.
+
 

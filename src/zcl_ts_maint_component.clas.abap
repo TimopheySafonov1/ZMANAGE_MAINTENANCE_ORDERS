@@ -57,10 +57,11 @@ CLASS zcl_ts_maint_component DEFINITION PUBLIC FINAL CREATE PUBLIC.
   PRIVATE SECTION.
     CONSTANTS state_area TYPE string VALUE 'VALIDATE_QUANTITY'.
 
-    METHODS add_error
+    METHODS add_message
       IMPORTING !component TYPE component
                 element  TYPE string
                 !message TYPE REF TO zcx_ts_maint_message
+                blocking TYPE abap_bool DEFAULT abap_true
       CHANGING  failed   TYPE zcl_ts_maint_order=>failed
                 reported TYPE zcl_ts_maint_order=>reported.
 
@@ -185,7 +186,7 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
                                 ELSE component-Description ).
 
       IF component-ReqQuantity IS INITIAL.
-        add_error( EXPORTING component = component
+        add_message( EXPORTING component = component
                              element = `ReqQuantity`
                              message = zcx_ts_maint_message=>create( number = '022' v1 = |{ name }| )
                    CHANGING  failed  = failed
@@ -200,7 +201,7 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
                    AND ComponentUuid <> component-ComponentUuid.
           INSERT |{ component-OperationUuid }{ component-ComponentId }| INTO TABLE duplicates.
           IF sy-subrc = 0.
-            add_error( EXPORTING component = component
+            add_message( EXPORTING component = component
                                  element = `ComponentId`
                                  message = zcx_ts_maint_message=>create( number = '023' v1 = |{ name }| )
                        CHANGING  failed  = failed
@@ -212,8 +213,19 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
         ENDLOOP.
       ENDIF.
 
+      IF component-ComponentId IS INITIAL AND component-Description IS NOT INITIAL.
+        add_message( EXPORTING component = component
+                               element  = `Description`
+                               message  = zcx_ts_maint_message=>create( number   = '040'
+                                                                        v1       = |{ name }|
+                                                                        severity = if_abap_behv_message=>severity-warning )
+                               blocking = abap_false
+                     CHANGING  failed   = failed
+                               reported = reported ).
+      ENDIF.
+
       IF component-ComponentId IS NOT INITIAL AND component-StorageLoc IS INITIAL.
-        add_error( EXPORTING component = component
+        add_message( EXPORTING component = component
                              element = `StorageLoc`
                              message = zcx_ts_maint_message=>create( number = '024' v1 = |{ name }| )
                    CHANGING  failed  = failed
@@ -222,8 +234,10 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-  METHOD add_error.
-    APPEND VALUE #( %tky = component-%tky ) TO failed-maintenancecomponent.
+  METHOD add_message.
+    IF blocking = abap_true.
+      APPEND VALUE #( %tky = component-%tky ) TO failed-maintenancecomponent.
+    ENDIF.
     APPEND VALUE #( %tky        = component-%tky
                     %state_area = state_area
                     %msg        = message
@@ -262,6 +276,7 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

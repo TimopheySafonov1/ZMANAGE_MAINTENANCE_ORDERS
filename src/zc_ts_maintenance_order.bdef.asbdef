@@ -15,6 +15,7 @@ use etag
   use action Edit;
   use action Resume;
   use action Prepare;
+  use action checkDueDate;
 
   use action releaseOrder;
   use action completeOrder;

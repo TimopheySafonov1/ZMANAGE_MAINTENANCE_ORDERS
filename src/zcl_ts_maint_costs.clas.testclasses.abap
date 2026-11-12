@@ -54,6 +54,9 @@ CLASS ltc_costs DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
     METHODS remembered_orders_are_merged FOR TESTING.
     METHODS prt_without_life_is_skipped FOR TESTING.
     METHODS changed_cost_row_is_updated FOR TESTING.
+    METHODS confirmed_material_is_actual FOR TESTING.
+    METHODS released_order_keeps_plan FOR TESTING.
+    METHODS empty_operation_is_skipped FOR TESTING.
 ENDCLASS.
 
 CLASS ltc_costs IMPLEMENTATION.
@@ -237,6 +240,81 @@ CLASS ltc_costs IMPLEMENTATION.
     cl_abap_unit_assert=>assert_initial( cost_creates ).
     cl_abap_unit_assert=>assert_equals( act = lines( cost_updates ) exp = 1 ).
     cl_abap_unit_assert=>assert_equals( act = cost_updates[ 1 ]-LaborPlannedCosts exp = 100 ).
+  ENDMETHOD.
+
+  METHOD confirmed_material_is_actual.
+    DATA(operations) = operation( person = '000000000001' work = 1 ).
+    operations[ 1 ]-Confirmed = abap_true.
+    operations[ 1 ]-ActualWork = 1.
+    operations[ 1 ]-ActualWorkUnit = 'H'.
+    DATA(created_orders) = orders( ).
+    created_orders[ 1 ]-OrderStatus = zif_ts_maint_order_status=>created.
+    DATA(components) = VALUE zcl_ts_maint_component=>components( ( %is_draft     = if_abap_behv=>mk-on
+                                                               OperationUuid = operation_uuid
+                                                               ComponentId   = 'SP001'
+                                                               ReqQuantity   = 4 ) ).
+
+    cut->calculate( EXPORTING orders         = created_orders
+                              operations     = operations
+                              components     = components
+                              prts           = VALUE #( )
+                              existing_costs = VALUE #( )
+                    IMPORTING cost_creates   = DATA(cost_creates) ).
+
+    cl_abap_unit_assert=>assert_equals( act = cost_creates[ 1 ]-%target[ 1 ]-MaterialPlannedCosts exp = 50 ).
+    cl_abap_unit_assert=>assert_equals( act = cost_creates[ 1 ]-%target[ 1 ]-MaterialActualCosts exp = 50 ).
+
+    CLEAR: operations[ 1 ]-ActualWork, operations[ 1 ]-ActualWorkUnit.
+    cut->calculate( EXPORTING orders         = created_orders
+                              operations     = operations
+                              components     = components
+                              prts           = VALUE #( )
+                              existing_costs = VALUE #( )
+                    IMPORTING cost_creates   = cost_creates ).
+
+    cl_abap_unit_assert=>assert_equals( act = cost_creates[ 1 ]-%target[ 1 ]-MaterialPlannedCosts exp = 50 ).
+    cl_abap_unit_assert=>assert_initial( cost_creates[ 1 ]-%target[ 1 ]-MaterialActualCosts ).
+  ENDMETHOD.
+
+  METHOD released_order_keeps_plan.
+    DATA(released_orders) = orders( ).
+    released_orders[ 1 ]-OrderStatus = zif_ts_maint_order_status=>released.
+
+    cut->calculate( EXPORTING orders         = released_orders
+                              operations     = operation( person = '000000000001' work = 2 )
+                              components     = VALUE #( ( %is_draft     = if_abap_behv=>mk-on
+                                                          OperationUuid = operation_uuid
+                                                          ComponentId   = 'SP001'
+                                                          ReqQuantity   = 4 ) )
+                              prts           = VALUE #( )
+                              existing_costs = VALUE #( ( %is_draft            = if_abap_behv=>mk-on
+                                                          CostItemUuid         = '00000000000000000000000000000021'
+                                                          OrderUuid            = order_uuid
+                                                          OperationUuid        = operation_uuid
+                                                          OperationId          = 1
+                                                          Currency             = 'PLN'
+                                                          PlannedCosts         = 110
+                                                          LaborPlannedCosts    = 80
+                                                          MaterialPlannedCosts = 30 ) )
+                    IMPORTING order_updates  = DATA(order_updates)
+                              cost_updates   = DATA(cost_updates) ).
+
+    cl_abap_unit_assert=>assert_equals( act = cost_updates[ 1 ]-LaborPlannedCosts exp = 80 ).
+    cl_abap_unit_assert=>assert_equals( act = cost_updates[ 1 ]-MaterialPlannedCosts exp = 30 ).
+    cl_abap_unit_assert=>assert_equals( act = cost_updates[ 1 ]-MaterialActualCosts exp = 20 ).
+    cl_abap_unit_assert=>assert_equals( act = cost_updates[ 1 ]-PlannedCosts exp = 110 ).
+    cl_abap_unit_assert=>assert_equals( act = order_updates[ 1 ]-TotalPlannedCosts exp = 110 ).
+  ENDMETHOD.
+
+  METHOD empty_operation_is_skipped.
+    cut->calculate( EXPORTING orders         = orders( )
+                              operations     = operation( person = VALUE #( ) work = 0 )
+                              components     = VALUE #( )
+                              prts           = VALUE #( )
+                              existing_costs = VALUE #( )
+                    IMPORTING cost_creates   = DATA(cost_creates) ).
+
+    cl_abap_unit_assert=>assert_initial( cost_creates ).
   ENDMETHOD.
 ENDCLASS.
 

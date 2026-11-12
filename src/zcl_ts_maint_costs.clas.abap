@@ -149,7 +149,7 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
                               * convert( amount = component_data-price from = component_data-currency to = currency ).
         ENDLOOP.
         cost_item-material_planned = round( val = material_planned dec = 2 ).
-        IF operation-Confirmed = abap_true.
+        IF operation-Confirmed = abap_true AND actual_hours > 0.
           cost_item-material_actual = cost_item-material_planned.
         ENDIF.
 
@@ -402,6 +402,7 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

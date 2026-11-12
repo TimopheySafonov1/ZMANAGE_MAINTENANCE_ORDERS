@@ -62,10 +62,11 @@ CLASS zcl_ts_maint_prt DEFINITION PUBLIC FINAL CREATE PUBLIC.
   PRIVATE SECTION.
     CONSTANTS state_area TYPE string VALUE 'VALIDATE_QUANTITY'.
 
-    METHODS add_error
+    METHODS add_message
       IMPORTING !prt TYPE prt
                 element  TYPE string
                 !message TYPE REF TO zcx_ts_maint_message
+                blocking TYPE abap_bool DEFAULT abap_true
       CHANGING  failed   TYPE zcl_ts_maint_order=>failed
                 reported TYPE zcl_ts_maint_order=>reported.
 
@@ -213,7 +214,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
                                 ELSE prt-Description ).
 
       IF prt-ReqQuantity IS INITIAL.
-        add_error( EXPORTING prt = prt
+        add_message( EXPORTING prt = prt
                              element = `ReqQuantity`
                              message = zcx_ts_maint_message=>create( number = '025' v1 = |{ name }| )
                    CHANGING  failed  = failed
@@ -228,7 +229,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
                    AND PrtUuid <> prt-PrtUuid.
           INSERT |{ prt-OperationUuid }{ prt-PrtId }| INTO TABLE duplicates.
           IF sy-subrc = 0.
-            add_error( EXPORTING prt = prt
+            add_message( EXPORTING prt = prt
                                  element = `PrtId`
                                  message = zcx_ts_maint_message=>create( number = '026' v1 = |{ name }| )
                        CHANGING  failed  = failed
@@ -240,8 +241,19 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
         ENDLOOP.
       ENDIF.
 
+      IF prt-PrtId IS INITIAL AND prt-Description IS NOT INITIAL.
+        add_message( EXPORTING prt = prt
+                               element  = `Description`
+                               message  = zcx_ts_maint_message=>create( number   = '041'
+                                                                        v1       = |{ name }|
+                                                                        severity = if_abap_behv_message=>severity-warning )
+                               blocking = abap_false
+                     CHANGING  failed   = failed
+                               reported = reported ).
+      ENDIF.
+
       IF prt-PrtId IS NOT INITIAL AND prt-StorageLoc IS INITIAL.
-        add_error( EXPORTING prt = prt
+        add_message( EXPORTING prt = prt
                              element = `StorageLoc`
                              message = zcx_ts_maint_message=>create( number = '027' v1 = |{ name }| )
                    CHANGING  failed  = failed
@@ -250,8 +262,10 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-  METHOD add_error.
-    APPEND VALUE #( %tky = prt-%tky ) TO failed-maintenanceprt.
+  METHOD add_message.
+    IF blocking = abap_true.
+      APPEND VALUE #( %tky = prt-%tky ) TO failed-maintenanceprt.
+    ENDIF.
     APPEND VALUE #( %tky        = prt-%tky
                     %state_area = state_area
                     %msg        = message
@@ -290,6 +304,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

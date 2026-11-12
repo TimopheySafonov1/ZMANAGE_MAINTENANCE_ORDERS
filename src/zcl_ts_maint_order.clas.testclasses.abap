@@ -36,6 +36,10 @@ CLASS ltd_data_provider IMPLEMENTATION.
     IF line_exists( tech_objects[ table_line = '10000013' ] ).
       result = VALUE #( ( tech_object = '10000013' tech_obj_type = 'EQ' ) ).
     ENDIF.
+    IF line_exists( tech_objects[ table_line = '10000014' ] ).
+      INSERT VALUE #( tech_object = '10000014' tech_obj_type = 'EQ' planning_plant = '0002' work_center = 'MECH' )
+             INTO TABLE result.
+    ENDIF.
   ENDMETHOD.
 
   METHOD zif_ts_maint_data_provider~get_saved_orders.
@@ -100,7 +104,7 @@ CLASS ltc_order DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
     METHODS order_ids_continue_after_max FOR TESTING.
     METHODS type_defaults_are_applied FOR TESTING.
     METHODS immediate_start_sets_due_date FOR TESTING.
-    METHODS due_date_only_for_immediate FOR TESTING.
+    METHODS due_dates_follow_type_rules FOR TESTING.
     METHODS tech_obj_type_from_master FOR TESTING.
     METHODS initial_status_is_created FOR TESTING.
     METHODS release_only_created_orders FOR TESTING.
@@ -121,6 +125,11 @@ CLASS ltc_order DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
     METHODS due_date_needs_start FOR TESTING.
     METHODS planned_order_needs_dates FOR TESTING.
     METHODS due_date_on_weekend_fails FOR TESTING.
+    METHODS tech_object_must_match FOR TESTING.
+    METHODS unknown_priority_fails FOR TESTING.
+    METHODS finish_after_due_date_fails FOR TESTING.
+    METHODS late_actual_finish_fails FOR TESTING.
+    METHODS no_due_date_without_rules FOR TESTING.
 ENDCLASS.
 
 CLASS ltc_order IMPLEMENTATION.
@@ -146,6 +155,9 @@ CLASS ltc_order IMPLEMENTATION.
     cut->validate( EXPORTING orders   = VALUE #( ( order ) )
                    CHANGING  failed   = failed
                              reported = reported ).
+    cut->validate_due_date( EXPORTING orders   = VALUE #( ( order ) )
+                            CHANGING  failed   = failed
+                                      reported = reported ).
   ENDMETHOD.
 
   METHOD has_error.
@@ -189,11 +201,11 @@ CLASS ltc_order IMPLEMENTATION.
     DATA(start) = updates[ 1 ]-MaintOrdBasicStartDateTime.
     cl_abap_unit_assert=>assert_not_initial( start ).
     cl_abap_unit_assert=>assert_equals(
-      act = utclong_diff( high = updates[ 1 ]-MaintOrdFinalDueDateTime low = start )
-      exp = 86400 ).
+      act = updates[ 1 ]-MaintOrdFinalDueDateTime
+      exp = NEW zcl_ts_maint_operation( data_provider )->next_working_moment( utclong_add( val = start hours = 24 ) ) ).
   ENDMETHOD.
 
-  METHOD due_date_only_for_immediate.
+  METHOD due_dates_follow_type_rules.
     DATA(emergency) = order( 'PM03' ).
     emergency-Priority = '1'.
     emergency-MaintOrdBasicStartDateTime = at( `2026-11-03T08:00:00` ).
@@ -203,9 +215,11 @@ CLASS ltc_order IMPLEMENTATION.
 
     DATA(updates) = cut->determine_due_dates( VALUE #( ( emergency ) ( planned ) ) ).
 
-    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 2 ).
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-MaintOrdFinalDueDateTime
                                         exp = at( `2026-11-04T08:00:00` ) ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 2 ]-MaintOrdFinalDueDateTime
+                                        exp = at( `2026-11-06T08:00:00` ) ).
   ENDMETHOD.
 
   METHOD tech_obj_type_from_master.
@@ -281,7 +295,7 @@ CLASS ltc_order IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = feature-release    exp = if_abap_behv=>fc-o-disabled ).
     cl_abap_unit_assert=>assert_equals( act = feature-complete   exp = if_abap_behv=>fc-o-disabled ).
     cl_abap_unit_assert=>assert_equals( act = feature-order_type exp = if_abap_behv=>fc-f-read_only ).
-    cl_abap_unit_assert=>assert_equals( act = feature-dates      exp = if_abap_behv=>fc-f-mandatory ).
+    cl_abap_unit_assert=>assert_equals( act = feature-dates      exp = if_abap_behv=>fc-f-read_only ).
   ENDMETHOD.
 
   METHOD mandatory_fields_are_checked.
@@ -401,6 +415,9 @@ CLASS ltc_order IMPLEMENTATION.
     cut->validate( EXPORTING orders   = VALUE #( )
                    CHANGING  failed   = failed
                              reported = reported ).
+    cut->validate_due_date( EXPORTING orders   = VALUE #( )
+                            CHANGING  failed   = failed
+                                      reported = reported ).
     cl_abap_unit_assert=>assert_initial( reported ).
   ENDMETHOD.
 
@@ -435,5 +452,65 @@ CLASS ltc_order IMPLEMENTATION.
     cl_abap_unit_assert=>assert_true( has_error( reported = reported element = `MaintOrdFinalDueDateTime` ) ).
     cl_abap_unit_assert=>assert_false( has_error( reported = reported element = `MaintOrdBasicFinishDateTime` ) ).
   ENDMETHOD.
+
+  METHOD tech_object_must_match.
+    DATA(corrective) = order( 'PM01' ).
+    corrective-TechObject = '10000014'.
+
+    validate( EXPORTING order    = corrective
+              IMPORTING reported = DATA(reported) ).
+
+    DATA(tech_errors) = REDUCE i( INIT count = 0
+                                  FOR entry IN reported-maintenanceorder
+                                  WHERE ( %element-TechObject = if_abap_behv=>mk-on )
+                                  NEXT count = count + 1 ).
+    cl_abap_unit_assert=>assert_equals( act = tech_errors exp = 2 ).
+  ENDMETHOD.
+
+  METHOD unknown_priority_fails.
+    DATA(planned) = order( 'PM02' ).
+    planned-Priority = '2'.
+
+    validate( EXPORTING order    = planned
+              IMPORTING reported = DATA(reported) ).
+
+    cl_abap_unit_assert=>assert_true( has_error( reported = reported element = `Priority` ) ).
+  ENDMETHOD.
+
+  METHOD finish_after_due_date_fails.
+    DATA(emergency) = order( 'PM03' ).
+    emergency-MaintOrdBasicStartDateTime = at( `2026-11-03T08:00:00` ).
+    emergency-MaintOrdBasicFinishDateTime = at( `2026-11-05T08:00:00` ).
+    emergency-MaintOrdFinalDueDateTime = at( `2026-11-04T08:00:00` ).
+
+    validate( EXPORTING order    = emergency
+              IMPORTING reported = DATA(reported) ).
+
+    cl_abap_unit_assert=>assert_true( has_error( reported = reported element = `MaintOrdFinalDueDateTime` ) ).
+  ENDMETHOD.
+
+  METHOD late_actual_finish_fails.
+    DATA(emergency) = order( 'PM03' ).
+    emergency-OrderStatus = zif_ts_maint_order_status=>released.
+    emergency-MaintOrdBasicStartDateTime = at( `2026-11-03T08:00:00` ).
+    emergency-MaintOrdFinalDueDateTime = at( `2026-11-04T08:00:00` ).
+    emergency-MaintOrdActualFinishDateTime = at( `2026-11-04T10:00:00` ).
+
+    validate( EXPORTING order    = emergency
+              IMPORTING reported = DATA(reported) ).
+
+    cl_abap_unit_assert=>assert_true( has_error( reported = reported element = `MaintOrdFinalDueDateTime` ) ).
+  ENDMETHOD.
+
+  METHOD no_due_date_without_rules.
+    DATA(unknown) = order( 'ZZ99' ).
+    unknown-MaintOrdBasicStartDateTime = at( `2026-11-03T08:00:00` ).
+    DATA(unrated) = order( order_type = 'PM03' uuid = ltd_data_provider=>saved_uuid ).
+    unrated-Priority = '2'.
+    unrated-MaintOrdBasicStartDateTime = at( `2026-11-03T08:00:00` ).
+
+    cl_abap_unit_assert=>assert_initial( cut->determine_due_dates( VALUE #( ( unknown ) ( unrated ) ) ) ).
+  ENDMETHOD.
 ENDCLASS.
+
 

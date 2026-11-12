@@ -68,14 +68,21 @@ CLASS zcl_ts_maint_order DEFINITION PUBLIC FINAL CREATE PUBLIC.
       CHANGING  failed   TYPE failed
                 reported TYPE reported.
 
+    METHODS validate_due_date
+      IMPORTING orders   TYPE orders
+      CHANGING  failed   TYPE failed
+                reported TYPE reported.
+
     METHODS record_status_history
       IMPORTING changes        TYPE status_changes
                 deleted_orders TYPE zif_ts_maint_data_provider=>order_uuids.
 
   PRIVATE SECTION.
     CONSTANTS state_area TYPE string VALUE 'TYPE_RULES'.
+    CONSTANTS due_date_area TYPE string VALUE 'DUE_DATE'.
 
     DATA data_provider TYPE REF TO zif_ts_maint_data_provider.
+    DATA operation_rules TYPE REF TO zcl_ts_maint_operation.
 
     METHODS read_types
       IMPORTING orders        TYPE orders
@@ -95,6 +102,7 @@ CLASS zcl_ts_maint_order DEFINITION PUBLIC FINAL CREATE PUBLIC.
       IMPORTING !order   TYPE order
                 element  TYPE string
                 !message TYPE REF TO zcx_ts_maint_message
+                area     TYPE string DEFAULT state_area
       CHANGING  failed   TYPE failed
                 reported TYPE reported.
 ENDCLASS.
@@ -102,6 +110,7 @@ ENDCLASS.
 CLASS zcl_ts_maint_order IMPLEMENTATION.
   METHOD constructor.
     me->data_provider = data_provider.
+    operation_rules = NEW #( data_provider ).
   ENDMETHOD.
 
   METHOD get_features.
@@ -400,6 +409,22 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
         ENDIF.
       ENDIF.
 
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD validate_due_date.
+    IF orders IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DATA(types) = read_types( orders ).
+    DATA(time_zone) = data_provider->get_time_zone( ).
+
+    LOOP AT orders INTO DATA(order).
+      APPEND VALUE #( %tky = order-%tky %state_area = due_date_area ) TO reported-maintenanceorder.
+
+      DATA(rules) = VALUE #( types[ order_type = order-OrderType ] OPTIONAL ).
+
       IF rules-working_days_only = abap_true AND order-MaintOrdFinalDueDateTime IS NOT INITIAL.
         CONVERT UTCLONG order-MaintOrdFinalDueDateTime TIME ZONE time_zone INTO DATE DATA(due_date).
         DATA(due_reason) = non_working_day( due_date ).
@@ -407,6 +432,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
           add_error( EXPORTING order   = order
                                element = `MaintOrdFinalDueDateTime`
                                message = zcx_ts_maint_message=>create( number = '012' v1 = |{ due_reason }| )
+                               area    = due_date_area
                      CHANGING  failed  = failed reported = reported ).
         ENDIF.
       ENDIF.
@@ -417,15 +443,17 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
         add_error( EXPORTING order   = order
                              element = `MaintOrdFinalDueDateTime`
                              message = zcx_ts_maint_message=>create( number = '031' )
+                             area    = due_date_area
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
       IF     rules-immediate_start = abap_false
          AND order-MaintOrdFinalDueDateTime IS NOT INITIAL
-         AND zcl_ts_maint_factory=>operation( )->is_working_time( order-MaintOrdFinalDueDateTime ) = abap_false.
+         AND operation_rules->is_working_time( order-MaintOrdFinalDueDateTime ) = abap_false.
         add_error( EXPORTING order   = order
                              element = `MaintOrdFinalDueDateTime`
                              message = zcx_ts_maint_message=>create( number = '036' )
+                             area    = due_date_area
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
@@ -440,6 +468,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                              message = zcx_ts_maint_message=>create( number = '039'
                                                                      v1     = |{ actual_finish_date DATE = ISO }|
                                                                      v2     = |{ actual_finish_time TIME = ISO }| )
+                             area    = due_date_area
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
     ENDLOOP.
@@ -484,9 +513,9 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDIF.
 
     IF rules-working_days_only = abap_true.
-      result = zcl_ts_maint_factory=>operation( )->working_time_after( start = start hours = CONV #( due_hours ) ).
+      result = operation_rules->working_time_after( start = start hours = CONV #( due_hours ) ).
     ELSE.
-      result = zcl_ts_maint_factory=>operation( )->next_working_moment( utclong_add( val = start hours = due_hours ) ).
+      result = operation_rules->next_working_moment( utclong_add( val = start hours = due_hours ) ).
     ENDIF.
   ENDMETHOD.
 
@@ -507,7 +536,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
       APPEND VALUE #( %tky = order-%tky ) TO failed-maintenanceorder.
     ENDIF.
     APPEND VALUE #( %tky        = order-%tky
-                    %state_area = state_area
+                    %state_area = area
                     %msg        = message ) TO reported-maintenanceorder ASSIGNING FIELD-SYMBOL(<reported>).
     ASSIGN COMPONENT to_upper( element ) OF STRUCTURE <reported>-%element TO FIELD-SYMBOL(<element>).
     IF sy-subrc = 0.
@@ -515,6 +544,8 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
+
 
 
 

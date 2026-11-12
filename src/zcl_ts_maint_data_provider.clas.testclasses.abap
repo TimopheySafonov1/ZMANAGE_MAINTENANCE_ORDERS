@@ -31,7 +31,7 @@ ENDCLASS.
 CLASS ltc_data_provider IMPLEMENTATION.
   METHOD class_setup.
     environment = cl_osql_test_environment=>create(
-                      i_dependency_list = VALUE #( ( 'ZTS_ORD_TYPE' ) ( 'ZTS_PRIORITY' ) ( 'ZTS_HOLIDAY' )
+                      i_dependency_list = VALUE #( ( 'ZTS_ORD_TYPE' ) ( 'ZTS_PRIORITY' ) ( 'ZTS_ORD_PRIO' ) ( 'ZTS_HOLIDAY' )
                                                    ( 'ZTS_TECH_OBJ' ) ( 'ZTS_RESP_PERSON' ) ( 'ZTS_COMPONENT' )
                                                    ( 'ZTS_COMPONENT_T' ) ( 'ZTS_PRT' ) ( 'ZTS_PRT_T' )
                                                    ( 'ZTS_TIME_UNIT' ) ( 'ZTS_EXCH_RATE' ) ( 'ZTS_FILE_TYPE' )
@@ -53,6 +53,10 @@ CLASS ltc_data_provider IMPLEMENTATION.
     DATA priorities TYPE STANDARD TABLE OF zts_priority WITH EMPTY KEY.
     priorities = VALUE #( ( priority = '1' due_hours = 24 ) ).
     environment->insert_test_data( priorities ).
+
+    DATA type_priorities TYPE STANDARD TABLE OF zts_ord_prio WITH EMPTY KEY.
+    type_priorities = VALUE #( ( order_type = 'PM02' priority = '1' due_hours = 48 ) ).
+    environment->insert_test_data( type_priorities ).
 
     DATA holidays TYPE STANDARD TABLE OF zts_holiday WITH EMPTY KEY.
     holidays = VALUE #( ( holiday_date = '20261225' holiday_name = 'Boże Narodzenie' ) ).
@@ -127,6 +131,8 @@ CLASS ltc_data_provider IMPLEMENTATION.
   METHOD due_hours_of_priority.
     cl_abap_unit_assert=>assert_equals( act = cut->get_due_hours( '1' ) exp = 24 ).
     cl_abap_unit_assert=>assert_initial( cut->get_due_hours( '4' ) ).
+    cl_abap_unit_assert=>assert_equals( act = cut->get_due_hours( priority = '1' order_type = 'PM02' ) exp = 48 ).
+    cl_abap_unit_assert=>assert_initial( cut->get_due_hours( priority = '1' order_type = 'PM03' ) ).
   ENDMETHOD.
 
   METHOD holiday_name_of_date.
@@ -206,6 +212,7 @@ CLASS ltc_data_provider IMPLEMENTATION.
     cl_abap_unit_assert=>assert_initial( cut->get_status_history( VALUE #( ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

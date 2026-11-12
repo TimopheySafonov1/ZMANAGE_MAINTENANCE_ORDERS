@@ -4,6 +4,8 @@ CLASS ltc_component DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SH
     CONSTANTS operation_uuid TYPE sysuuid_x16 VALUE '00000000000000000000000000000011'.
     CONSTANTS first_uuid     TYPE sysuuid_x16 VALUE '00000000000000000000000000000031'.
     CONSTANTS second_uuid    TYPE sysuuid_x16 VALUE '00000000000000000000000000000032'.
+    CONSTANTS third_uuid     TYPE sysuuid_x16 VALUE '00000000000000000000000000000033'.
+    CONSTANTS fourth_uuid    TYPE sysuuid_x16 VALUE '00000000000000000000000000000034'.
 
     DATA data_provider TYPE REF TO zif_ts_maint_data_provider.
     DATA cut           TYPE REF TO zcl_ts_maint_component.
@@ -16,6 +18,8 @@ CLASS ltc_component DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SH
       RETURNING VALUE(result) TYPE zcl_ts_maint_component=>component.
 
     METHODS empty_row_is_recognized FOR TESTING.
+    METHODS validation_reports_problems FOR TESTING.
+    METHODS item_numbers_continue FOR TESTING.
     METHODS fields_open_without_id FOR TESTING.
     METHODS fields_locked_with_id FOR TESTING.
     METHODS order_uuid_from_operation FOR TESTING.
@@ -112,7 +116,50 @@ CLASS ltc_component IMPLEMENTATION.
   METHOD no_components_no_master_data.
     cl_abap_unit_assert=>assert_initial( cut->master_data_updates( VALUE #( ) ) ).
   ENDMETHOD.
+
+  METHOD validation_reports_problems.
+    DATA failed   TYPE zcl_ts_maint_order=>failed.
+    DATA reported TYPE zcl_ts_maint_order=>reported.
+    DATA(no_storage) = component( uuid = second_uuid component_id = 'SP001' ).
+    no_storage-ReqQuantity = 1.
+    DATA(duplicate) = component( uuid = third_uuid component_id = 'SP001' ).
+    DATA(manual) = component( fourth_uuid ).
+    manual-Description = 'Pozycja spoza magazynu'.
+    manual-ReqQuantity = 1.
+
+    cut->validate( EXPORTING siblings = VALUE #( ( no_storage ) ( duplicate ) )
+                             components = VALUE #( ( component( first_uuid ) ) ( no_storage ) ( duplicate ) ( manual ) )
+                   CHANGING  failed   = failed
+                             reported = reported ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenancecomponent ) exp = 5 ).
+    cl_abap_unit_assert=>assert_false( xsdbool( line_exists( failed-maintenancecomponent[ ComponentUuid = fourth_uuid ] ) ) ).
+    DATA warnings TYPE i.
+    LOOP AT reported-maintenancecomponent INTO DATA(message) WHERE ComponentUuid = fourth_uuid AND %msg IS BOUND.
+      warnings += 1.
+      cl_abap_unit_assert=>assert_equals( act = message-%msg->m_severity exp = if_abap_behv_message=>severity-warning ).
+      cl_abap_unit_assert=>assert_equals( act = message-%element-Description exp = if_abap_behv=>mk-on ).
+    ENDLOOP.
+    cl_abap_unit_assert=>assert_equals( act = warnings exp = 1 ).
+  ENDMETHOD.
+
+  METHOD item_numbers_continue.
+    DATA(first) = component( first_uuid ).
+    first-ItemNo = 1.
+    DATA(second) = component( second_uuid ).
+    second-ItemNo = 2.
+
+    DATA(updates) = cut->order_uuid_updates(
+                        links      = VALUE #( ( source-%is_draft     = if_abap_behv=>mk-on
+                                                source-ComponentUuid = third_uuid
+                                                target-%is_draft     = if_abap_behv=>mk-on
+                                                target-OperationUuid = operation_uuid ) )
+                        operations = VALUE #( ( %is_draft     = if_abap_behv=>mk-on
+                                                OperationUuid = operation_uuid
+                                                OrderUuid     = order_uuid ) )
+                        siblings   = VALUE #( ( first ) ( second ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ItemNo exp = 3 ).
+  ENDMETHOD.
 ENDCLASS.
-
-
 

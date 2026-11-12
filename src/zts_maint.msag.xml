@@ -242,6 +242,18 @@
      <MSGNR>039</MSGNR>
      <TEXT>The final due date cannot be before the actual finish (&amp;1 &amp;2).</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>040</MSGNR>
+     <TEXT>Component &amp;1 is not in stock: its costs will not be calculated.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>041</MSGNR>
+     <TEXT>PRT &amp;1 is not in stock: its costs will not be calculated.</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

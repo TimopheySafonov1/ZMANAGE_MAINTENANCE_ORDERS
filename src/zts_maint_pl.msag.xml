@@ -213,6 +213,16 @@
      <MSGNR>039</MSGNR>
      <TEXT>Termin ostateczny nie może być przed rzeczywistym końcem (&amp;1 &amp;2).</TEXT>
     </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>040</MSGNR>
+     <TEXT>Komponent &amp;1 spoza magazynu: koszty materiału nie zostaną obliczone.</TEXT>
+    </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>041</MSGNR>
+     <TEXT>Pomoc produkcyjna &amp;1 spoza magazynu: koszty nie zostaną obliczone.</TEXT>
+    </item>
    </T100_TEXTS>
   </asx:values>
  </asx:abap>

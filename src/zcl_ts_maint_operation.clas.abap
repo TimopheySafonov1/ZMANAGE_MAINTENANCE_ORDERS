@@ -25,6 +25,7 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
            blockers TYPE STANDARD TABLE OF blocker WITH EMPTY KEY.
     TYPES: BEGIN OF confirm_blocker,
              operation TYPE operation,
+             element   TYPE string,
              message   TYPE REF TO zcx_ts_maint_message,
            END OF confirm_blocker,
            confirm_blockers TYPE STANDARD TABLE OF confirm_blocker WITH EMPTY KEY.
@@ -102,6 +103,16 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
     METHODS take_orders
       IMPORTING orders        TYPE zcl_ts_maint_order=>keys
       RETURNING VALUE(result) TYPE zcl_ts_maint_order=>keys.
+
+    METHODS orders_with_deletes
+      RETURNING VALUE(result) TYPE zcl_ts_maint_order=>keys.
+
+    METHODS renumber_updates
+      IMPORTING orders        TYPE zcl_ts_maint_order=>orders
+                operations    TYPE operations
+                deleted_from  TYPE zcl_ts_maint_order=>keys
+                saved         TYPE operations OPTIONAL
+      RETURNING VALUE(result) TYPE updates.
 
     METHODS plan
       IMPORTING orders        TYPE zcl_ts_maint_order=>orders
@@ -433,6 +444,60 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     DELETE result WHERE OrderUuid IS INITIAL.
   ENDMETHOD.
 
+  METHOD orders_with_deletes.
+    result = remembered_orders.
+  ENDMETHOD.
+
+  METHOD renumber_updates.
+    DATA stages TYPE SORTED TABLE OF zts_maint_operat-stage WITH UNIQUE KEY table_line.
+    DATA fixed_id TYPE zts_maint_operat-operation_id.
+    DATA fixed_stage TYPE zts_maint_operat-stage.
+
+    LOOP AT orders INTO DATA(order) WHERE %is_draft = if_abap_behv=>mk-on.
+      IF NOT line_exists( deleted_from[ %is_draft = order-%is_draft OrderUuid = order-OrderUuid ] ).
+        CONTINUE.
+      ENDIF.
+      DATA(planning) = zcl_ts_maint_order_state=>for_status( order-OrderStatus )->allows_planning( ).
+
+      DATA(kept) = VALUE operations( FOR o IN operations
+                                     WHERE ( %is_draft = order-%is_draft AND OrderUuid = order-OrderUuid )
+                                     ( LINES OF COND #( WHEN is_empty( o ) = abap_false THEN VALUE #( ( o ) ) ) ) ).
+      SORT kept BY OperationId.
+
+      CLEAR: stages, fixed_id, fixed_stage.
+      LOOP AT kept INTO DATA(fixed).
+        IF planning = abap_false AND line_exists( saved[ OperationUuid = fixed-OperationUuid ] ).
+          IF fixed-OperationId > fixed_id.
+            fixed_id = fixed-OperationId.
+          ENDIF.
+          IF fixed-Stage > fixed_stage.
+            fixed_stage = fixed-Stage.
+          ENDIF.
+          DELETE kept.
+        ENDIF.
+      ENDLOOP.
+
+      LOOP AT kept INTO DATA(staged) WHERE Stage > fixed_stage.
+        INSERT staged-Stage INTO TABLE stages.
+      ENDLOOP.
+
+      LOOP AT kept INTO DATA(operation).
+        DATA(new_id) = CONV zts_maint_operat-operation_id( fixed_id + sy-tabix ).
+        DATA(new_stage) = COND zts_maint_operat-stage(
+                            WHEN operation-Stage > fixed_stage
+                            THEN fixed_stage + line_index( stages[ table_line = operation-Stage ] )
+                            ELSE operation-Stage ).
+        IF new_id <> operation-OperationId OR new_stage <> operation-Stage.
+          APPEND VALUE #( %tky                 = operation-%tky
+                          OperationId          = new_id
+                          Stage                = new_stage
+                          %control-OperationId = if_abap_behv=>mk-on
+                          %control-Stage       = if_abap_behv=>mk-on ) TO result.
+        ENDIF.
+      ENDLOOP.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD plan.
     IF operations IS INITIAL.
       RETURN.
@@ -560,16 +625,14 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       DATA(number) = |{ CONV i( operation-OperationId ) }|.
       IF operation-ActualStart IS INITIAL.
         APPEND VALUE #( operation = operation
+                        element   = `ActualStart`
                         message   = zcx_ts_maint_message=>create( number = '030' v1 = number ) ) TO result.
-      ENDIF.
-      IF operation-ActualWork IS INITIAL AND operation-ActualWorkDuration IS INITIAL.
-        APPEND VALUE #( operation = operation
-                        message   = zcx_ts_maint_message=>create( number = '032' v1 = number ) ) TO result.
       ENDIF.
       IF     operation-ActualStart  IS NOT INITIAL
          AND operation-ActualFinish IS NOT INITIAL
          AND operation-ActualFinish < operation-ActualStart.
         APPEND VALUE #( operation = operation
+                        element   = `ActualFinish`
                         message   = zcx_ts_maint_message=>create( number = '017' v1 = number ) ) TO result.
       ENDIF.
       IF operation-ActualStart IS NOT INITIAL.
@@ -584,6 +647,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
           CONVERT TIME STAMP previous_finish TIME ZONE data_provider->get_time_zone( )
                   INTO DATE DATA(finish_date) TIME DATA(finish_time).
           APPEND VALUE #( operation = operation
+                          element   = `ActualStart`
                           message   = zcx_ts_maint_message=>create( number = '018'
                                                                      v1     = number
                                                                      v2     = |{ finish_date DATE = ISO }|
@@ -608,15 +672,13 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                                                                  ActualWorkDuration = if_abap_behv=>mk-on
                                                                  ActualDurationUnit = if_abap_behv=>mk-on
                                                                  ActualFinish       = if_abap_behv=>mk-on ) ).
-      IF update-ActualWorkDuration IS INITIAL AND update-ActualWork IS INITIAL.
-        update-ActualWorkDuration = operation-PlannedWorkDuration.
-        update-ActualDurationUnit = operation-PlannedDurationUnit.
-      ENDIF.
-      IF update-ActualWork IS INITIAL.
+      IF update-ActualWork IS INITIAL AND update-ActualWorkDuration IS NOT INITIAL.
         update-ActualWork = operation-PlannedWork.
         update-ActualWorkUnit = operation-PlannedWorkUnit.
       ENDIF.
-      IF update-ActualFinish IS INITIAL.
+      IF update-ActualFinish IS INITIAL AND update-ActualWork IS INITIAL AND update-ActualWorkDuration IS INITIAL.
+        update-ActualFinish = operation-ActualStart.
+      ELSEIF update-ActualFinish IS INITIAL.
         GET TIME STAMP FIELD update-ActualFinish.
       ENDIF.
       APPEND update TO result.
@@ -1146,6 +1208,8 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
+
 
 
 
