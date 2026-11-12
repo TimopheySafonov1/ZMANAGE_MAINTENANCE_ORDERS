@@ -174,7 +174,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZTS_MAINT</ARBGB>
      <MSGNR>028</MSGNR>
-     <TEXT>Operation &amp;1 has no planned time. Costs will not be calculated.</TEXT>
+     <TEXT>Operation &amp;1: enter the planned work.</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -240,7 +240,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZTS_MAINT</ARBGB>
      <MSGNR>039</MSGNR>
-     <TEXT>The final due date cannot be before the actual finish (&amp;1 &amp;2).</TEXT>
+     <TEXT>The final due date cannot be before the actual start or finish (&amp;1 &amp;2).</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>

@@ -421,7 +421,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         FIELDS ( OrderType MaintOrdBasicFinishDateTime MaintOrdFinalDueDateTime OrderStatus
-                 MaintOrdActualFinishDateTime )
+                 MaintOrdActualStartDateTime MaintOrdActualFinishDateTime )
         WITH CORRESPONDING #( keys )
         RESULT DATA(orders).
 
@@ -465,6 +465,9 @@ CLASS lhc_maintenanceoperation DEFINITION INHERITING FROM cl_abap_behavior_handl
 
     METHODS validateexecution FOR VALIDATE ON SAVE
       IMPORTING keys FOR MaintenanceOperation~validateExecution.
+
+    METHODS validateorderduedate FOR VALIDATE ON SAVE
+      IMPORTING keys FOR MaintenanceOperation~validateOrderDueDate.
 ENDCLASS.
 
 CLASS lhc_maintenanceoperation IMPLEMENTATION.
@@ -796,6 +799,21 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
                                                             orders     = orders
                                                   CHANGING  failed     = failed
                                                             reported   = reported ).
+  ENDMETHOD.
+
+  METHOD validateorderduedate.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation BY \_MaintenanceOrder
+        FIELDS ( OrderType MaintOrdBasicFinishDateTime MaintOrdFinalDueDateTime OrderStatus
+                 MaintOrdActualStartDateTime MaintOrdActualFinishDateTime )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(orders).
+    SORT orders BY %is_draft OrderUuid.
+    DELETE ADJACENT DUPLICATES FROM orders COMPARING %is_draft OrderUuid.
+
+    zcl_ts_maint_factory=>order( )->validate_due_date( EXPORTING orders   = orders
+                                                       CHANGING  failed   = failed
+                                                                 reported = reported ).
   ENDMETHOD.
 ENDCLASS.
 

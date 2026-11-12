@@ -155,6 +155,7 @@ CLASS ltc_operation DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SH
     METHODS finish_before_start_fails FOR TESTING.
     METHODS start_before_previous_fails FOR TESTING.
     METHODS late_finish_is_warning FOR TESTING.
+    METHODS missing_planned_work_fails FOR TESTING.
     METHODS valid_operation_passes FOR TESTING.
     METHODS open_operations_block_teco FOR TESTING.
     METHODS confirmed_order_can_complete FOR TESTING.
@@ -568,7 +569,8 @@ CLASS ltc_operation IMPLEMENTATION.
     cl_abap_unit_assert=>assert_not_initial( updates[ 1 ]-ActualFinish ).
     cl_abap_unit_assert=>assert_initial( updates[ 2 ]-ActualWork ).
     cl_abap_unit_assert=>assert_initial( updates[ 2 ]-ActualWorkDuration ).
-    cl_abap_unit_assert=>assert_equals( act = updates[ 2 ]-ActualFinish exp = redundant-ActualStart ).
+    cl_abap_unit_assert=>assert_initial( updates[ 2 ]-ActualStart ).
+    cl_abap_unit_assert=>assert_initial( updates[ 2 ]-ActualFinish ).
   ENDMETHOD.
 
   METHOD confirm_keeps_actuals.
@@ -590,6 +592,7 @@ CLASS ltc_operation IMPLEMENTATION.
     DATA failed TYPE zcl_ts_maint_order=>failed.
     DATA reported TYPE zcl_ts_maint_order=>reported.
     DATA(checked) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` ).
+    checked-PlannedWork = 1.
 
     cut->validate( EXPORTING operations = VALUE #( ( checked ) ( operation( second_uuid ) ) )
                              siblings   = VALUE #( ( checked ) )
@@ -605,6 +608,7 @@ CLASS ltc_operation IMPLEMENTATION.
     DATA failed TYPE zcl_ts_maint_order=>failed.
     DATA reported TYPE zcl_ts_maint_order=>reported.
     DATA(moved) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 1 ).
+    moved-PlannedWork = 1.
 
     cut->validate( EXPORTING operations = VALUE #( ( moved ) )
                              siblings   = VALUE #( ( operation( uuid      = first_uuid operation_id = 1 description = `Pomiar`
@@ -624,6 +628,8 @@ CLASS ltc_operation IMPLEMENTATION.
     DATA(checked) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 ).
     checked-ActualStart = stamp( date = '20261110' time = '100000' ).
     checked-ActualFinish = stamp( date = '20261110' time = '090000' ).
+
+    checked-PlannedWork = 1.
 
     cut->validate( EXPORTING operations = VALUE #( ( checked ) )
                              siblings   = VALUE #( ( checked ) )
@@ -645,6 +651,8 @@ CLASS ltc_operation IMPLEMENTATION.
     previous_early-ActualFinish = stamp( date = '20261110' time = '080000' ).
     DATA(checked) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 ).
     checked-ActualStart = stamp( date = '20261110' time = '090000' ).
+
+    checked-PlannedWork = 1.
 
     cut->validate( EXPORTING operations = VALUE #( ( checked ) )
                              siblings   = VALUE #( ( previous ) ( previous_early ) ( checked ) )
@@ -677,6 +685,22 @@ CLASS ltc_operation IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = lines( reported-maintenanceoperation ) exp = 2 ).
     cl_abap_unit_assert=>assert_equals( act = reported-maintenanceoperation[ 2 ]-%msg->m_severity
                                         exp = if_abap_behv_message=>severity-warning ).
+  ENDMETHOD.
+
+  METHOD missing_planned_work_fails.
+    DATA failed TYPE zcl_ts_maint_order=>failed.
+    DATA reported TYPE zcl_ts_maint_order=>reported.
+    DATA(checked) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 ).
+
+    cut->validate( EXPORTING operations = VALUE #( ( checked ) )
+                             siblings   = VALUE #( ( checked ) )
+                             orders     = VALUE #( ( order( zif_ts_maint_order_status=>created ) ) )
+                   CHANGING  failed     = failed
+                             reported   = reported ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenanceoperation ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = reported-maintenanceoperation[ 2 ]-%element-PlannedWork
+                                        exp = if_abap_behv=>mk-on ).
   ENDMETHOD.
 
   METHOD valid_operation_passes.
@@ -741,6 +765,8 @@ CLASS ltc_operation IMPLEMENTATION.
 
   METHOD confirm_check_lists_problems.
     DATA(missing) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 ).
+    missing-ActualWork = 1.
+    missing-ActualWorkUnit = 'H'.
     DATA(reversed) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 ).
     reversed-ActualStart = stamp( date = '20261102' time = '100000' ).
     reversed-ActualFinish = stamp( date = '20261102' time = '090000' ).
@@ -761,6 +787,8 @@ CLASS ltc_operation IMPLEMENTATION.
     DATA(done) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 confirmed = abap_true ).
     done-ActualFinish = stamp( date = '20261102' time = '150000' ).
     DATA(next) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 ).
+    next-ActualWork = 1.
+    next-ActualWorkUnit = 'H'.
 
     DATA(updates) = cut->next_stage_start_updates(
                         VALUE #( ( done )
@@ -782,6 +810,8 @@ CLASS ltc_operation IMPLEMENTATION.
     DATA(done) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 confirmed = abap_true ).
     done-ActualFinish = stamp( date = '20261102' time = '160000' ).
     DATA(next) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 ).
+    next-ActualWork = 1.
+    next-ActualWorkUnit = 'H'.
 
     DATA(updates) = cut->unplanned_start_updates(
                         orders     = VALUE #( ( released ) ( created ) )

@@ -41,7 +41,7 @@ authorization master ( global )
                                          MaintOrdFinalDueDateTime, PlanningPlant, WorkCenter,
                                          MaintOrdActualFinishDateTime; }
   validation validateDueDate on save { create; field OrderType, MaintOrdBasicFinishDateTime, MaintOrdFinalDueDateTime,
-                                       MaintOrdActualFinishDateTime; }
+                                       MaintOrdActualStartDateTime, MaintOrdActualFinishDateTime; }
 
   determine action checkDueDate { validation validateDueDate; }
 
@@ -129,6 +129,10 @@ authorization dependent by _MaintenanceOrder
 
   action ( features : instance, authorization : update ) confirmOperation result [1] $self;
 
+  validation validateOrderDueDate on save { create; field Confirmed, ActualStart, ActualFinish, ActualWork,
+                                            ActualWorkDuration; }
+  determine action checkOrderDueDate { validation validateOrderDueDate; }
+
   determination setOperationId on modify { create; }
   determination createComponentAndPrt on modify { create; }
   determination addEmptyOperation on modify { field Description, PersonResp, PlannedWork, PlannedWorkDuration; }
@@ -158,6 +162,9 @@ authorization dependent by _MaintenanceOrder
                                       entity _MaintenanceOrder._Operations;
     field PlannedDurationUnit affects field PlannedStart, field PlannedFinish, entity _MaintenanceOrder,
                                       entity _MaintenanceOrder._Operations;
+    determine action checkOrderDueDate executed on field ActualStart, field ActualWork, field ActualWorkUnit,
+                                                   field ActualWorkDuration, field ActualDurationUnit, field Stage
+                                       affects messages;
     field ActualStart affects field ActualFinish, entity _MaintenanceOrder;
     field ActualWork affects field ActualStart, field ActualFinish, entity _MaintenanceOrder;
     field ActualWorkUnit affects field ActualStart, field ActualFinish, entity _MaintenanceOrder;

@@ -156,7 +156,7 @@
     <item>
      <SPRSL>L</SPRSL>
      <MSGNR>028</MSGNR>
-     <TEXT>Operacja &amp;1 nie ma czasu planowanego. Koszty nie zostaną obliczone.</TEXT>
+     <TEXT>Operacja &amp;1: podaj pracę planowaną.</TEXT>
     </item>
     <item>
      <SPRSL>L</SPRSL>
@@ -211,7 +211,7 @@
     <item>
      <SPRSL>L</SPRSL>
      <MSGNR>039</MSGNR>
-     <TEXT>Termin ostateczny nie może być przed rzeczywistym końcem (&amp;1 &amp;2).</TEXT>
+     <TEXT>Termin ostateczny przed rzeczywistym początkiem lub końcem (&amp;1 &amp;2).</TEXT>
     </item>
     <item>
      <SPRSL>L</SPRSL>

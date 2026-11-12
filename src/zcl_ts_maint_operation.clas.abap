@@ -623,7 +623,8 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
   METHOD confirm_check.
     LOOP AT operations INTO DATA(operation) WHERE Confirmed = abap_false.
       DATA(number) = |{ CONV i( operation-OperationId ) }|.
-      IF operation-ActualStart IS INITIAL.
+      IF     operation-ActualStart IS INITIAL
+         AND ( operation-ActualWork IS NOT INITIAL OR operation-ActualWorkDuration IS NOT INITIAL ).
         APPEND VALUE #( operation = operation
                         element   = `ActualStart`
                         message   = zcx_ts_maint_message=>create( number = '030' v1 = number ) ) TO result.
@@ -665,8 +666,10 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                                    ActualWorkUnit     = operation-ActualWorkUnit
                                    ActualWorkDuration = operation-ActualWorkDuration
                                    ActualDurationUnit = operation-ActualDurationUnit
+                                   ActualStart        = operation-ActualStart
                                    ActualFinish       = operation-ActualFinish
                                    %control           = VALUE #( Confirmed          = if_abap_behv=>mk-on
+                                                                 ActualStart        = if_abap_behv=>mk-on
                                                                  ActualWork         = if_abap_behv=>mk-on
                                                                  ActualWorkUnit     = if_abap_behv=>mk-on
                                                                  ActualWorkDuration = if_abap_behv=>mk-on
@@ -676,8 +679,8 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
         update-ActualWork = operation-PlannedWork.
         update-ActualWorkUnit = operation-PlannedWorkUnit.
       ENDIF.
-      IF update-ActualFinish IS INITIAL AND update-ActualWork IS INITIAL AND update-ActualWorkDuration IS INITIAL.
-        update-ActualFinish = operation-ActualStart.
+      IF update-ActualWork IS INITIAL AND update-ActualWorkDuration IS INITIAL.
+        CLEAR: update-ActualStart, update-ActualFinish.
       ELSEIF update-ActualFinish IS INITIAL.
         GET TIME STAMP FIELD update-ActualFinish.
       ENDIF.
@@ -691,6 +694,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
 
     LOOP AT operations INTO DATA(operation) WHERE Confirmed = abap_false AND ActualStart IS INITIAL.
       IF    is_empty( operation ) = abap_true
+         OR ( operation-ActualWork IS INITIAL AND operation-ActualWorkDuration IS INITIAL )
          OR blocking_operations( operation = operation siblings = operations ) IS NOT INITIAL.
         CONTINUE.
       ENDIF.
@@ -740,7 +744,8 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                  AND ActualStart          IS INITIAL
                  AND PlannedWork          IS INITIAL
                  AND PlannedWorkDuration  IS INITIAL.
-        IF is_empty( operation ) = abap_true.
+        IF    is_empty( operation ) = abap_true
+           OR ( operation-ActualWork IS INITIAL AND operation-ActualWorkDuration IS INITIAL ).
           CONTINUE.
         ENDIF.
 
@@ -997,9 +1002,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
          AND zcl_ts_maint_order_state=>for_status( order_status )->allows_planning( ) = abap_true.
         add_message( EXPORTING operation = operation
                                element   = `PlannedWork`
-                               message   = zcx_ts_maint_message=>create( number   = '028'
-                                                                         v1       = |{ number }|
-                                                                         severity = if_abap_behv_message=>severity-warning )
+                               message   = zcx_ts_maint_message=>create( number = '028' v1 = |{ number }| )
                      CHANGING  failed    = failed reported = reported ).
       ENDIF.
     ENDLOOP.

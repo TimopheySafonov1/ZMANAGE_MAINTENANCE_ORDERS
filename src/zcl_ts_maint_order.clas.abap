@@ -457,11 +457,14 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
+      DATA(latest_actual) = COND utclong( WHEN order-MaintOrdActualFinishDateTime > order-MaintOrdActualStartDateTime
+                                          THEN order-MaintOrdActualFinishDateTime
+                                          ELSE order-MaintOrdActualStartDateTime ).
       IF     zcl_ts_maint_order_state=>for_status( order-OrderStatus )->allows_actuals( ) = abap_true
-         AND order-MaintOrdActualFinishDateTime IS NOT INITIAL
-         AND order-MaintOrdFinalDueDateTime     IS NOT INITIAL
-         AND order-MaintOrdFinalDueDateTime < order-MaintOrdActualFinishDateTime.
-        CONVERT UTCLONG order-MaintOrdActualFinishDateTime TIME ZONE time_zone
+         AND latest_actual                  IS NOT INITIAL
+         AND order-MaintOrdFinalDueDateTime IS NOT INITIAL
+         AND order-MaintOrdFinalDueDateTime < latest_actual.
+        CONVERT UTCLONG latest_actual TIME ZONE time_zone
                 INTO DATE DATA(actual_finish_date) TIME DATA(actual_finish_time).
         add_error( EXPORTING order   = order
                              element = `MaintOrdFinalDueDateTime`

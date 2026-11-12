@@ -177,6 +177,7 @@ CLASS ltc_behavior_pool DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATIO
     METHODS order_complete FOR TESTING.
     METHODS order_validation FOR TESTING.
     METHODS order_due_date_validation FOR TESTING.
+    METHODS operation_due_date_validation FOR TESTING.
     METHODS order_complete_blocked FOR TESTING.
     METHODS order_schedule FOR TESTING.
 
@@ -789,6 +790,13 @@ CLASS ltc_behavior_pool IMPLEMENTATION.
     CREATE OBJECT cut FOR TESTING.
     create_order( status = zif_ts_maint_order_status=>released ).
     add_operation( ).
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        UPDATE FIELDS ( ActualWork ActualWorkUnit )
+        WITH VALUE #( ( %is_draft      = draft
+                        OperationUuid  = operation_uuid
+                        ActualWork     = 1
+                        ActualWorkUnit = 'H' ) ).
 
     cut->confirmoperation( EXPORTING keys     = VALUE #( ( %is_draft = draft OperationUuid = operation_uuid ) )
                            CHANGING  result   = result
@@ -797,7 +805,7 @@ CLASS ltc_behavior_pool IMPLEMENTATION.
                                      reported = reported ).
 
     cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenanceoperation ) exp = 1 ).
-    cl_abap_unit_assert=>assert_equals( act = lines( reported-maintenanceoperation ) exp = 2 ).
+    cl_abap_unit_assert=>assert_equals( act = lines( reported-maintenanceoperation ) exp = 1 ).
     cl_abap_unit_assert=>assert_initial( result ).
   ENDMETHOD.
 
@@ -1251,6 +1259,30 @@ CLASS ltc_behavior_pool IMPLEMENTATION.
     cut->validateduedate( EXPORTING keys     = VALUE #( ( %is_draft = draft OrderUuid = order_uuid ) )
                           CHANGING  failed   = failed
                                     reported = reported ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenanceorder ) exp = 1 ).
+    cl_abap_unit_assert=>assert_true(
+        xsdbool( line_exists( reported-maintenanceorder[ %element-MaintOrdFinalDueDateTime = if_abap_behv=>mk-on ] ) ) ).
+  ENDMETHOD.
+
+  METHOD operation_due_date_validation.
+    DATA cut      TYPE REF TO lhc_maintenanceoperation.
+    DATA failed   TYPE RESPONSE FOR FAILED LATE zr_ts_maintenance_order.
+    DATA reported TYPE RESPONSE FOR REPORTED LATE zr_ts_maintenance_order.
+    CREATE OBJECT cut FOR TESTING.
+    create_order( status = zif_ts_maint_order_status=>released ).
+    add_operation( ).
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder
+        UPDATE FIELDS ( MaintOrdActualStartDateTime MaintOrdFinalDueDateTime )
+        WITH VALUE #( ( %is_draft                   = draft
+                        OrderUuid                   = order_uuid
+                        MaintOrdActualStartDateTime = CONV #( `2026-11-10T14:00:00` )
+                        MaintOrdFinalDueDateTime    = CONV #( `2026-11-10T10:00:00` ) ) ).
+
+    cut->validateorderduedate( EXPORTING keys     = VALUE #( ( %is_draft = draft OperationUuid = operation_uuid ) )
+                               CHANGING  failed   = failed
+                                         reported = reported ).
 
     cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenanceorder ) exp = 1 ).
     cl_abap_unit_assert=>assert_true(
