@@ -838,19 +838,23 @@ CLASS ltc_operation IMPLEMENTATION.
 
   METHOD next_stage_starts_when_planned.
     DATA(skipped) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 confirmed = abap_true ).
+    skipped-PlannedStart = stamp( date = '20261102' time = '070000' ).
     DATA(next) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 ).
     next-ActualWork = 1.
     next-ActualWorkUnit = 'H'.
     next-PlannedStart = stamp( date = '20261103' time = '090000' ).
-    DATA(unscheduled) = operation( uuid = third_uuid operation_id = 3 description = `Próbka` stage = 2 ).
-    unscheduled-ActualWork = 1.
-    unscheduled-ActualWorkUnit = 'H'.
+    DATA(unplanned) = operation( uuid = third_uuid operation_id = 3 description = `Próbka` stage = 1 confirmed = abap_true ).
 
-    DATA(updates) = cut->next_stage_start_updates( VALUE #( ( skipped ) ( next ) ( unscheduled ) ) ).
+    DATA(updates) = cut->next_stage_start_updates( VALUE #( ( skipped ) ( next ) ( unplanned ) ) ).
 
     cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 1 ).
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-OperationUuid exp = second_uuid ).
-    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ActualStart exp = next-PlannedStart ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ActualStart exp = skipped-PlannedStart ).
+    cl_abap_unit_assert=>assert_equals( act = cut->next_stage_start_updates( VALUE #( ( unplanned ) ( next ) ) )
+                                        exp = VALUE zcl_ts_maint_operation=>updates(
+                                                  ( %tky                 = next-%tky
+                                                    ActualStart          = next-PlannedStart
+                                                    %control-ActualStart = if_abap_behv=>mk-on ) ) ).
   ENDMETHOD.
 
   METHOD zero_work_is_warned.

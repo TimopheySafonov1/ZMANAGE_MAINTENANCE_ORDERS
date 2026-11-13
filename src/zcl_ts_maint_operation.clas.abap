@@ -729,19 +729,25 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       ENDIF.
 
       DATA(latest) = VALUE zts_maint_operat-actual_finish( ).
-      DATA(has_previous) = abap_false.
+      DATA(earliest_planned) = VALUE zts_maint_operat-planned_start( ).
       LOOP AT same_order( operation = operation siblings = operations ) INTO DATA(previous)
            WHERE Stage < operation-Stage.
-        has_previous = abap_true.
         IF previous-ActualFinish > latest.
           latest = previous-ActualFinish.
+        ENDIF.
+        IF     previous-PlannedStart IS NOT INITIAL
+           AND ( earliest_planned IS INITIAL OR previous-PlannedStart < earliest_planned ).
+          earliest_planned = previous-PlannedStart.
         ENDIF.
       ENDLOOP.
 
       IF latest IS INITIAL.
-        IF has_previous = abap_true AND operation-PlannedStart IS NOT INITIAL.
+        IF earliest_planned IS INITIAL.
+          earliest_planned = operation-PlannedStart.
+        ENDIF.
+        IF earliest_planned IS NOT INITIAL.
           APPEND VALUE #( %tky                 = operation-%tky
-                          ActualStart          = operation-PlannedStart
+                          ActualStart          = earliest_planned
                           %control-ActualStart = if_abap_behv=>mk-on ) TO result.
         ENDIF.
         CONTINUE.
