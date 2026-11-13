@@ -37,7 +37,8 @@ CLASS ltd_data_provider IMPLEMENTATION.
 
   METHOD zif_ts_maint_data_provider~get_time_units.
     result = VALUE #( ( time_unit = 'H' work_hours = 1 working_days = '0.125' )
-                      ( time_unit = 'TAG' work_hours = 8 working_days = 1 ) ).
+                      ( time_unit = 'TAG' work_hours = 8 working_days = 1 )
+                      ( time_unit = 'MIN' work_hours = '0.01667' working_days = '0.00208' ) ).
   ENDMETHOD.
 
   METHOD zif_ts_maint_data_provider~get_exchange_rates.
@@ -156,12 +157,15 @@ CLASS ltc_operation DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SH
     METHODS start_before_previous_fails FOR TESTING.
     METHODS late_finish_is_warning FOR TESTING.
     METHODS missing_planned_work_fails FOR TESTING.
+    METHODS pm02_work_limit FOR TESTING.
     METHODS valid_operation_passes FOR TESTING.
     METHODS open_operations_block_teco FOR TESTING.
     METHODS confirmed_order_can_complete FOR TESTING.
     METHODS empty_rows_get_next_ids FOR TESTING.
     METHODS confirm_check_lists_problems FOR TESTING.
     METHODS next_stage_starts_after_finish FOR TESTING.
+    METHODS next_stage_starts_when_planned FOR TESTING.
+    METHODS zero_work_is_warned FOR TESTING.
     METHODS unplanned_start_follows_stage FOR TESTING.
     METHODS actual_finish_from_work FOR TESTING.
     METHODS basic_finish_from_latest FOR TESTING.
@@ -703,6 +707,36 @@ CLASS ltc_operation IMPLEMENTATION.
                                         exp = if_abap_behv=>mk-on ).
   ENDMETHOD.
 
+  METHOD pm02_work_limit.
+    DATA failed TYPE zcl_ts_maint_order=>failed.
+    DATA reported TYPE zcl_ts_maint_order=>reported.
+    DATA(pm02) = order( zif_ts_maint_order_status=>released ).
+    pm02-OrderType = 'PM02'.
+    DATA(in_minutes) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 ).
+    in_minutes-ActualWork = 480.
+    in_minutes-ActualWorkUnit = 'MIN'.
+    DATA(too_long) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 ).
+    too_long-ActualWork = 481.
+    too_long-ActualWorkUnit = 'MIN'.
+
+    cut->validate_actual_work( EXPORTING operations = VALUE #( ( in_minutes ) ( too_long ) )
+                                         orders     = VALUE #( ( pm02 ) )
+                               CHANGING  failed     = failed
+                                         reported   = reported ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenanceoperation ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = failed-maintenanceoperation[ 1 ]-OperationUuid exp = second_uuid ).
+    cl_abap_unit_assert=>assert_true( xsdbool( line_exists( reported-maintenanceoperation[
+                                                                %element-ActualWork = if_abap_behv=>mk-on ] ) ) ).
+
+    CLEAR: failed, reported.
+    cut->validate_actual_work( EXPORTING operations = VALUE #( )
+                                         orders     = VALUE #( ( pm02 ) )
+                               CHANGING  failed     = failed
+                                         reported   = reported ).
+    cl_abap_unit_assert=>assert_initial( reported ).
+  ENDMETHOD.
+
   METHOD valid_operation_passes.
     DATA failed TYPE zcl_ts_maint_order=>failed.
     DATA reported TYPE zcl_ts_maint_order=>reported.
@@ -800,6 +834,39 @@ CLASS ltc_operation IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-OperationUuid exp = second_uuid ).
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ActualStart exp = stamp( date = '20261103' time = '070000' ) ).
     cl_abap_unit_assert=>assert_initial( cut->next_stage_start_updates( VALUE #( ( next ) ) ) ).
+  ENDMETHOD.
+
+  METHOD next_stage_starts_when_planned.
+    DATA(skipped) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 confirmed = abap_true ).
+    DATA(next) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 2 ).
+    next-ActualWork = 1.
+    next-ActualWorkUnit = 'H'.
+    next-PlannedStart = stamp( date = '20261103' time = '090000' ).
+    DATA(unscheduled) = operation( uuid = third_uuid operation_id = 3 description = `Próbka` stage = 2 ).
+    unscheduled-ActualWork = 1.
+    unscheduled-ActualWorkUnit = 'H'.
+
+    DATA(updates) = cut->next_stage_start_updates( VALUE #( ( skipped ) ( next ) ( unscheduled ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( updates ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-OperationUuid exp = second_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ActualStart exp = next-PlannedStart ).
+  ENDMETHOD.
+
+  METHOD zero_work_is_warned.
+    DATA(zero) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 ).
+    DATA(worked) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 1 ).
+    worked-ActualWork = 1.
+    worked-ActualWorkUnit = 'H'.
+    DATA(done) = operation( uuid = third_uuid operation_id = 3 description = `Próbka` stage = 1 confirmed = abap_true ).
+
+    DATA(warnings) = cut->zero_work_warnings( VALUE #( ( zero ) ( worked ) ( done ) ( operation( fourth_uuid ) ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( warnings ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = warnings[ 1 ]-operation-OperationUuid exp = first_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = warnings[ 1 ]-element exp = `ActualWork` ).
+    cl_abap_unit_assert=>assert_equals( act = warnings[ 1 ]-message->if_abap_behv_message~m_severity
+                                        exp = if_abap_behv_message=>severity-warning ).
   ENDMETHOD.
 
   METHOD unplanned_start_follows_stage.
@@ -1028,5 +1095,6 @@ CLASS ltc_operation IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = updates[ 2 ]-Stage exp = 2 ).
   ENDMETHOD.
 ENDCLASS.
+
 
 

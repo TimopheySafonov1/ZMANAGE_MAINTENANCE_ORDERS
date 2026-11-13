@@ -147,6 +147,18 @@ CLASS lcl_schedule IMPLEMENTATION.
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder BY \_Operations
+        FIELDS ( OrderUuid OperationId Stage Description PersonResp PlannedWork PlannedWorkDuration ActualWork
+                 ActualWorkDuration ActualStart ActualFinish PlannedStart Confirmed )
+        WITH CORRESPONDING #( all_orders )
+        RESULT operations.
+
+    MODIFY ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        UPDATE FROM operation->next_stage_start_updates( operations = operations
+                                                         orders     = order_data ).
+
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOrder BY \_Operations
         FIELDS ( OrderUuid PlannedFinish Confirmed Description PersonResp PlannedWork PlannedWorkDuration
                  ActualWork ActualWorkDuration ActualStart ActualFinish )
         WITH CORRESPONDING #( all_orders )
@@ -463,11 +475,14 @@ CLASS lhc_maintenanceoperation DEFINITION INHERITING FROM cl_abap_behavior_handl
     METHODS confirmoperation FOR MODIFY
       IMPORTING keys FOR ACTION MaintenanceOperation~confirmOperation RESULT result.
 
+    METHODS precheck_confirmoperation FOR PRECHECK
+      IMPORTING keys FOR ACTION MaintenanceOperation~confirmOperation.
+
     METHODS validateexecution FOR VALIDATE ON SAVE
       IMPORTING keys FOR MaintenanceOperation~validateExecution.
 
-    METHODS validateorderduedate FOR VALIDATE ON SAVE
-      IMPORTING keys FOR MaintenanceOperation~validateOrderDueDate.
+    METHODS validateactualwork FOR VALIDATE ON SAVE
+      IMPORTING keys FOR MaintenanceOperation~validateActualWork.
 ENDCLASS.
 
 CLASS lhc_maintenanceoperation IMPLEMENTATION.
@@ -700,6 +715,24 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
                                                                                  orders     = orders ).
   ENDMETHOD.
 
+  METHOD precheck_confirmoperation.
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        FIELDS ( OrderUuid OperationId Confirmed Description PersonResp PlannedWork PlannedWorkDuration ActualWork
+                 ActualWorkDuration ActualStart ActualFinish )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(operations).
+
+    LOOP AT zcl_ts_maint_factory=>operation( )->zero_work_warnings( operations ) INTO DATA(warning).
+      APPEND VALUE #( %tky                = warning-operation-%tky
+                      %msg                = warning-message
+                      %element-ActualWork = if_abap_behv=>mk-on
+                      %path               = VALUE #( MaintenanceOrder-%is_draft = warning-operation-%is_draft
+                                                     MaintenanceOrder-OrderUuid = warning-operation-OrderUuid ) )
+             TO reported-maintenanceoperation.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD confirmoperation.
     DATA components TYPE zcl_ts_maint_component=>components.
     DATA prts TYPE zcl_ts_maint_prt=>prts.
@@ -801,19 +834,21 @@ CLASS lhc_maintenanceoperation IMPLEMENTATION.
                                                             reported   = reported ).
   ENDMETHOD.
 
-  METHOD validateorderduedate.
-    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
-      ENTITY MaintenanceOperation BY \_MaintenanceOrder
-        FIELDS ( OrderType MaintOrdBasicFinishDateTime MaintOrdFinalDueDateTime OrderStatus
-                 MaintOrdActualStartDateTime MaintOrdActualFinishDateTime )
-        WITH CORRESPONDING #( keys )
-        RESULT DATA(orders).
-    SORT orders BY %is_draft OrderUuid.
-    DELETE ADJACENT DUPLICATES FROM orders COMPARING %is_draft OrderUuid.
+  METHOD validateactualwork.
+    DATA orders TYPE zcl_ts_maint_order=>orders.
 
-    zcl_ts_maint_factory=>order( )->validate_due_date( EXPORTING orders   = orders
-                                                       CHANGING  failed   = failed
-                                                                 reported = reported ).
+    READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
+      ENTITY MaintenanceOperation
+        FIELDS ( OrderUuid OperationId ActualWork ActualWorkUnit ) WITH CORRESPONDING #( keys )
+        RESULT DATA(operations)
+      ENTITY MaintenanceOperation BY \_MaintenanceOrder
+        FIELDS ( OrderType ) WITH CORRESPONDING #( keys )
+        RESULT orders.
+
+    zcl_ts_maint_factory=>operation( )->validate_actual_work( EXPORTING operations = operations
+                                                                        orders     = orders
+                                                              CHANGING  failed     = failed
+                                                                        reported   = reported ).
   ENDMETHOD.
 ENDCLASS.
 
@@ -1237,6 +1272,7 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

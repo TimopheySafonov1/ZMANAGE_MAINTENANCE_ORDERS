@@ -254,6 +254,18 @@
      <MSGNR>041</MSGNR>
      <TEXT>PRT &amp;1 is not in stock: its costs will not be calculated.</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>042</MSGNR>
+     <TEXT>Operation &amp;1: actual work in PM02 orders cannot exceed 8 hours.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>043</MSGNR>
+     <TEXT>Operation &amp;1 has zero actual work. Do you really want to confirm it?</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

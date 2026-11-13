@@ -72,6 +72,7 @@ authorization master ( global )
   draft action ( features : instance ) Edit;
   draft action Resume;
   draft determine action Prepare { validation validateTypeRules; validation validateDueDate; validation MaintenanceOperation~validateExecution;
+                                   validation MaintenanceOperation~validateActualWork;
                                    validation MaintenanceAttachment~validateMimeType;
                                    validation MaintenanceComponent~validateQuantity;
                                    validation MaintenancePrt~validateQuantity; }
@@ -127,11 +128,10 @@ authorization dependent by _MaintenanceOrder
                                 ActualStart, PlannedWork, PlannedWorkUnit, PlannedWorkDuration,
                                 PlannedDurationUnit;
 
-  action ( features : instance, authorization : update ) confirmOperation result [1] $self;
+  action ( features : instance, precheck, authorization : update ) confirmOperation result [1] $self;
 
-  validation validateOrderDueDate on save { create; field Confirmed, ActualStart, ActualFinish, ActualWork,
-                                            ActualWorkDuration; }
-  determine action checkOrderDueDate { validation validateOrderDueDate; }
+  validation validateActualWork on save { create; field ActualWork, ActualWorkUnit; }
+  determine action ( authorization : update ) checkActualWork { validation validateActualWork; }
 
   determination setOperationId on modify { create; }
   determination createComponentAndPrt on modify { create; }
@@ -162,9 +162,7 @@ authorization dependent by _MaintenanceOrder
                                       entity _MaintenanceOrder._Operations;
     field PlannedDurationUnit affects field PlannedStart, field PlannedFinish, entity _MaintenanceOrder,
                                       entity _MaintenanceOrder._Operations;
-    determine action checkOrderDueDate executed on field ActualStart, field ActualWork, field ActualWorkUnit,
-                                                   field ActualWorkDuration, field ActualDurationUnit, field Stage
-                                       affects messages;
+    determine action checkActualWork executed on field ActualWork, field ActualWorkUnit affects messages;
     field ActualStart affects field ActualFinish, entity _MaintenanceOrder;
     field ActualWork affects field ActualStart, field ActualFinish, entity _MaintenanceOrder;
     field ActualWorkUnit affects field ActualStart, field ActualFinish, entity _MaintenanceOrder;

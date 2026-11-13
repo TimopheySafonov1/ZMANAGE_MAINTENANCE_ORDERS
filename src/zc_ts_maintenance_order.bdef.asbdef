@@ -31,7 +31,7 @@ define behavior for ZC_TS_MAINTENANCE_OPERATION alias MaintenanceOperation
   use delete;
 
   use action confirmOperation;
-  use action checkOrderDueDate;
+  use action checkActualWork;
 
   use association _MaintenanceOrder { with draft; }
   use association _Components { create; with draft; }

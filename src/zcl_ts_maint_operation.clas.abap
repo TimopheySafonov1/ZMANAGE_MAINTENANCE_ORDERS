@@ -133,6 +133,10 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
       IMPORTING operations    TYPE operations
       RETURNING VALUE(result) TYPE updates.
 
+    METHODS zero_work_warnings
+      IMPORTING operations    TYPE operations
+      RETURNING VALUE(result) TYPE confirm_blockers.
+
     METHODS next_stage_start_updates
       IMPORTING operations    TYPE operations
                 orders        TYPE zcl_ts_maint_order=>orders OPTIONAL
@@ -178,6 +182,12 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
       CHANGING  failed     TYPE zcl_ts_maint_order=>failed
                 reported   TYPE zcl_ts_maint_order=>reported.
 
+    METHODS validate_actual_work
+      IMPORTING operations TYPE operations
+                orders     TYPE zcl_ts_maint_order=>orders
+      CHANGING  failed     TYPE zcl_ts_maint_order=>failed
+                reported   TYPE zcl_ts_maint_order=>reported.
+
     METHODS completion_blockers
       IMPORTING orders        TYPE zcl_ts_maint_order=>orders
                 operations    TYPE operations
@@ -185,6 +195,9 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
 
   PRIVATE SECTION.
     CONSTANTS state_area    TYPE string VALUE 'EXECUTION'.
+    CONSTANTS work_area     TYPE string VALUE 'ACTUAL_WORK'.
+    CONSTANTS limited_type  TYPE zts_maint_order-order_type VALUE 'PM02'.
+    CONSTANTS limited_hours TYPE decfloat34 VALUE 8.
     CONSTANTS workday_start TYPE t VALUE '070000'.
     CONSTANTS workday_end   TYPE t VALUE '150000'.
 
@@ -243,6 +256,7 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
       IMPORTING !operation TYPE operation
                 element    TYPE string
                 !message   TYPE REF TO zcx_ts_maint_message
+                area       TYPE string DEFAULT state_area
       CHANGING  failed     TYPE zcl_ts_maint_order=>failed
                 reported   TYPE zcl_ts_maint_order=>reported.
 ENDCLASS.
@@ -688,6 +702,21 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+  METHOD zero_work_warnings.
+    LOOP AT operations INTO DATA(operation)
+         WHERE Confirmed = abap_false AND ActualWork IS INITIAL AND ActualWorkDuration IS INITIAL.
+      IF is_empty( operation ) = abap_true.
+        CONTINUE.
+      ENDIF.
+      APPEND VALUE #( operation = operation
+                      element   = `ActualWork`
+                      message   = zcx_ts_maint_message=>create( number   = '043'
+                                                                v1       = |{ CONV i( operation-OperationId ) }|
+                                                                severity = if_abap_behv_message=>severity-warning ) )
+             TO result.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD next_stage_start_updates.
     DATA(time_zone) = data_provider->get_time_zone( ).
     DATA(clock_orders) = around_the_clock_orders( orders ).
@@ -700,14 +729,21 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       ENDIF.
 
       DATA(latest) = VALUE zts_maint_operat-actual_finish( ).
+      DATA(has_previous) = abap_false.
       LOOP AT same_order( operation = operation siblings = operations ) INTO DATA(previous)
            WHERE Stage < operation-Stage.
+        has_previous = abap_true.
         IF previous-ActualFinish > latest.
           latest = previous-ActualFinish.
         ENDIF.
       ENDLOOP.
 
       IF latest IS INITIAL.
+        IF has_previous = abap_true AND operation-PlannedStart IS NOT INITIAL.
+          APPEND VALUE #( %tky                 = operation-%tky
+                          ActualStart          = operation-PlannedStart
+                          %control-ActualStart = if_abap_behv=>mk-on ) TO result.
+        ENDIF.
         CONTINUE.
       ENDIF.
 
@@ -1008,6 +1044,34 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+  METHOD validate_actual_work.
+    IF operations IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DATA(time_units) = data_provider->get_time_units( ).
+
+    LOOP AT operations INTO DATA(operation).
+      APPEND VALUE #( %tky = operation-%tky %state_area = work_area ) TO reported-maintenanceoperation.
+
+      DATA(order_type) = VALUE #( orders[ %is_draft = operation-%is_draft
+                                          OrderUuid = operation-OrderUuid ]-OrderType OPTIONAL ).
+      DATA(hours) = round( val = CONV decfloat34( operation-ActualWork
+                                                  * VALUE #( time_units[ time_unit = operation-ActualWorkUnit ]-work_hours
+                                                             DEFAULT 1 ) )
+                           dec = 2 ).
+      IF order_type = limited_type AND hours > limited_hours.
+        add_message( EXPORTING operation = operation
+                               element   = `ActualWork`
+                               message   = zcx_ts_maint_message=>create( number = '042'
+                                                                         v1     = |{ CONV i( operation-OperationId ) }| )
+                               area      = work_area
+                     CHANGING  failed    = failed
+                               reported  = reported ).
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD completion_blockers.
     DATA(sorted_operations) = operations.
     SORT sorted_operations BY OperationId.
@@ -1200,7 +1264,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       APPEND VALUE #( %tky = operation-%tky ) TO failed-maintenanceoperation.
     ENDIF.
     APPEND VALUE #( %tky        = operation-%tky
-                    %state_area = state_area
+                    %state_area = area
                     %msg        = message
                     %path       = VALUE #( MaintenanceOrder-%is_draft = operation-%is_draft
                                            MaintenanceOrder-OrderUuid = operation-OrderUuid ) )
@@ -1211,6 +1275,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

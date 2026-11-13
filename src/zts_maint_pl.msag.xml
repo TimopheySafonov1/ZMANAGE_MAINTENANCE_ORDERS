@@ -223,6 +223,16 @@
      <MSGNR>041</MSGNR>
      <TEXT>Pomoc produkcyjna &amp;1 spoza magazynu: koszty nie zostaną obliczone.</TEXT>
     </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>042</MSGNR>
+     <TEXT>Operacja &amp;1: praca rzeczywista w PM02 nie może przekroczyć 8 h.</TEXT>
+    </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>043</MSGNR>
+     <TEXT>Operacja &amp;1 ma zerową pracę rzeczywistą. Czy na pewno ją potwierdzić?</TEXT>
+    </item>
    </T100_TEXTS>
   </asx:values>
  </asx:abap>
