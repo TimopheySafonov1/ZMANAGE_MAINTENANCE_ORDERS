@@ -155,7 +155,10 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_REVISION_VH', element: 'MaintenanceRevision' },
                                        additionalBinding: [{ localElement: 'PlanningPlant',
                                                              element: 'Plant',
-                                                             usage: #FILTER_AND_RESULT }],
+                                                             usage: #FILTER },
+                                                           { localElement: 'MaintRevisionPlant',
+                                                             element: 'Plant',
+                                                             usage: #RESULT }],
                                        useForValidation: true }]
   @UI.fieldGroup: [{ qualifier: 'Scheduling', position: 20 }]
   MaintRevision;
@@ -216,5 +219,6 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @UI.hidden: true
   LastChangedAt;
 }
+
 
 

@@ -198,10 +198,12 @@ CLASS ZCL_TS_MAINT_ORDER IMPLEMENTATION.
                                    MaintOrdBasicStartDateTime = order-MaintOrdBasicStartDateTime
                                    MaintOrdFinalDueDateTime   = order-MaintOrdFinalDueDateTime
                                    MaintRevision              = order-MaintRevision
+                                   MaintRevisionPlant         = order-MaintRevisionPlant
                                    %control                   = VALUE #( Priority                   = if_abap_behv=>mk-on
                                                                          MaintOrdBasicStartDateTime = if_abap_behv=>mk-on
                                                                          MaintOrdFinalDueDateTime   = if_abap_behv=>mk-on
-                                                                         MaintRevision              = if_abap_behv=>mk-on ) ).
+                                                                         MaintRevision              = if_abap_behv=>mk-on
+                                                                         MaintRevisionPlant         = if_abap_behv=>mk-on ) ).
       IF rules-default_priority IS NOT INITIAL.
         update-Priority = rules-default_priority.
       ENDIF.
@@ -218,7 +220,7 @@ CLASS ZCL_TS_MAINT_ORDER IMPLEMENTATION.
       ENDIF.
 
       IF rules-revision_allowed = abap_false.
-        CLEAR update-MaintRevision.
+        CLEAR: update-MaintRevision, update-MaintRevisionPlant.
       ENDIF.
 
       APPEND update TO result.
@@ -308,6 +310,8 @@ CLASS ZCL_TS_MAINT_ORDER IMPLEMENTATION.
     DATA(time_zone) = data_provider->get_time_zone( ).
     DATA(tech_objects) = data_provider->get_tech_objects( VALUE #( FOR o IN orders WHERE ( TechObject IS NOT INITIAL )
                                                                    ( o-TechObject ) ) ).
+    DATA(revisions) = data_provider->get_revisions( VALUE #( FOR o IN orders WHERE ( MaintRevision IS NOT INITIAL )
+                                                             ( plant = o-PlanningPlant revision = o-MaintRevision ) ) ).
 
     LOOP AT orders INTO DATA(order).
       APPEND VALUE #( %tky = order-%tky %state_area = state_area ) TO reported-maintenanceorder.
@@ -356,6 +360,26 @@ CLASS ZCL_TS_MAINT_ORDER IMPLEMENTATION.
         add_error( EXPORTING order   = order
                              element = `TechObject`
                              message = zcx_ts_maint_message=>create( number = '029' v1 = |{ order-WorkCenter }| )
+                   CHANGING  failed  = failed reported = reported ).
+      ENDIF.
+
+      IF     order-MaintRevision      IS NOT INITIAL
+         AND order-MaintRevisionPlant IS NOT INITIAL
+         AND order-MaintRevisionPlant <> order-PlanningPlant.
+        add_error( EXPORTING order   = order
+                             element = `MaintRevision`
+                             message = zcx_ts_maint_message=>create( number = '047'
+                                                                     v1     = |{ order-MaintRevision }|
+                                                                     v2     = |{ order-MaintRevisionPlant }|
+                                                                     v3     = |{ order-PlanningPlant }| )
+                   CHANGING  failed  = failed reported = reported ).
+      ELSEIF     order-MaintRevision IS NOT INITIAL
+             AND NOT line_exists( revisions[ plant = order-PlanningPlant revision = order-MaintRevision ] ).
+        add_error( EXPORTING order   = order
+                             element = `MaintRevision`
+                             message = zcx_ts_maint_message=>create( number = '046'
+                                                                     v1     = |{ order-MaintRevision }|
+                                                                     v2     = |{ order-PlanningPlant }| )
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 

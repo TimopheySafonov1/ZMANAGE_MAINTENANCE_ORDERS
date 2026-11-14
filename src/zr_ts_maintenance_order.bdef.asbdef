@@ -39,7 +39,7 @@ authorization master ( global )
   validation validateTypeRules on save { create; field OrderType, Priority, TechObject, LongText,
                                          MaintOrdBasicStartDateTime, MaintOrdBasicFinishDateTime,
                                          MaintOrdFinalDueDateTime, PlanningPlant, WorkCenter,
-                                         MaintOrdActualFinishDateTime; }
+                                         MaintOrdActualFinishDateTime, MaintRevision, MaintRevisionPlant; }
   validation validateDueDate on save { create; field OrderType, MaintOrdBasicFinishDateTime, MaintOrdFinalDueDateTime,
                                        MaintOrdActualStartDateTime, MaintOrdActualFinishDateTime; }
 
@@ -93,6 +93,7 @@ authorization master ( global )
       MaintOrdFinalDueDateTime    = final_due_datetime;
       MaintOrdPlndFinalDueDateTime = planned_final_due;
       MaintRevision               = maint_revision;
+      MaintRevisionPlant          = revision_plant;
       MaintOrdBasicStartDateTime  = basic_start_datetime;
       MaintOrdBasicFinishDateTime = basic_finish_datetime;
       MaintOrdActualStartDateTime  = actual_start_datetime;

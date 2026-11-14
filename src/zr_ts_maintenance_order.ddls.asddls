@@ -43,6 +43,7 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
         else cast( 'X' as abap_boolean preserving type )
       end as PlndFinalDueHidden,
       MaintRevision,
+      MaintRevisionPlant,
       @EndUserText.label: 'Planned Start Date/Time'
       MaintOrdBasicStartDateTime,
       @EndUserText.label: 'Planned Finish Date/Time'
@@ -78,5 +79,6 @@ define root view entity ZR_TS_MAINTENANCE_ORDER
       _Status,
       _OrderStatus
 }
+
 
 

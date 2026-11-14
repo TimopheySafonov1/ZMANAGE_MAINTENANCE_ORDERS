@@ -243,6 +243,16 @@
      <MSGNR>045</MSGNR>
      <TEXT>Osoba odpowiedzialna &amp;2 w operacji &amp;1 nie istnieje. Popraw ją.</TEXT>
     </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>046</MSGNR>
+     <TEXT>Rewizja &amp;1 nie istnieje w zakładzie planowania &amp;2.</TEXT>
+    </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>047</MSGNR>
+     <TEXT>Rewizja &amp;1 jest z zakładu &amp;2, a zlecenie z zakładu &amp;3.</TEXT>
+    </item>
    </T100_TEXTS>
   </asx:values>
  </asx:abap>

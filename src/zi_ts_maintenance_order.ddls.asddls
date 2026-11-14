@@ -22,6 +22,7 @@ define root view entity ZI_TS_MAINTENANCE_ORDER
       final_due_datetime    as MaintOrdFinalDueDateTime,
       planned_final_due     as MaintOrdPlndFinalDueDateTime,
       maint_revision        as MaintRevision,
+      revision_plant        as MaintRevisionPlant,
       basic_start_datetime  as MaintOrdBasicStartDateTime,
       basic_finish_datetime as MaintOrdBasicFinishDateTime,
       actual_start_datetime  as MaintOrdActualStartDateTime,

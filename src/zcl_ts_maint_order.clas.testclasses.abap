@@ -42,6 +42,12 @@ CLASS ltd_data_provider IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+  METHOD zif_ts_maint_data_provider~get_revisions.
+    LOOP AT revisions INTO DATA(revision) WHERE plant = '0001' AND revision = '00000001'.
+      INSERT revision INTO TABLE result.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD zif_ts_maint_data_provider~get_saved_orders.
     IF line_exists( order_uuids[ table_line = saved_uuid ] ).
       result = VALUE #( ( order_uuid = saved_uuid basic_start_datetime = saved_start ) ).
@@ -126,6 +132,8 @@ CLASS ltc_order DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
     METHODS planned_order_needs_dates FOR TESTING.
     METHODS due_date_on_weekend_fails FOR TESTING.
     METHODS tech_object_must_match FOR TESTING.
+    METHODS revision_must_match_plant FOR TESTING.
+    METHODS revision_from_other_plant FOR TESTING.
     METHODS unknown_priority_fails FOR TESTING.
     METHODS finish_after_due_date_fails FOR TESTING.
     METHODS late_actual_finish_fails FOR TESTING.
@@ -468,6 +476,41 @@ CLASS ltc_order IMPLEMENTATION.
                                   WHERE ( %element-TechObject = if_abap_behv=>mk-on )
                                   NEXT count = count + 1 ).
     cl_abap_unit_assert=>assert_equals( act = tech_errors exp = 2 ).
+  ENDMETHOD.
+
+  METHOD revision_must_match_plant.
+    DATA(planned) = order( 'PM02' ).
+    planned-MaintRevision = '00000001'.
+
+    validate( EXPORTING order    = planned
+              IMPORTING reported = DATA(reported) ).
+
+    cl_abap_unit_assert=>assert_false( has_error( reported = reported element = `MaintRevision` ) ).
+
+    planned-PlanningPlant = '0002'.
+
+    validate( EXPORTING order    = planned
+              IMPORTING reported = reported ).
+
+    cl_abap_unit_assert=>assert_true( has_error( reported = reported element = `MaintRevision` ) ).
+  ENDMETHOD.
+
+  METHOD revision_from_other_plant.
+    DATA(planned) = order( 'PM02' ).
+    planned-MaintRevision      = '00000001'.
+    planned-MaintRevisionPlant = '0006'.
+
+    validate( EXPORTING order    = planned
+              IMPORTING reported = DATA(reported) ).
+
+    cl_abap_unit_assert=>assert_true( has_error( reported = reported element = `MaintRevision` ) ).
+
+    planned-MaintRevisionPlant = '0001'.
+
+    validate( EXPORTING order    = planned
+              IMPORTING reported = reported ).
+
+    cl_abap_unit_assert=>assert_false( has_error( reported = reported element = `MaintRevision` ) ).
   ENDMETHOD.
 
   METHOD unknown_priority_fails.

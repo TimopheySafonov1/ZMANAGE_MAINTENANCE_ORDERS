@@ -278,6 +278,18 @@
      <MSGNR>045</MSGNR>
      <TEXT>Person responsible &amp;2 in operation &amp;1 does not exist. Correct it.</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>046</MSGNR>
+     <TEXT>Revision &amp;1 does not exist in planning plant &amp;2.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>047</MSGNR>
+     <TEXT>Revision &amp;1 is from plant &amp;2, but the order is in plant &amp;3.</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

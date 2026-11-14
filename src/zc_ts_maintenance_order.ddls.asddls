@@ -50,6 +50,8 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       MaintRevision,
       @UI.hidden: true
       _MaintRevision.MaintenanceRevisionText as MaintRevisionText,
+      @UI.hidden: true
+      MaintRevisionPlant,
       MaintOrdBasicStartDateTime,
       MaintOrdBasicFinishDateTime,
       MaintOrdFinalDueDateTime,
@@ -73,5 +75,6 @@ define root view entity ZC_TS_MAINTENANCE_ORDER
       _Attachments : redirected to composition child ZC_TS_MAINTENANCE_ATTACH,
       _Status
 }
+
 
 

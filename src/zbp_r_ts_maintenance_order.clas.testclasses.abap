@@ -30,6 +30,12 @@ CLASS ltd_data_provider IMPLEMENTATION.
     result = VALUE #( ( tech_object = '10000013' tech_obj_type = 'EQ' ) ).
   ENDMETHOD.
 
+  METHOD zif_ts_maint_data_provider~get_revisions.
+    LOOP AT revisions INTO DATA(revision).
+      INSERT revision INTO TABLE result.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD zif_ts_maint_data_provider~get_persons.
     result = VALUE #( ( person_resp = '000000000001' hourly_rate = 50 currency = 'PLN' ) ).
   ENDMETHOD.

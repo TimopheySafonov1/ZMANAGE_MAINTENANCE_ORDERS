@@ -17,6 +17,7 @@ CLASS ltc_data_provider DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATIO
     METHODS due_hours_of_priority FOR TESTING.
     METHODS holiday_name_of_date FOR TESTING.
     METHODS tech_objects_by_key FOR TESTING.
+    METHODS revisions_by_plant FOR TESTING.
     METHODS persons_by_key FOR TESTING.
     METHODS components_with_text FOR TESTING.
     METHODS prts_with_text FOR TESTING.
@@ -32,7 +33,7 @@ CLASS ltc_data_provider IMPLEMENTATION.
   METHOD class_setup.
     environment = cl_osql_test_environment=>create(
                       i_dependency_list = VALUE #( ( 'ZTS_ORD_TYPE' ) ( 'ZTS_PRIORITY' ) ( 'ZTS_ORD_PRIO' ) ( 'ZTS_HOLIDAY' )
-                                                   ( 'ZTS_TECH_OBJ' ) ( 'ZTS_RESP_PERSON' ) ( 'ZTS_COMPONENT' )
+                                                   ( 'ZTS_TECH_OBJ' ) ( 'ZTS_REVISION' ) ( 'ZTS_RESP_PERSON' ) ( 'ZTS_COMPONENT' )
                                                    ( 'ZTS_COMPONENT_T' ) ( 'ZTS_PRT' ) ( 'ZTS_PRT_T' )
                                                    ( 'ZTS_TIME_UNIT' ) ( 'ZTS_EXCH_RATE' ) ( 'ZTS_FILE_TYPE' )
                                                    ( 'ZTS_MAINT_ORDER' ) ( 'ZTS_MAINT_ORD_ST' ) ) ).
@@ -109,6 +110,11 @@ CLASS ltc_data_provider IMPLEMENTATION.
     history = VALUE #( ( order_uuid = first_uuid status = 'CRTD' ) ).
     environment->insert_test_data( history ).
 
+    DATA revisions TYPE STANDARD TABLE OF zts_revision WITH EMPTY KEY.
+    revisions = VALUE #( ( plant = '0001' revision = '00000001' )
+                         ( plant = '0002' revision = '00000002' ) ).
+    environment->insert_test_data( revisions ).
+
     cut = NEW zcl_ts_maint_data_provider( ).
   ENDMETHOD.
 
@@ -122,6 +128,7 @@ CLASS ltc_data_provider IMPLEMENTATION.
   METHOD no_keys_reads_nothing.
     cl_abap_unit_assert=>assert_initial( cut->get_order_types( VALUE #( ) ) ).
     cl_abap_unit_assert=>assert_initial( cut->get_tech_objects( VALUE #( ) ) ).
+    cl_abap_unit_assert=>assert_initial( cut->get_revisions( VALUE #( ) ) ).
     cl_abap_unit_assert=>assert_initial( cut->get_persons( VALUE #( ) ) ).
     cl_abap_unit_assert=>assert_initial( cut->get_components( VALUE #( ) ) ).
     cl_abap_unit_assert=>assert_initial( cut->get_prts( VALUE #( ) ) ).
@@ -145,6 +152,14 @@ CLASS ltc_data_provider IMPLEMENTATION.
 
     cl_abap_unit_assert=>assert_equals( act = lines( tech_objects ) exp = 1 ).
     cl_abap_unit_assert=>assert_equals( act = tech_objects[ tech_object = '10000013' ]-tech_obj_type exp = 'EQ' ).
+  ENDMETHOD.
+
+  METHOD revisions_by_plant.
+    DATA(revisions) = cut->get_revisions( VALUE #( ( plant = '0001' revision = '00000001' )
+                                                   ( plant = '0001' revision = '00000002' ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( revisions ) exp = 1 ).
+    cl_abap_unit_assert=>assert_true( xsdbool( line_exists( revisions[ plant = '0001' revision = '00000001' ] ) ) ).
   ENDMETHOD.
 
   METHOD persons_by_key.

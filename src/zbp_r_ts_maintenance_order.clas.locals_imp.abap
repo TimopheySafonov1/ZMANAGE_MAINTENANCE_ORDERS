@@ -278,7 +278,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
   METHOD settypedefaults.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
-        FIELDS ( OrderType Priority MaintOrdBasicStartDateTime MaintOrdFinalDueDateTime MaintRevision )
+        FIELDS ( OrderType Priority MaintOrdBasicStartDateTime MaintOrdFinalDueDateTime MaintRevision MaintRevisionPlant )
         WITH CORRESPONDING #( keys )
         RESULT DATA(orders).
 
@@ -431,7 +431,8 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOrder
         FIELDS ( OrderType Priority TechObject LongText MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime
-                 MaintOrdFinalDueDateTime PlanningPlant WorkCenter OrderStatus MaintOrdActualFinishDateTime )
+                 MaintOrdFinalDueDateTime PlanningPlant WorkCenter OrderStatus MaintOrdActualFinishDateTime
+                 MaintRevision MaintRevisionPlant )
         WITH CORRESPONDING #( keys )
         RESULT DATA(orders).
 

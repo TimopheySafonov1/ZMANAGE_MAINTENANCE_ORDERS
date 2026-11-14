@@ -11,6 +11,13 @@ INTERFACE zif_ts_maint_data_provider PUBLIC.
          tech_objects     TYPE HASHED TABLE OF tech_object WITH UNIQUE KEY tech_object,
          tech_object_keys TYPE STANDARD TABLE OF zts_tech_obj-tech_object WITH EMPTY KEY.
 
+  TYPES: BEGIN OF revision,
+           plant    TYPE zts_revision-plant,
+           revision TYPE zts_revision-revision,
+         END OF revision,
+         revisions     TYPE HASHED TABLE OF revision WITH UNIQUE KEY plant revision,
+         revision_keys TYPE STANDARD TABLE OF revision WITH EMPTY KEY.
+
   TYPES persons     TYPE HASHED TABLE OF zts_resp_person WITH UNIQUE KEY person_resp.
   TYPES person_keys TYPE STANDARD TABLE OF zts_resp_person-person_resp WITH EMPTY KEY.
 
@@ -64,6 +71,10 @@ INTERFACE zif_ts_maint_data_provider PUBLIC.
   METHODS get_tech_objects
     IMPORTING tech_objects  TYPE tech_object_keys
     RETURNING VALUE(result) TYPE tech_objects.
+
+  METHODS get_revisions
+    IMPORTING revisions     TYPE revision_keys
+    RETURNING VALUE(result) TYPE revisions.
 
   METHODS get_persons
     IMPORTING persons       TYPE person_keys

@@ -22,6 +22,12 @@ CLASS ltd_data_provider IMPLEMENTATION.
     CLEAR result.
   ENDMETHOD.
 
+  METHOD zif_ts_maint_data_provider~get_revisions.
+    LOOP AT revisions INTO DATA(revision).
+      INSERT revision INTO TABLE result.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD zif_ts_maint_data_provider~get_persons.
     result = VALUE #( ( person_resp = '000000000001' first_name = 'Katarzyna' last_name = 'Wójcik' )
                       ( person_resp = '000000000002' first_name = 'Tomasz' last_name = 'Kowalczyk' ) ).

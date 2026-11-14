@@ -48,6 +48,20 @@ CLASS ZCL_TS_MAINT_DATA_PROVIDER IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD zif_ts_maint_data_provider~get_revisions.
+    IF revisions IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT FROM zts_revision
+      FIELDS plant, revision
+      FOR ALL ENTRIES IN @revisions
+      WHERE plant    = @revisions-plant
+        AND revision = @revisions-revision
+      INTO TABLE @result.
+  ENDMETHOD.
+
+
   METHOD zif_ts_maint_data_provider~get_tech_objects.
     IF tech_objects IS INITIAL.
       RETURN.
