@@ -50,10 +50,15 @@ CLASS zcl_ts_maint_test_draft_ts01 DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING VALUE(result)  TYPE abap_bool.
 ENDCLASS.
 
-CLASS zcl_ts_maint_test_draft_ts01 IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_TEST_DRAFT_TS01 IMPLEMENTATION.
+
+
   METHOD if_oo_adt_classrun~main.
     out->write( create_draft( ) ).
   ENDMETHOD.
+
 
   METHOD create_draft.
     CONVERT DATE CONV d( '20270105' ) TIME CONV t( '070000' ) TIME ZONE 'CET' INTO UTCLONG DATA(start).
@@ -97,6 +102,7 @@ CLASS zcl_ts_maint_test_draft_ts01 IMPLEMENTATION.
     APPEND `Draft for TS-01 created` TO result.
   ENDMETHOD.
 
+
   METHOD scenario_operations.
     result = VALUE #( ( stage       = '001'
                         description = 'Pomiar termowizyjny pod obciążeniem'
@@ -135,6 +141,7 @@ CLASS zcl_ts_maint_test_draft_ts01 IMPLEMENTATION.
                         person      = '000000000005'
                         hours       = 1 ) ).
   ENDMETHOD.
+
 
   METHOD fill_operation.
     READ ENTITIES OF zr_ts_maintenance_order
@@ -180,6 +187,7 @@ CLASS zcl_ts_maint_test_draft_ts01 IMPLEMENTATION.
     result = abap_true.
   ENDMETHOD.
 
+
   METHOD fill_component.
     READ ENTITIES OF zr_ts_maintenance_order
       ENTITY MaintenanceOperation BY \_Components
@@ -203,6 +211,7 @@ CLASS zcl_ts_maint_test_draft_ts01 IMPLEMENTATION.
 
     result = xsdbool( failed IS INITIAL ).
   ENDMETHOD.
+
 
   METHOD fill_prt.
     READ ENTITIES OF zr_ts_maintenance_order
@@ -228,4 +237,3 @@ CLASS zcl_ts_maint_test_draft_ts01 IMPLEMENTATION.
     result = xsdbool( failed IS INITIAL ).
   ENDMETHOD.
 ENDCLASS.
-

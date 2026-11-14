@@ -41,18 +41,20 @@ CLASS zcx_ts_maint_message DEFINITION PUBLIC INHERITING FROM cx_no_check FINAL C
     DATA message_text TYPE string.
 ENDCLASS.
 
-CLASS zcx_ts_maint_message IMPLEMENTATION.
-  METHOD create.
-    result = NEW #( number = number v1 = v1 v2 = v2 v3 = v3 v4 = v4 severity = severity ).
+
+
+CLASS ZCX_TS_MAINT_MESSAGE IMPLEMENTATION.
+
+
+  METHOD message_class.
+    result = COND #( WHEN sy-langu = 'E' THEN message_class_en ELSE message_class_pl ).
   ENDMETHOD.
+
 
   METHOD text.
     result = create( number = number v1 = v1 v2 = v2 v3 = v3 v4 = v4 )->get_message_text( ).
   ENDMETHOD.
 
-  METHOD message_class.
-    result = COND #( WHEN sy-langu = 'E' THEN message_class_en ELSE message_class_pl ).
-  ENDMETHOD.
 
   METHOD constructor ##ADT_SUPPRESS_GENERATION.
     super->constructor( previous = previous ).
@@ -74,8 +76,13 @@ CLASS zcx_ts_maint_message IMPLEMENTATION.
             INTO message_text.
   ENDMETHOD.
 
+
+  METHOD create.
+    result = NEW #( number = number v1 = v1 v2 = v2 v3 = v3 v4 = v4 severity = severity ).
+  ENDMETHOD.
+
+
   METHOD get_message_text.
     result = message_text.
   ENDMETHOD.
 ENDCLASS.
-

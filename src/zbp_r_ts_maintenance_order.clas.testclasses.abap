@@ -174,6 +174,7 @@ CLASS ltc_behavior_pool DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATIO
     METHODS order_initial_status FOR TESTING.
     METHODS order_release FOR TESTING.
     METHODS order_release_blocked FOR TESTING.
+    METHODS order_release_needs_person FOR TESTING.
     METHODS order_complete FOR TESTING.
     METHODS order_validation FOR TESTING.
     METHODS order_due_date_validation FOR TESTING.
@@ -1151,6 +1152,29 @@ CLASS ltc_behavior_pool IMPLEMENTATION.
                                         exp = VALUE zif_ts_maint_data_provider=>order_uuids( ( deleted_uuid ) ) ).
   ENDMETHOD.
 
+  METHOD order_release_needs_person.
+    DATA cut      TYPE REF TO lhc_maintenanceorder.
+    DATA result   TYPE TABLE FOR ACTION RESULT zr_ts_maintenance_order\\MaintenanceOrder~releaseOrder.
+    DATA mapped   TYPE RESPONSE FOR MAPPED EARLY zr_ts_maintenance_order.
+    DATA failed   TYPE RESPONSE FOR FAILED EARLY zr_ts_maintenance_order.
+    DATA reported TYPE RESPONSE FOR REPORTED EARLY zr_ts_maintenance_order.
+    CREATE OBJECT cut FOR TESTING.
+    create_order( ).
+    add_operation( ).
+    add_operation( operation_id = 2 description = 'Pomiar' person = VALUE #( ) ).
+    add_operation( operation_id = 3 description = 'Próba' person = '000000000009' ).
+
+    cut->releaseorder( EXPORTING keys     = VALUE #( ( %is_draft = draft OrderUuid = order_uuid ) )
+                       CHANGING  result   = result
+                                 mapped   = mapped
+                                 failed   = failed
+                                 reported = reported ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenanceorder ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = lines( reported-maintenanceorder ) exp = 2 ).
+    cl_abap_unit_assert=>assert_equals( act = read_order( )-OrderStatus exp = zif_ts_maint_order_status=>created ).
+  ENDMETHOD.
+
   METHOD order_release_blocked.
     DATA cut      TYPE REF TO lhc_maintenanceorder.
     DATA result   TYPE TABLE FOR ACTION RESULT zr_ts_maintenance_order\\MaintenanceOrder~releaseOrder.
@@ -1304,5 +1328,6 @@ CLASS ltc_behavior_pool IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = lines( failed-maintenanceoperation ) exp = 1 ).
   ENDMETHOD.
 ENDCLASS.
+
 
 

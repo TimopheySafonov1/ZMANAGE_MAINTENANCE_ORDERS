@@ -40,10 +40,15 @@ CLASS zcl_ts_maint_test_draft DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING VALUE(result)  TYPE abap_bool.
 ENDCLASS.
 
-CLASS zcl_ts_maint_test_draft IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_TEST_DRAFT IMPLEMENTATION.
+
+
   METHOD if_oo_adt_classrun~main.
     out->write( create_draft( ) ).
   ENDMETHOD.
+
 
   METHOD create_draft.
     CONVERT DATE CONV d( '20261117' ) TIME CONV t( '080000' ) TIME ZONE 'CET' INTO UTCLONG DATA(start).
@@ -87,6 +92,7 @@ CLASS zcl_ts_maint_test_draft IMPLEMENTATION.
     APPEND `Draft for TS-03 created` TO result.
   ENDMETHOD.
 
+
   METHOD scenario_operations.
     result = VALUE #( ( stage             = '001'
                         description       = 'Wyłączenie, uziemienie, blokada LOTO'
@@ -108,6 +114,7 @@ CLASS zcl_ts_maint_test_draft IMPLEMENTATION.
                         prt                = 'PT001'
                         prt_storage        = '0004' ) ).
   ENDMETHOD.
+
 
   METHOD fill_operation.
     READ ENTITIES OF zr_ts_maintenance_order
@@ -139,6 +146,7 @@ CLASS zcl_ts_maint_test_draft IMPLEMENTATION.
                       AND fill_prt( operation_uuid = empty_row-OperationUuid data = data ) = abap_true ).
   ENDMETHOD.
 
+
   METHOD fill_component.
     result = abap_true.
     IF data-component IS INITIAL.
@@ -167,6 +175,7 @@ CLASS zcl_ts_maint_test_draft IMPLEMENTATION.
 
     result = xsdbool( failed IS INITIAL ).
   ENDMETHOD.
+
 
   METHOD fill_prt.
     result = abap_true.
@@ -197,4 +206,3 @@ CLASS zcl_ts_maint_test_draft IMPLEMENTATION.
     result = xsdbool( failed IS INITIAL ).
   ENDMETHOD.
 ENDCLASS.
-

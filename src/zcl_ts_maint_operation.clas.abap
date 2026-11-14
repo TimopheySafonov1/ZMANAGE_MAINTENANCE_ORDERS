@@ -137,6 +137,10 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
       IMPORTING operations    TYPE operations
       RETURNING VALUE(result) TYPE confirm_blockers.
 
+    METHODS release_blockers
+      IMPORTING operations    TYPE operations
+      RETURNING VALUE(result) TYPE confirm_blockers.
+
     METHODS next_stage_start_updates
       IMPORTING operations    TYPE operations
                 orders        TYPE zcl_ts_maint_order=>orders OPTIONAL
@@ -261,7 +265,11 @@ CLASS zcl_ts_maint_operation DEFINITION PUBLIC FINAL CREATE PUBLIC.
                 reported   TYPE zcl_ts_maint_order=>reported.
 ENDCLASS.
 
-CLASS zcl_ts_maint_operation IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_OPERATION IMPLEMENTATION.
+
+
   METHOD is_empty.
     result = xsdbool(     operation-Description         IS INITIAL
                       AND operation-PersonResp          IS INITIAL
@@ -273,9 +281,11 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                       AND operation-ActualFinish        IS INITIAL ).
   ENDMETHOD.
 
+
   METHOD constructor.
     me->data_provider = data_provider.
   ENDMETHOD.
+
 
   METHOD get_features.
     LOOP AT operations INTO DATA(operation).
@@ -332,12 +342,14 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD first_operations.
     result = VALUE #( FOR key IN order_keys INDEX INTO idx
                       ( %tky    = key-%tky
                         %target = VALUE #( ( %cid      = |FIRST_OPERATION_{ idx }|
                                              %is_draft = key-%is_draft ) ) ) ).
   ENDMETHOD.
+
 
   METHOD initial_items.
     components = VALUE #( FOR key IN keys INDEX INTO idx
@@ -349,6 +361,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                       %target = VALUE #( ( %cid      = |PRT_{ idx }|
                                            %is_draft = key-%is_draft ) ) ) ).
   ENDMETHOD.
+
 
   METHOD empty_row_creates.
     DATA(draft_orders) = orders.
@@ -375,6 +388,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD orders_of_new_operations.
     LOOP AT operations INTO DATA(operation) WHERE OperationId IS INITIAL.
       IF NOT line_exists( result[ KEY id %is_draft = operation-%is_draft OrderUuid = operation-OrderUuid ] ).
@@ -383,6 +397,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD assign_operation_ids.
     DATA(orders) = orders_of_new_operations( new_operations ).
@@ -412,11 +427,13 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD empty_operations.
     result = VALUE #( FOR operation IN operations WHERE ( OperationUuid IS NOT INITIAL )
                       ( LINES OF COND #( WHEN is_empty( operation ) = abap_true
                                          THEN VALUE #( ( operation ) ) ) ) ).
   ENDMETHOD.
+
 
   METHOD operations_to_delete.
     DATA(candidates) = operations.
@@ -436,6 +453,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     result = VALUE #( FOR candidate IN candidates ( %tky = candidate-%tky ) ).
   ENDMETHOD.
 
+
   METHOD cost_items_to_delete.
     LOOP AT cost_items INTO DATA(cost_item).
       IF line_exists( operations[ %is_draft = cost_item-%is_draft OperationUuid = cost_item-OperationUuid ] ).
@@ -444,9 +462,11 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD remember_orders.
     APPEND LINES OF orders TO remembered_orders.
   ENDMETHOD.
+
 
   METHOD take_orders.
     result = orders.
@@ -458,9 +478,11 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     DELETE result WHERE OrderUuid IS INITIAL.
   ENDMETHOD.
 
+
   METHOD orders_with_deletes.
     result = remembered_orders.
   ENDMETHOD.
+
 
   METHOD renumber_updates.
     DATA stages TYPE SORTED TABLE OF zts_maint_operat-stage WITH UNIQUE KEY table_line.
@@ -511,6 +533,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       ENDLOOP.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD plan.
     IF operations IS INITIAL.
@@ -603,6 +626,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD empty_row_updates.
     LOOP AT orders INTO DATA(order) WHERE %is_draft = if_abap_behv=>mk-on.
       DATA(last_id) = 0.
@@ -633,6 +657,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       ENDLOOP.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD confirm_check.
     LOOP AT operations INTO DATA(operation) WHERE Confirmed = abap_false.
@@ -672,6 +697,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD confirm.
     LOOP AT operations INTO DATA(operation) WHERE Confirmed = abap_false.
       DATA(update) = VALUE update( %tky               = operation-%tky
@@ -702,6 +728,32 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
+  METHOD release_blockers.
+    DATA(persons) = data_provider->get_persons( VALUE #( FOR o IN operations WHERE ( PersonResp IS NOT INITIAL )
+                                                         ( o-PersonResp ) ) ).
+
+    LOOP AT operations INTO DATA(operation).
+      IF is_empty( operation ) = abap_true.
+        CONTINUE.
+      ENDIF.
+      DATA(number) = |{ CONV i( operation-OperationId ) }|.
+      IF operation-PersonResp IS INITIAL.
+        APPEND VALUE #( operation = operation
+                        element   = `PersonResp`
+                        message   = zcx_ts_maint_message=>create( number = '044' v1 = number ) ) TO result.
+      ELSEIF NOT line_exists( persons[ person_resp = operation-PersonResp ] ).
+        APPEND VALUE #( operation = operation
+                        element   = `PersonResp`
+                        message   = zcx_ts_maint_message=>create( number = '045'
+                                                                  v1     = number
+                                                                  v2     = |{ operation-PersonResp ALPHA = OUT }| ) )
+               TO result.
+      ENDIF.
+    ENDLOOP.
+    SORT result BY operation-OperationId.
+  ENDMETHOD.
+
   METHOD zero_work_warnings.
     LOOP AT operations INTO DATA(operation)
          WHERE Confirmed = abap_false AND ActualWork IS INITIAL AND ActualWorkDuration IS INITIAL.
@@ -716,6 +768,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
              TO result.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD next_stage_start_updates.
     DATA(time_zone) = data_provider->get_time_zone( ).
@@ -768,6 +821,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                       %control-ActualStart = if_abap_behv=>mk-on ) TO result.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD unplanned_start_updates.
     DATA(time_zone) = data_provider->get_time_zone( ).
@@ -824,6 +878,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD actual_finish_updates.
     IF operations IS INITIAL.
       RETURN.
@@ -858,6 +913,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD basic_finish_updates.
     LOOP AT orders INTO DATA(order).
       IF order-MaintRevision IS NOT INITIAL AND order-MaintOrdBasicFinishDateTime IS NOT INITIAL.
@@ -886,6 +942,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD actual_dates_updates.
     LOOP AT orders INTO DATA(order).
@@ -938,6 +995,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD validate.
     DATA(time_zone) = data_provider->get_time_zone( ).
@@ -1050,6 +1108,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD validate_actual_work.
     IF operations IS INITIAL.
       RETURN.
@@ -1078,6 +1137,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD completion_blockers.
     DATA(sorted_operations) = operations.
     SORT sorted_operations BY OperationId.
@@ -1101,11 +1161,13 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD same_order.
     result = VALUE #( FOR sibling IN siblings
                       WHERE ( %is_draft = operation-%is_draft AND OrderUuid = operation-OrderUuid )
                       ( LINES OF COND #( WHEN is_empty( sibling ) = abap_false THEN VALUE #( ( sibling ) ) ) ) ).
   ENDMETHOD.
+
 
   METHOD blocking_operations.
     result = VALUE #( FOR sibling IN same_order( operation = operation siblings = siblings )
@@ -1113,6 +1175,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                       ( sibling ) ).
     SORT result BY OperationId.
   ENDMETHOD.
+
 
   METHOD waiting_text.
     DATA text TYPE string.
@@ -1139,6 +1202,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     result = text.
   ENDMETHOD.
 
+
   METHOD duration_hours.
     IF operation-PlannedWorkDuration IS NOT INITIAL.
       result = operation-PlannedWorkDuration
@@ -1148,6 +1212,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
                * VALUE #( time_units[ time_unit = operation-PlannedWorkUnit ]-work_hours DEFAULT 1 ).
     ENDIF.
   ENDMETHOD.
+
 
   METHOD actual_hours.
     IF operation-ActualWorkDuration IS NOT INITIAL.
@@ -1159,6 +1224,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD to_utclong.
     IF timestamp IS INITIAL.
       RETURN.
@@ -1167,6 +1233,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     CONVERT TIME STAMP timestamp TIME ZONE 'UTC' INTO DATE DATA(utc_date) TIME DATA(utc_time).
     CONVERT DATE utc_date TIME utc_time TIME ZONE 'UTC' INTO UTCLONG result.
   ENDMETHOD.
+
 
   METHOD working_time_after.
     IF start IS INITIAL.
@@ -1181,6 +1248,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     CONVERT DATE date TIME time TIME ZONE time_zone INTO UTCLONG result.
   ENDMETHOD.
 
+
   METHOD is_working_time.
     IF moment IS INITIAL.
       RETURN.
@@ -1189,6 +1257,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     CONVERT UTCLONG moment TIME ZONE data_provider->get_time_zone( ) INTO DATE DATA(date) TIME DATA(time).
     result = xsdbool( is_working_day( date ) = abap_true AND time >= workday_start AND time <= workday_end ).
   ENDMETHOD.
+
 
   METHOD next_working_moment.
     result = moment.
@@ -1202,10 +1271,12 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     CONVERT DATE date TIME time TIME ZONE time_zone INTO UTCLONG result.
   ENDMETHOD.
 
+
   METHOD is_working_day.
     result = xsdbool(     ( check_date - CONV d( '19000101' ) ) MOD 7 < 5
                       AND data_provider->get_holiday_name( check_date ) IS INITIAL ).
   ENDMETHOD.
+
 
   METHOD around_the_clock_orders.
     IF orders IS INITIAL.
@@ -1220,6 +1291,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD next_working_time.
     IF around_the_clock = abap_true.
@@ -1238,6 +1310,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
       time = workday_start.
     ENDWHILE.
   ENDMETHOD.
+
 
   METHOD add_working_hours.
     DATA(remaining) = CONV i( round( val = hours * 3600 dec = 0 ) ).
@@ -1265,6 +1338,7 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDWHILE.
   ENDMETHOD.
 
+
   METHOD add_message.
     IF message->if_abap_behv_message~m_severity = if_abap_behv_message=>severity-error.
       APPEND VALUE #( %tky = operation-%tky ) TO failed-maintenanceoperation.
@@ -1281,13 +1355,4 @@ CLASS zcl_ts_maint_operation IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
-
-
-
-
-
-
-
-
-
 

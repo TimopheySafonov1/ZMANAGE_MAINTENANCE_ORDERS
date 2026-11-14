@@ -10,7 +10,11 @@ CLASS zcl_ts_maint_priority_query DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING VALUE(result) TYPE priority_table.
 ENDCLASS.
 
-CLASS zcl_ts_maint_priority_query IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_PRIORITY_QUERY IMPLEMENTATION.
+
+
   METHOD if_rap_query_provider~select.
     DATA ranges TYPE if_rap_query_filter=>tt_name_range_pairs.
 
@@ -67,6 +71,7 @@ CLASS zcl_ts_maint_priority_query IMPLEMENTATION.
     io_response->set_data( page ).
   ENDMETHOD.
 
+
   METHOD priorities.
     IF order_type IS NOT INITIAL.
       SELECT FROM zts_ord_prio AS by_type
@@ -87,4 +92,3 @@ CLASS zcl_ts_maint_priority_query IMPLEMENTATION.
       INTO CORRESPONDING FIELDS OF TABLE @result.
   ENDMETHOD.
 ENDCLASS.
-

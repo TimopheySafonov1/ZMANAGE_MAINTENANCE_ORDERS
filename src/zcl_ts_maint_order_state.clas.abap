@@ -5,7 +5,11 @@ CLASS zcl_ts_maint_order_state DEFINITION PUBLIC FINAL CREATE PRIVATE.
       RETURNING VALUE(result) TYPE REF TO zif_ts_maint_order_state.
 ENDCLASS.
 
-CLASS zcl_ts_maint_order_state IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_ORDER_STATE IMPLEMENTATION.
+
+
   METHOD for_status.
     result = SWITCH #( status
                        WHEN zif_ts_maint_order_status=>released  THEN NEW zcl_ts_maint_state_released( )
@@ -13,4 +17,3 @@ CLASS zcl_ts_maint_order_state IMPLEMENTATION.
                        ELSE NEW zcl_ts_maint_state_created( ) ).
   ENDMETHOD.
 ENDCLASS.
-

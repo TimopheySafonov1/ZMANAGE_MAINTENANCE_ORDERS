@@ -3,7 +3,11 @@ CLASS zcl_ts_maint_data_provider DEFINITION PUBLIC FINAL CREATE PUBLIC.
     INTERFACES zif_ts_maint_data_provider.
 ENDCLASS.
 
-CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_DATA_PROVIDER IMPLEMENTATION.
+
+
   METHOD zif_ts_maint_data_provider~get_order_types.
     IF order_types IS INITIAL.
       RETURN.
@@ -14,6 +18,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
       WHERE order_type = @order_types-table_line
       INTO TABLE @result.
   ENDMETHOD.
+
 
   METHOD zif_ts_maint_data_provider~get_due_hours.
     IF order_type IS SUPPLIED.
@@ -31,6 +36,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
       INTO @result.
   ENDMETHOD.
 
+
   METHOD zif_ts_maint_data_provider~get_holiday_name.
     SELECT SINGLE FROM zts_holiday
       FIELDS holiday_name
@@ -40,6 +46,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
       result = holiday_name.
     ENDIF.
   ENDMETHOD.
+
 
   METHOD zif_ts_maint_data_provider~get_tech_objects.
     IF tech_objects IS INITIAL.
@@ -53,6 +60,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
       INTO TABLE @result.
   ENDMETHOD.
 
+
   METHOD zif_ts_maint_data_provider~get_persons.
     IF persons IS INITIAL.
       RETURN.
@@ -63,6 +71,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
       WHERE person_resp = @persons-table_line
       INTO TABLE @result.
   ENDMETHOD.
+
 
   METHOD zif_ts_maint_data_provider~get_components.
     IF components IS INITIAL.
@@ -80,6 +89,7 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
       INTO TABLE @result.
   ENDMETHOD.
 
+
   METHOD zif_ts_maint_data_provider~get_prts.
     IF prts IS INITIAL.
       RETURN.
@@ -95,23 +105,28 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
       INTO TABLE @result.
   ENDMETHOD.
 
+
   METHOD zif_ts_maint_data_provider~get_time_units.
     SELECT * FROM zts_time_unit INTO TABLE @result.
   ENDMETHOD.
+
 
   METHOD zif_ts_maint_data_provider~get_exchange_rates.
     SELECT * FROM zts_exch_rate INTO TABLE @result.
   ENDMETHOD.
 
+
   METHOD zif_ts_maint_data_provider~get_file_types.
     SELECT * FROM zts_file_type INTO TABLE @result.
   ENDMETHOD.
+
 
   METHOD zif_ts_maint_data_provider~get_max_order_id.
     SELECT SINGLE FROM zts_maint_order
       FIELDS MAX( order_id )
       INTO @result.
   ENDMETHOD.
+
 
   METHOD zif_ts_maint_data_provider~get_saved_orders.
     IF order_uuids IS INITIAL.
@@ -125,13 +140,16 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
       INTO TABLE @result.
   ENDMETHOD.
 
+
   METHOD zif_ts_maint_data_provider~get_today.
     result = cl_abap_context_info=>get_system_date( ).
   ENDMETHOD.
 
+
   METHOD zif_ts_maint_data_provider~get_time_zone.
     result = 'CET'.
   ENDMETHOD.
+
 
   METHOD zif_ts_maint_data_provider~get_status_history.
     IF order_uuids IS INITIAL.
@@ -144,11 +162,13 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
       INTO TABLE @result.
   ENDMETHOD.
 
+
   METHOD zif_ts_maint_data_provider~insert_status_history.
     IF history IS NOT INITIAL.
       INSERT zts_maint_ord_st FROM TABLE @history.
     ENDIF.
   ENDMETHOD.
+
 
   METHOD zif_ts_maint_data_provider~delete_status_history.
     LOOP AT order_uuids INTO DATA(order_uuid).
@@ -156,8 +176,3 @@ CLASS zcl_ts_maint_data_provider IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
-
-
-
-
-

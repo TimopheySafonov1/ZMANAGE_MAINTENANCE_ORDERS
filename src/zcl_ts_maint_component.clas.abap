@@ -68,16 +68,22 @@ CLASS zcl_ts_maint_component DEFINITION PUBLIC FINAL CREATE PUBLIC.
     DATA data_provider TYPE REF TO zif_ts_maint_data_provider.
 ENDCLASS.
 
-CLASS zcl_ts_maint_component IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_COMPONENT IMPLEMENTATION.
+
+
   METHOD is_empty.
     result = xsdbool(     component-ComponentId IS INITIAL
                       AND component-Description IS INITIAL
                       AND component-ReqQuantity IS INITIAL ).
   ENDMETHOD.
 
+
   METHOD constructor.
     me->data_provider = data_provider.
   ENDMETHOD.
+
 
   METHOD get_features.
     LOOP AT components INTO DATA(component).
@@ -109,6 +115,7 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
                                             ELSE if_abap_behv=>fc-o-enabled ) ) TO result.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD order_uuid_updates.
     TYPES: BEGIN OF counter,
@@ -145,6 +152,7 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD master_data_updates.
     IF components IS INITIAL.
       RETURN.
@@ -162,6 +170,7 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
                         %control-Uom          = if_abap_behv=>mk-on ) ).
   ENDMETHOD.
 
+
   METHOD empty_components.
     LOOP AT components INTO DATA(component).
       IF is_empty( component ) = abap_true.
@@ -169,6 +178,7 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD validate.
     DATA duplicates TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line.
@@ -234,22 +244,6 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-  METHOD add_message.
-    IF blocking = abap_true.
-      APPEND VALUE #( %tky = component-%tky ) TO failed-maintenancecomponent.
-    ENDIF.
-    APPEND VALUE #( %tky        = component-%tky
-                    %state_area = state_area
-                    %msg        = message
-                    %path       = VALUE #( MaintenanceOrder-%is_draft         = component-%is_draft
-                                           MaintenanceOrder-OrderUuid         = component-OrderUuid
-                                           MaintenanceOperation-%is_draft     = component-%is_draft
-                                           MaintenanceOperation-OperationUuid = component-OperationUuid ) )
-      TO reported-maintenancecomponent ASSIGNING FIELD-SYMBOL(<line>).
-
-    ASSIGN COMPONENT element OF STRUCTURE <line>-%element TO FIELD-SYMBOL(<flag>).
-    <flag> = if_abap_behv=>mk-on.
-  ENDMETHOD.
 
   METHOD empty_row_creates.
     DATA(draft_operations) = operations.
@@ -275,14 +269,22 @@ CLASS zcl_ts_maint_component IMPLEMENTATION.
                                            %is_draft = operation-%is_draft ) ) ) TO result.
     ENDLOOP.
   ENDMETHOD.
+
+
+  METHOD add_message.
+    IF blocking = abap_true.
+      APPEND VALUE #( %tky = component-%tky ) TO failed-maintenancecomponent.
+    ENDIF.
+    APPEND VALUE #( %tky        = component-%tky
+                    %state_area = state_area
+                    %msg        = message
+                    %path       = VALUE #( MaintenanceOrder-%is_draft         = component-%is_draft
+                                           MaintenanceOrder-OrderUuid         = component-OrderUuid
+                                           MaintenanceOperation-%is_draft     = component-%is_draft
+                                           MaintenanceOperation-OperationUuid = component-OperationUuid ) )
+      TO reported-maintenancecomponent ASSIGNING FIELD-SYMBOL(<line>).
+
+    ASSIGN COMPONENT element OF STRUCTURE <line>-%element TO FIELD-SYMBOL(<flag>).
+    <flag> = if_abap_behv=>mk-on.
+  ENDMETHOD.
 ENDCLASS.
-
-
-
-
-
-
-
-
-
-

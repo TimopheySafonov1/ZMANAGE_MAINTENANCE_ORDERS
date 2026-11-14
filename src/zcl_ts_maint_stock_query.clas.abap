@@ -81,7 +81,11 @@ CLASS zcl_ts_maint_stock_query DEFINITION PUBLIC FINAL CREATE PUBLIC.
                 !rows    TYPE STANDARD TABLE.
 ENDCLASS.
 
-CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_STOCK_QUERY IMPLEMENTATION.
+
+
   METHOD if_rap_query_provider~select.
     DATA ranges TYPE if_rap_query_filter=>tt_name_range_pairs.
 
@@ -104,6 +108,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
         respond( request = io_request response = io_response rows = components ).
     ENDCASE.
   ENDMETHOD.
+
 
   METHOD viewer_of.
     DATA(range) = VALUE #( ranges[ name = 'OPERATIONUUID' ]-range OPTIONAL ).
@@ -139,6 +144,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD component_usages.
     DATA(other_than) = COND sysuuid_x16( WHEN viewer-is_draft = abap_true THEN viewer-order_uuid ).
 
@@ -166,6 +172,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
         AND component~draftentityoperationcode <> 'D'
       APPENDING CORRESPONDING FIELDS OF TABLE @result.
   ENDMETHOD.
+
 
   METHOD prt_usages.
     DATA(other_than) = COND sysuuid_x16( WHEN viewer-is_draft = abap_true THEN viewer-order_uuid ).
@@ -201,6 +208,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD overlaps.
     IF    viewer-planned_start  IS INITIAL OR viewer-planned_finish IS INITIAL
        OR usage-planned_start   IS INITIAL OR usage-planned_finish  IS INITIAL.
@@ -211,6 +219,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
     result = xsdbool( usage-planned_start < viewer-planned_finish AND usage-planned_finish > viewer-planned_start ).
   ENDMETHOD.
 
+
   METHOD reserved.
     result = REDUCE #( INIT sum = VALUE zts_maint_prt-req_quantity( )
                        FOR u IN usages
@@ -218,12 +227,14 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
                        NEXT sum = sum + u-quantity ).
   ENDMETHOD.
 
+
   METHOD storage_names.
     SELECT Plant AS plant, StorageLoc AS storage_loc, StorageLocName AS name
       FROM zi_ts_stor_loc_t
       WHERE Language = @sy-langu
       INTO CORRESPONDING FIELDS OF TABLE @result.
   ENDMETHOD.
+
 
   METHOD component_rows.
     DATA(usages) = component_usages( viewer ).
@@ -262,6 +273,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD prt_rows.
     DATA(usages) = prt_usages( viewer ).
     DATA(names) = storage_names( ).
@@ -285,6 +297,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
                       Uom               = entry-uom ) TO result.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD apply_request.
     LOOP AT ranges INTO DATA(range) WHERE name <> 'OPERATIONUUID'.
@@ -321,6 +334,7 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
     SORT rows BY (sort_order).
   ENDMETHOD.
 
+
   METHOD respond.
     IF request->is_total_numb_of_rec_requested( ).
       response->set_total_number_of_records( lines( rows ) ).
@@ -352,5 +366,3 @@ CLASS zcl_ts_maint_stock_query IMPLEMENTATION.
     response->set_data( <page> ).
   ENDMETHOD.
 ENDCLASS.
-
-

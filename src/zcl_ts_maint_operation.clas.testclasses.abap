@@ -166,6 +166,7 @@ CLASS ltc_operation DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SH
     METHODS next_stage_starts_after_finish FOR TESTING.
     METHODS next_stage_starts_when_planned FOR TESTING.
     METHODS zero_work_is_warned FOR TESTING.
+    METHODS release_needs_person FOR TESTING.
     METHODS unplanned_start_follows_stage FOR TESTING.
     METHODS actual_finish_from_work FOR TESTING.
     METHODS basic_finish_from_latest FOR TESTING.
@@ -857,6 +858,26 @@ CLASS ltc_operation IMPLEMENTATION.
                                                     %control-ActualStart = if_abap_behv=>mk-on ) ) ).
   ENDMETHOD.
 
+  METHOD release_needs_person.
+    DATA(staffed) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 person = '000000000001' ).
+    DATA(unstaffed) = operation( uuid = second_uuid operation_id = 3 description = `LOTO` stage = 1 ).
+    DATA(other) = operation( uuid = third_uuid operation_id = 2 description = `Próbka` stage = 1 ).
+
+    DATA(unknown) = operation( uuid = fourth_uuid operation_id = 4 description = `Czyszczenie` stage = 2
+                               person = '000000000009' ).
+
+    DATA(blockers) = cut->release_blockers( VALUE #( ( staffed ) ( unknown ) ( unstaffed ) ( other ) ) ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( blockers ) exp = 3 ).
+    cl_abap_unit_assert=>assert_equals( act = blockers[ 1 ]-operation-OperationUuid exp = third_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = blockers[ 2 ]-operation-OperationUuid exp = second_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = blockers[ 3 ]-operation-OperationUuid exp = fourth_uuid ).
+    cl_abap_unit_assert=>assert_equals( act = blockers[ 1 ]-element exp = `PersonResp` ).
+    cl_abap_unit_assert=>assert_equals( act = blockers[ 1 ]-message->if_t100_message~t100key-msgno exp = '044' ).
+    cl_abap_unit_assert=>assert_equals( act = blockers[ 3 ]-message->if_t100_message~t100key-msgno exp = '045' ).
+    cl_abap_unit_assert=>assert_initial( cut->release_blockers( VALUE #( ( staffed ) ( operation( fourth_uuid ) ) ) ) ).
+  ENDMETHOD.
+
   METHOD zero_work_is_warned.
     DATA(zero) = operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 ).
     DATA(worked) = operation( uuid = second_uuid operation_id = 2 description = `LOTO` stage = 1 ).
@@ -896,6 +917,11 @@ CLASS ltc_operation IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = updates[ 1 ]-ActualStart exp = stamp( date = '20261102' time = '160000' ) ).
     cl_abap_unit_assert=>assert_initial( cut->unplanned_start_updates( orders     = VALUE #( ( released ) )
                                                                        operations = VALUE #( ( next ) ) ) ).
+    cl_abap_unit_assert=>assert_initial(
+        cut->unplanned_start_updates(
+            orders     = VALUE #( ( released ) )
+            operations = VALUE #( ( operation( uuid = first_uuid operation_id = 1 description = `Pomiar` stage = 1 ) )
+                                  ( next ) ) ) ).
   ENDMETHOD.
 
   METHOD actual_finish_from_work.
@@ -1099,6 +1125,8 @@ CLASS ltc_operation IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = updates[ 2 ]-Stage exp = 2 ).
   ENDMETHOD.
 ENDCLASS.
+
+
 
 
 

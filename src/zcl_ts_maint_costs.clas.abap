@@ -84,14 +84,20 @@ CLASS zcl_ts_maint_costs DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING VALUE(result) TYPE decfloat34.
 ENDCLASS.
 
-CLASS zcl_ts_maint_costs IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_COSTS IMPLEMENTATION.
+
+
   METHOD constructor.
     me->data_provider = data_provider.
   ENDMETHOD.
 
+
   METHOD remember_orders.
     APPEND LINES OF orders TO remembered_orders.
   ENDMETHOD.
+
 
   METHOD take_orders.
     result = orders.
@@ -102,6 +108,7 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
     DELETE ADJACENT DUPLICATES FROM result COMPARING %is_draft OrderUuid.
     DELETE result WHERE OrderUuid IS INITIAL.
   ENDMETHOD.
+
 
   METHOD calculate_items.
     time_units = data_provider->get_time_units( ).
@@ -187,6 +194,7 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
       ENDLOOP.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD calculate.
     CLEAR: order_updates, cost_creates, cost_updates, cost_deletes.
@@ -368,14 +376,17 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD currency_of.
     result = COND #( WHEN order-Currency IS INITIAL THEN default_currency ELSE order-Currency ).
   ENDMETHOD.
+
 
   METHOD work_hours.
     DATA(factor) = VALUE #( time_units[ time_unit = unit ]-work_hours OPTIONAL ).
     result = quantity * COND decfloat34( WHEN factor > 0 THEN factor ELSE 1 ).
   ENDMETHOD.
+
 
   METHOD labor_hours.
     result = work_hours( quantity = work unit = work_unit ).
@@ -386,6 +397,7 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
       result = result * nmax( val1 = CONV decfloat34( 1 ) val2 = ceil( days ) ).
     ENDIF.
   ENDMETHOD.
+
 
   METHOD convert.
     result = amount.
@@ -402,7 +414,3 @@ CLASS zcl_ts_maint_costs IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
-
-
-
-

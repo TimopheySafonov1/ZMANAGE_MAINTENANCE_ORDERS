@@ -33,10 +33,15 @@ CLASS zcl_ts_maint_attachment DEFINITION PUBLIC FINAL CREATE PUBLIC.
     DATA data_provider TYPE REF TO zif_ts_maint_data_provider.
 ENDCLASS.
 
-CLASS zcl_ts_maint_attachment IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_ATTACHMENT IMPLEMENTATION.
+
+
   METHOD constructor.
     me->data_provider = data_provider.
   ENDMETHOD.
+
 
   METHOD mime_type_updates.
     IF attachments IS INITIAL.
@@ -57,6 +62,7 @@ CLASS zcl_ts_maint_attachment IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD validate.
     DATA(file_types) = data_provider->get_file_types( ).
@@ -81,6 +87,7 @@ CLASS zcl_ts_maint_attachment IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD detect.
     DATA(extension) = to_lower( substring_after( val = file_name sub = '.' occ = -1 ) ).
@@ -108,6 +115,7 @@ CLASS zcl_ts_maint_attachment IMPLEMENTATION.
       CLEAR result.
     ENDIF.
   ENDMETHOD.
+
 
   METHOD from_content.
     DATA(length) = nmin( val1 = xstrlen( content ) val2 = 16 ).
@@ -149,5 +157,3 @@ CLASS zcl_ts_maint_attachment IMPLEMENTATION.
       ELSE `` ).
   ENDMETHOD.
 ENDCLASS.
-
-

@@ -6,9 +6,12 @@ CLASS zcl_ts_maint_text DEFINITION PUBLIC FINAL CREATE PRIVATE.
       RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
-CLASS zcl_ts_maint_text IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_TEXT IMPLEMENTATION.
+
+
   METHOD get.
     result = COND #( WHEN sy-langu = 'E' THEN en ELSE pl ).
   ENDMETHOD.
 ENDCLASS.
-

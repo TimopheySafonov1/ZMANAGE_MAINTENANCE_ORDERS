@@ -266,6 +266,18 @@
      <MSGNR>043</MSGNR>
      <TEXT>Operation &amp;1 has zero actual work. Do you really want to confirm it?</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>044</MSGNR>
+     <TEXT>Operation &amp;1 has no person responsible; the order cannot be released.</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZTS_MAINT</ARBGB>
+     <MSGNR>045</MSGNR>
+     <TEXT>Person responsible &amp;2 in operation &amp;1 does not exist. Correct it.</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

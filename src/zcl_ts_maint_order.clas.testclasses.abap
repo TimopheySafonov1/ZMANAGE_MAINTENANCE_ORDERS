@@ -384,7 +384,10 @@ CLASS ltc_order IMPLEMENTATION.
                         reported = DATA(reported) ).
 
     cl_abap_unit_assert=>assert_initial( failed-maintenanceorder ).
-    cl_abap_unit_assert=>assert_equals( act = lines( reported-maintenanceorder ) exp = 1 ).
+    cl_abap_unit_assert=>assert_not_initial( reported-maintenanceorder ).
+    LOOP AT reported-maintenanceorder INTO DATA(entry).
+      cl_abap_unit_assert=>assert_not_bound( entry-%msg ).
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD history_skips_known_status.
@@ -512,5 +515,6 @@ CLASS ltc_order IMPLEMENTATION.
     cl_abap_unit_assert=>assert_initial( cut->determine_due_dates( VALUE #( ( unknown ) ( unrated ) ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 

@@ -34,34 +34,10 @@ CLASS zcl_ts_maint_factory DEFINITION PUBLIC FINAL CREATE PRIVATE.
     CLASS-DATA attachment_instance    TYPE REF TO zcl_ts_maint_attachment.
 ENDCLASS.
 
-CLASS zcl_ts_maint_factory IMPLEMENTATION.
-  METHOD data_provider.
-    IF data_provider_instance IS NOT BOUND.
-      data_provider_instance = NEW zcl_ts_maint_data_provider( ).
-    ENDIF.
-    result = data_provider_instance.
-  ENDMETHOD.
 
-  METHOD order.
-    IF order_instance IS NOT BOUND.
-      order_instance = NEW #( data_provider( ) ).
-    ENDIF.
-    result = order_instance.
-  ENDMETHOD.
 
-  METHOD operation.
-    IF operation_instance IS NOT BOUND.
-      operation_instance = NEW #( data_provider( ) ).
-    ENDIF.
-    result = operation_instance.
-  ENDMETHOD.
+CLASS ZCL_TS_MAINT_FACTORY IMPLEMENTATION.
 
-  METHOD component.
-    IF component_instance IS NOT BOUND.
-      component_instance = NEW #( data_provider( ) ).
-    ENDIF.
-    result = component_instance.
-  ENDMETHOD.
 
   METHOD prt.
     IF prt_instance IS NOT BOUND.
@@ -70,12 +46,38 @@ CLASS zcl_ts_maint_factory IMPLEMENTATION.
     result = prt_instance.
   ENDMETHOD.
 
+
+  METHOD order.
+    IF order_instance IS NOT BOUND.
+      order_instance = NEW #( data_provider( ) ).
+    ENDIF.
+    result = order_instance.
+  ENDMETHOD.
+
+
+  METHOD component.
+    IF component_instance IS NOT BOUND.
+      component_instance = NEW #( data_provider( ) ).
+    ENDIF.
+    result = component_instance.
+  ENDMETHOD.
+
+
+  METHOD data_provider.
+    IF data_provider_instance IS NOT BOUND.
+      data_provider_instance = NEW zcl_ts_maint_data_provider( ).
+    ENDIF.
+    result = data_provider_instance.
+  ENDMETHOD.
+
+
   METHOD costs.
     IF costs_instance IS NOT BOUND.
       costs_instance = NEW #( data_provider( ) ).
     ENDIF.
     result = costs_instance.
   ENDMETHOD.
+
 
   METHOD attachment.
     IF attachment_instance IS NOT BOUND.
@@ -84,9 +86,17 @@ CLASS zcl_ts_maint_factory IMPLEMENTATION.
     result = attachment_instance.
   ENDMETHOD.
 
+
   METHOD inject_data_provider.
     data_provider_instance = data_provider.
     CLEAR: order_instance, operation_instance, component_instance, prt_instance, costs_instance, attachment_instance.
   ENDMETHOD.
-ENDCLASS.
 
+
+  METHOD operation.
+    IF operation_instance IS NOT BOUND.
+      operation_instance = NEW #( data_provider( ) ).
+    ENDIF.
+    result = operation_instance.
+  ENDMETHOD.
+ENDCLASS.

@@ -107,11 +107,16 @@ CLASS zcl_ts_maint_order DEFINITION PUBLIC FINAL CREATE PUBLIC.
                 reported TYPE reported.
 ENDCLASS.
 
-CLASS zcl_ts_maint_order IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_ORDER IMPLEMENTATION.
+
+
   METHOD constructor.
     me->data_provider = data_provider.
     operation_rules = NEW #( data_provider ).
   ENDMETHOD.
+
 
   METHOD get_features.
     IF orders IS INITIAL.
@@ -163,6 +168,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD assign_order_ids.
     DATA(new_orders) = orders.
     DELETE new_orders WHERE OrderId IS NOT INITIAL.
@@ -176,6 +182,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
       APPEND VALUE #( %tky = order-%tky OrderId = order_id %control-OrderId = if_abap_behv=>mk-on ) TO result.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD apply_type_defaults.
     DATA(types) = read_types( orders ).
@@ -218,6 +225,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD determine_due_dates.
     DATA(types) = read_types( orders ).
 
@@ -238,6 +246,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD determine_tech_obj_types.
     IF orders IS INITIAL.
       RETURN.
@@ -253,12 +262,14 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
                         %control-TechObjType = if_abap_behv=>mk-on ) ).
   ENDMETHOD.
 
+
   METHOD set_initial_status.
     result = VALUE #( FOR key IN keys
                       ( %tky                 = key-%tky
                         OrderStatus          = zcl_ts_maint_order_state=>for_status( VALUE #( ) )->status( )
                         %control-OrderStatus = if_abap_behv=>mk-on ) ).
   ENDMETHOD.
+
 
   METHOD release.
     LOOP AT orders INTO DATA(order).
@@ -273,6 +284,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD complete.
     LOOP AT orders INTO DATA(order).
       DATA(state) = zcl_ts_maint_order_state=>for_status( order-OrderStatus ).
@@ -283,6 +295,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD validate.
     IF orders IS INITIAL.
@@ -412,6 +425,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD validate_due_date.
     IF orders IS INITIAL.
       RETURN.
@@ -477,6 +491,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD record_status_history.
     DATA history TYPE zif_ts_maint_data_provider=>status_history.
     DATA(now) = utclong_current( ).
@@ -500,10 +515,12 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD read_types.
     result = data_provider->get_order_types( VALUE #( FOR order IN orders WHERE ( OrderType IS NOT INITIAL )
                                                    ( order-OrderType ) ) ).
   ENDMETHOD.
+
 
   METHOD due_date.
     IF start IS INITIAL.
@@ -522,6 +539,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+
   METHOD non_working_day.
     IF ( check_date - CONV d( '19000101' ) ) MOD 7 >= 5.
       result = zcx_ts_maint_message=>text( number = '013' ).
@@ -533,6 +551,7 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
       result = zcx_ts_maint_message=>text( number = '014' v1 = |{ holiday_name }| ).
     ENDIF.
   ENDMETHOD.
+
 
   METHOD add_error.
     IF message->if_abap_behv_message~m_severity = if_abap_behv_message=>severity-error.
@@ -547,13 +566,3 @@ CLASS zcl_ts_maint_order IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
-
-
-
-
-
-
-
-
-
-

@@ -333,8 +333,11 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
         FIELDS ( OrderStatus MaintOrdFinalDueDateTime ) WITH CORRESPONDING #( keys )
         RESULT DATA(current)
       ENTITY MaintenanceOrder BY \_Operations
-        FIELDS ( OperationUuid ) WITH CORRESPONDING #( keys )
+        FIELDS ( OrderUuid OperationId Description PersonResp PlannedWork PlannedWorkDuration ActualWork
+                 ActualWorkDuration ActualStart ActualFinish ) WITH CORRESPONDING #( keys )
         RESULT DATA(release_operations).
+
+    DATA(unstaffed) = zcl_ts_maint_factory=>operation( )->release_blockers( release_operations ).
 
     READ ENTITIES OF zr_ts_maintenance_order IN LOCAL MODE
       ENTITY MaintenanceOperation BY \_Components
@@ -346,6 +349,14 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
 
     LOOP AT current INTO DATA(release_order).
       DATA(unregistered) = abap_false.
+      LOOP AT unstaffed INTO DATA(blocker)
+           WHERE     operation-%is_draft = release_order-%is_draft
+                 AND operation-OrderUuid = release_order-OrderUuid.
+        unregistered = abap_true.
+        APPEND VALUE #( %tky = release_order-%tky
+                        %msg = blocker-message )
+          TO reported-maintenanceorder.
+      ENDLOOP.
       LOOP AT release_components INTO DATA(component)
            WHERE     %is_draft   = release_order-%is_draft
                  AND OrderUuid   = release_order-OrderUuid
@@ -1272,6 +1283,7 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

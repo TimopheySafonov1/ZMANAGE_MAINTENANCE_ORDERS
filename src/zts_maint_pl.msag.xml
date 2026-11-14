@@ -233,6 +233,16 @@
      <MSGNR>043</MSGNR>
      <TEXT>Operacja &amp;1 ma zerową pracę rzeczywistą. Czy na pewno ją potwierdzić?</TEXT>
     </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>044</MSGNR>
+     <TEXT>Operacja &amp;1 nie ma osoby odpowiedzialnej – zlecenia nie można zwolnić.</TEXT>
+    </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>045</MSGNR>
+     <TEXT>Osoba odpowiedzialna &amp;2 w operacji &amp;1 nie istnieje. Popraw ją.</TEXT>
+    </item>
    </T100_TEXTS>
   </asx:values>
  </asx:abap>

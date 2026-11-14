@@ -73,7 +73,11 @@ CLASS zcl_ts_maint_prt DEFINITION PUBLIC FINAL CREATE PUBLIC.
     DATA data_provider TYPE REF TO zif_ts_maint_data_provider.
 ENDCLASS.
 
-CLASS zcl_ts_maint_prt IMPLEMENTATION.
+
+
+CLASS ZCL_TS_MAINT_PRT IMPLEMENTATION.
+
+
   METHOD is_empty.
     result = xsdbool(     prt-PrtId        IS INITIAL
                       AND prt-Description  IS INITIAL
@@ -82,9 +86,11 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
                       AND prt-ActualUsage  IS INITIAL ).
   ENDMETHOD.
 
+
   METHOD constructor.
     me->data_provider = data_provider.
   ENDMETHOD.
+
 
   METHOD get_features.
     LOOP AT prts INTO DATA(prt).
@@ -139,6 +145,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD order_uuid_updates.
     TYPES: BEGIN OF counter,
              is_draft       TYPE abp_behv_flag,
@@ -174,6 +181,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+
   METHOD master_data_updates.
     IF prts IS INITIAL.
       RETURN.
@@ -190,6 +198,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
                         %control-Uom         = if_abap_behv=>mk-on ) ).
   ENDMETHOD.
 
+
   METHOD empty_prts.
     LOOP AT prts INTO DATA(prt).
       IF is_empty( prt ) = abap_true.
@@ -197,6 +206,7 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD validate.
     DATA duplicates TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line.
@@ -262,22 +272,6 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-  METHOD add_message.
-    IF blocking = abap_true.
-      APPEND VALUE #( %tky = prt-%tky ) TO failed-maintenanceprt.
-    ENDIF.
-    APPEND VALUE #( %tky        = prt-%tky
-                    %state_area = state_area
-                    %msg        = message
-                    %path       = VALUE #( MaintenanceOrder-%is_draft         = prt-%is_draft
-                                           MaintenanceOrder-OrderUuid         = prt-OrderUuid
-                                           MaintenanceOperation-%is_draft     = prt-%is_draft
-                                           MaintenanceOperation-OperationUuid = prt-OperationUuid ) )
-      TO reported-maintenanceprt ASSIGNING FIELD-SYMBOL(<line>).
-
-    ASSIGN COMPONENT element OF STRUCTURE <line>-%element TO FIELD-SYMBOL(<flag>).
-    <flag> = if_abap_behv=>mk-on.
-  ENDMETHOD.
 
   METHOD empty_row_creates.
     DATA(draft_operations) = operations.
@@ -303,14 +297,22 @@ CLASS zcl_ts_maint_prt IMPLEMENTATION.
                                            %is_draft = operation-%is_draft ) ) ) TO result.
     ENDLOOP.
   ENDMETHOD.
+
+
+  METHOD add_message.
+    IF blocking = abap_true.
+      APPEND VALUE #( %tky = prt-%tky ) TO failed-maintenanceprt.
+    ENDIF.
+    APPEND VALUE #( %tky        = prt-%tky
+                    %state_area = state_area
+                    %msg        = message
+                    %path       = VALUE #( MaintenanceOrder-%is_draft         = prt-%is_draft
+                                           MaintenanceOrder-OrderUuid         = prt-OrderUuid
+                                           MaintenanceOperation-%is_draft     = prt-%is_draft
+                                           MaintenanceOperation-OperationUuid = prt-OperationUuid ) )
+      TO reported-maintenanceprt ASSIGNING FIELD-SYMBOL(<line>).
+
+    ASSIGN COMPONENT element OF STRUCTURE <line>-%element TO FIELD-SYMBOL(<flag>).
+    <flag> = if_abap_behv=>mk-on.
+  ENDMETHOD.
 ENDCLASS.
-
-
-
-
-
-
-
-
-
-
