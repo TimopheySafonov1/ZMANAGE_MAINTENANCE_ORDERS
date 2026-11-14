@@ -18,8 +18,6 @@ define view entity ZI_TS_TECH_OBJ
       object_type     as ObjectType,
       ident_number    as IdentNumber,
       location        as Location,
-      marked_for_del  as IsMarkedForDeletion,
-      inactive        as IsInactive,
       @ObjectModel.foreignKey.association: '_Superior'
       superior_object as SuperiorObject,
       @ObjectModel.foreignKey.association: '_PlanningPlant'

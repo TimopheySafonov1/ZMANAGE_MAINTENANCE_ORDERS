@@ -496,8 +496,6 @@ CLASS ZCL_TS_MAINT_DEMO_DATA IMPLEMENTATION.
              serial_number   TYPE zts_tech_obj-serial_number,
              ident_number    TYPE zts_tech_obj-ident_number,
              location        TYPE zts_tech_obj-location,
-             marked_for_del  TYPE zts_tech_obj-marked_for_del,
-             inactive        TYPE zts_tech_obj-inactive,
              name            TYPE zts_tech_obj_t-tech_object_text,
              name_en           TYPE zts_tech_obj_t-tech_object_text,
            END OF tech_object_template,
@@ -539,7 +537,7 @@ CLASS ZCL_TS_MAINT_DEMO_DATA IMPLEMENTATION.
           work_center = 'HVAC' sort_field = 'MEDIA'     object_type = 'INSTALACJA' location = 'DACH'
           name = 'Instalacja wentylacji i klimatyzacji' name_en = 'Ventilation and air conditioning' )
         ( tech_object = 'PL01-WAW-MAG-OLD'   tech_obj_type = 'FL' planning_plant = '0001' superior_object = 'PL01-WAW'
-          work_center = 'MECH' sort_field = 'MAGAZYN'   object_type = 'BUDYNEK'    location = 'MAG-STARY' marked_for_del = abap_true
+          work_center = 'MECH' sort_field = 'MAGAZYN'   object_type = 'BUDYNEK'    location = 'MAG-STARY'
           name = 'Stary magazyn wyrobów gotowych' name_en = 'Old finished goods warehouse' )
         ( tech_object = '10000001' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-PROD-L01'
           work_center = 'MECH' sort_field = 'POMPY'      object_type = 'POMPA'      material = 'GRU-CR32-4'     serial_number = 'A965123P11945'
@@ -567,11 +565,11 @@ CLASS ZCL_TS_MAINT_DEMO_DATA IMPLEMENTATION.
           ident_number = 'RG-2015-001'  location = 'BUD-TECH'  name = 'Rozdzielnica główna RG 0,4 kV' name_en = 'Main switchboard RG 0.4 kV' )
         ( tech_object = '10000009' tech_obj_type = 'EQ' planning_plant = '0001' superior_object = 'PL01-WAW-MAG-OLD'
           work_center = 'MECH' sort_field = 'POMPY'      object_type = 'POMPA'      material = 'GRU-SEG-40'     serial_number = 'SEG12007'
-          ident_number = 'P-2012-0007'  location = 'MAG-STARY' inactive = abap_true
+          ident_number = 'P-2012-0007'  location = 'MAG-STARY'
           name = 'Pompa zatapialna (wycofana)' name_en = 'Submersible pump (retired)' )
         ( tech_object = '10000010' tech_obj_type = 'EQ' planning_plant = '0001'
           work_center = 'MECH' sort_field = 'WOZKI'      object_type = 'WOZEK'      material = 'LIN-H25'        serial_number = 'H2X391T16552'
-          ident_number = 'WW-2016-552'  location = 'HALA-B'    marked_for_del = abap_true
+          ident_number = 'WW-2016-552'  location = 'HALA-B'
           name = 'Wózek widłowy WW-03' name_en = 'Forklift WW-03' )
         ( tech_object = 'PL02-KRK'           tech_obj_type = 'FL' planning_plant = '0002'
           work_center = 'MECH' sort_field = 'ZAKLAD'    object_type = 'ZAKLAD'     location = 'KRK'

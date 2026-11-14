@@ -50,14 +50,6 @@ define view entity ZC_TS_TECH_OBJ_VH
       @UI.selectionField: [{ position: 70 }]
       @EndUserText.label: 'Lokalizacja'
       Location,
-      @UI.lineItem: [{ position: 80 }]
-      @UI.selectionField: [{ position: 80 }]
-      @EndUserText.label: 'Oznaczony do usunięcia'
-      IsMarkedForDeletion,
-      @UI.lineItem: [{ position: 90 }]
-      @UI.selectionField: [{ position: 90 }]
-      @EndUserText.label: 'Nieaktywny'
-      IsInactive,
       @UI.lineItem: [{ position: 34 }]
       @UI.selectionField: [{ position: 34 }]
       @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_PLANT_VH', element: 'Plant' } }]
