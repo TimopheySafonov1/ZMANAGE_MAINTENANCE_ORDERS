@@ -48,6 +48,10 @@ CLASS ltd_data_provider IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
+  METHOD zif_ts_maint_data_provider~get_exchange_rates.
+    result = VALUE #( ( currency = 'EUR' pln_rate = '4.40700' ) ).
+  ENDMETHOD.
+
   METHOD zif_ts_maint_data_provider~get_saved_orders.
     IF line_exists( order_uuids[ table_line = saved_uuid ] ).
       result = VALUE #( ( order_uuid = saved_uuid basic_start_datetime = saved_start ) ).
@@ -134,6 +138,7 @@ CLASS ltc_order DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
     METHODS tech_object_must_match FOR TESTING.
     METHODS revision_must_match_plant FOR TESTING.
     METHODS revision_from_other_plant FOR TESTING.
+    METHODS currency_needs_rate FOR TESTING.
     METHODS unknown_priority_fails FOR TESTING.
     METHODS finish_after_due_date_fails FOR TESTING.
     METHODS late_actual_finish_fails FOR TESTING.
@@ -478,6 +483,24 @@ CLASS ltc_order IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = tech_errors exp = 2 ).
   ENDMETHOD.
 
+  METHOD currency_needs_rate.
+    DATA(planned) = order( 'PM02' ).
+
+    LOOP AT VALUE string_table( ( `PLN` ) ( `EUR` ) ) INTO DATA(valid).
+      planned-Currency = valid.
+      validate( EXPORTING order    = planned
+                IMPORTING reported = DATA(reported) ).
+      cl_abap_unit_assert=>assert_false( has_error( reported = reported element = `Currency` ) ).
+    ENDLOOP.
+
+    planned-Currency = 'XYZ'.
+
+    validate( EXPORTING order    = planned
+              IMPORTING reported = reported ).
+
+    cl_abap_unit_assert=>assert_true( has_error( reported = reported element = `Currency` ) ).
+  ENDMETHOD.
+
   METHOD revision_must_match_plant.
     DATA(planned) = order( 'PM02' ).
     planned-MaintRevision = '00000001'.
@@ -558,6 +581,7 @@ CLASS ltc_order IMPLEMENTATION.
     cl_abap_unit_assert=>assert_initial( cut->determine_due_dates( VALUE #( ( unknown ) ( unrated ) ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

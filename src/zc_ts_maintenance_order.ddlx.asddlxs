@@ -192,7 +192,9 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   MaintOrdDelayHours;
 
   @EndUserText.label: 'Waluta'
-  @UI.hidden: true
+  @UI.fieldGroup: [{ qualifier: 'Costs', position: 5 }]
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZC_TS_CURRENCY_VH', element: 'Currency' },
+                                       useForValidation: true }]
   Currency;
 
   @EndUserText.label: 'Koszty planowane łącznie'
@@ -219,6 +221,7 @@ annotate entity ZC_TS_MAINTENANCE_ORDER with
   @UI.hidden: true
   LastChangedAt;
 }
+
 
 
 

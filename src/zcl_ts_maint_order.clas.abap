@@ -312,6 +312,7 @@ CLASS ZCL_TS_MAINT_ORDER IMPLEMENTATION.
                                                                    ( o-TechObject ) ) ).
     DATA(revisions) = data_provider->get_revisions( VALUE #( FOR o IN orders WHERE ( MaintRevision IS NOT INITIAL )
                                                              ( plant = o-PlanningPlant revision = o-MaintRevision ) ) ).
+    DATA(exchange_rates) = data_provider->get_exchange_rates( ).
 
     LOOP AT orders INTO DATA(order).
       APPEND VALUE #( %tky = order-%tky %state_area = state_area ) TO reported-maintenanceorder.
@@ -327,6 +328,15 @@ CLASS ZCL_TS_MAINT_ORDER IMPLEMENTATION.
         add_error( EXPORTING order   = order
                              element = `WorkCenter`
                              message = zcx_ts_maint_message=>create( number = '002' )
+                   CHANGING  failed  = failed reported = reported ).
+      ENDIF.
+
+      IF     order-Currency IS NOT INITIAL
+         AND order-Currency <> zcl_ts_maint_costs=>default_currency
+         AND NOT line_exists( exchange_rates[ currency = order-Currency ] ).
+        add_error( EXPORTING order   = order
+                             element = `Currency`
+                             message = zcx_ts_maint_message=>create( number = '048' v1 = |{ order-Currency }| )
                    CHANGING  failed  = failed reported = reported ).
       ENDIF.
 
@@ -590,3 +600,4 @@ CLASS ZCL_TS_MAINT_ORDER IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+

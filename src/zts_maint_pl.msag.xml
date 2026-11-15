@@ -253,6 +253,11 @@
      <MSGNR>047</MSGNR>
      <TEXT>Rewizja &amp;1 jest z zakładu &amp;2, a zlecenie z zakładu &amp;3.</TEXT>
     </item>
+    <item>
+     <SPRSL>L</SPRSL>
+     <MSGNR>048</MSGNR>
+     <TEXT>Waluta &amp;1 nie ma kursu wymiany NBP.</TEXT>
+    </item>
    </T100_TEXTS>
   </asx:values>
  </asx:abap>

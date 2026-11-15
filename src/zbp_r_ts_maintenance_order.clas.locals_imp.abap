@@ -432,7 +432,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
       ENTITY MaintenanceOrder
         FIELDS ( OrderType Priority TechObject LongText MaintOrdBasicStartDateTime MaintOrdBasicFinishDateTime
                  MaintOrdFinalDueDateTime PlanningPlant WorkCenter OrderStatus MaintOrdActualFinishDateTime
-                 MaintRevision MaintRevisionPlant )
+                 MaintRevision MaintRevisionPlant Currency )
         WITH CORRESPONDING #( keys )
         RESULT DATA(orders).
 
@@ -1284,6 +1284,7 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 
