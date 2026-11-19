@@ -18,19 +18,25 @@ CLASS ZCL_TS_MAINT_PRIORITY_QUERY IMPLEMENTATION.
   METHOD if_rap_query_provider~select.
     DATA ranges TYPE if_rap_query_filter=>tt_name_range_pairs.
 
+    DATA(filter_readable) = abap_true.
     TRY.
         ranges = io_request->get_filter( )->get_as_ranges( ).
       CATCH cx_rap_query_filter_no_range.
-        CLEAR ranges.
+        filter_readable = abap_false.
     ENDTRY.
 
     DATA(type_range) = VALUE #( ranges[ name = 'ORDERTYPE' ]-range OPTIONAL ).
     DATA(order_type) = CONV zts_ord_prio-order_type( VALUE #( type_range[ sign = 'I' option = 'EQ' ]-low OPTIONAL ) ).
-    DATA(rows) = priorities( order_type ).
+    DATA(rows) = COND priority_table( WHEN filter_readable = abap_true THEN priorities( order_type ) ).
 
     DATA(priority_range) = VALUE #( ranges[ name = 'PRIORITY' ]-range OPTIONAL ).
     IF priority_range IS NOT INITIAL.
       DELETE rows WHERE NOT priority IN priority_range.
+    ENDIF.
+
+    DATA(name_range) = VALUE #( ranges[ name = 'PRIORITYNAME' ]-range OPTIONAL ).
+    IF name_range IS NOT INITIAL.
+      DELETE rows WHERE NOT priorityname IN name_range.
     ENDIF.
 
     DATA(search) = to_upper( io_request->get_search_expression( ) ).
@@ -92,3 +98,4 @@ CLASS ZCL_TS_MAINT_PRIORITY_QUERY IMPLEMENTATION.
       INTO CORRESPONDING FIELDS OF TABLE @result.
   ENDMETHOD.
 ENDCLASS.
+

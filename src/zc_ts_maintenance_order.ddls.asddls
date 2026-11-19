@@ -2,6 +2,7 @@
 @EndUserText.label: 'Maintenance Order - Projection'
 @Metadata.ignorePropagatedAnnotations: true
 @Metadata.allowExtensions: true
+@ObjectModel.semanticKey: [ 'OrderId' ]
 define root view entity ZC_TS_MAINTENANCE_ORDER
   provider contract transactional_query
   as projection on ZR_TS_MAINTENANCE_ORDER

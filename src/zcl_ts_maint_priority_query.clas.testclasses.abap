@@ -93,6 +93,9 @@ CLASS ltc_priority_query DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATI
     METHODS sorted_page_without_filter FOR TESTING.
     METHODS priority_and_search_filter FOR TESTING.
     METHODS count_only_sends_no_data FOR TESTING.
+    METHODS priority_outside_type_missing FOR TESTING.
+    METHODS name_filter_limits_rows FOR TESTING.
+    METHODS unreadable_filter_no_rows FOR TESTING.
 ENDCLASS.
 
 CLASS ltc_priority_query IMPLEMENTATION.
@@ -151,7 +154,6 @@ CLASS ltc_priority_query IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD sorted_page_without_filter.
-    request->no_range = abap_true.
     request->sort_elements = VALUE #( ( element_name = 'PRIORITY' descending = abap_true ) ).
     request->offset = 1.
     request->page_size = 1.
@@ -180,6 +182,38 @@ CLASS ltc_priority_query IMPLEMENTATION.
 
     cl_abap_unit_assert=>assert_equals( act = response->total exp = 3 ).
     cl_abap_unit_assert=>assert_false( response->set ).
+  ENDMETHOD.
+
+  METHOD priority_outside_type_missing.
+    request->ranges = VALUE #( ( name = 'ORDERTYPE' range = VALUE #( ( sign = 'I' option = 'EQ' low = 'PM03' ) ) )
+                               ( name = 'PRIORITY'  range = VALUE #( ( sign = 'I' option = 'EQ' low = '3' ) ) ) ).
+    request->total = abap_true.
+
+    run( ).
+
+    cl_abap_unit_assert=>assert_initial( response->rows ).
+    cl_abap_unit_assert=>assert_equals( act = response->total exp = 0 ).
+  ENDMETHOD.
+
+  METHOD name_filter_limits_rows.
+    request->ranges = VALUE #( ( name = 'ORDERTYPE'    range = VALUE #( ( sign = 'I' option = 'EQ' low = 'PM03' ) ) )
+                               ( name = 'PRIORITYNAME' range = VALUE #( ( sign = 'I' option = 'CP' low = 'Wys*' ) ) ) ).
+
+    run( ).
+
+    cl_abap_unit_assert=>assert_equals( act = lines( response->rows ) exp = 1 ).
+    cl_abap_unit_assert=>assert_equals( act = response->rows[ 1 ]-Priority exp = '2' ).
+  ENDMETHOD.
+
+  METHOD unreadable_filter_no_rows.
+    request->no_range = abap_true.
+    request->total = abap_true.
+
+    run( ).
+
+    cl_abap_unit_assert=>assert_initial( response->rows ).
+    cl_abap_unit_assert=>assert_equals( act = response->total exp = 0 ).
+    cl_abap_unit_assert=>assert_true( response->set ).
   ENDMETHOD.
 ENDCLASS.
 
