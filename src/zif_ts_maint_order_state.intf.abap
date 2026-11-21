@@ -5,6 +5,9 @@ INTERFACE zif_ts_maint_order_state PUBLIC.
   METHODS can_change
     RETURNING VALUE(result) TYPE abap_bool.
 
+  METHODS can_delete
+    RETURNING VALUE(result) TYPE abap_bool.
+
   METHODS can_release
     RETURNING VALUE(result) TYPE abap_bool.
 

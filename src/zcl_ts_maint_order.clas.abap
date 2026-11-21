@@ -10,6 +10,7 @@ CLASS zcl_ts_maint_order DEFINITION PUBLIC FINAL CREATE PUBLIC.
     TYPES: BEGIN OF feature,
              order       TYPE order,
              change      TYPE operation_control,
+             delete      TYPE operation_control,
              release     TYPE operation_control,
              complete    TYPE operation_control,
              order_type  TYPE field_control,
@@ -137,6 +138,9 @@ CLASS ZCL_TS_MAINT_ORDER IMPLEMENTATION.
 
       APPEND VALUE #( order       = order
                       change      = change_control
+                      delete      = COND #( WHEN state->can_delete( ) = abap_true
+                                            THEN if_abap_behv=>fc-o-enabled
+                                            ELSE if_abap_behv=>fc-o-disabled )
                       release     = COND #( WHEN is_active = abap_true AND state->can_release( ) = abap_true
                                             THEN if_abap_behv=>fc-o-enabled
                                             ELSE if_abap_behv=>fc-o-disabled )
@@ -600,4 +604,5 @@ CLASS ZCL_TS_MAINT_ORDER IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
+
 

@@ -18,6 +18,11 @@ CLASS ZCL_TS_MAINT_STATE_RELEASED IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD zif_ts_maint_order_state~can_delete.
+    result = abap_false.
+  ENDMETHOD.
+
+
   METHOD zif_ts_maint_order_state~can_release.
     result = abap_false.
   ENDMETHOD.
@@ -47,3 +52,4 @@ CLASS ZCL_TS_MAINT_STATE_RELEASED IMPLEMENTATION.
     result = zcl_ts_maint_order_state=>for_status( zif_ts_maint_order_status=>completed ).
   ENDMETHOD.
 ENDCLASS.
+

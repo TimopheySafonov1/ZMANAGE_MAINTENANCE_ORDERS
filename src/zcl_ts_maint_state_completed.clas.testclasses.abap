@@ -15,6 +15,7 @@ CLASS ltc_completed IMPLEMENTATION.
   METHOD rules.
     cl_abap_unit_assert=>assert_equals( act = cut->status( ) exp = zif_ts_maint_order_status=>completed ).
     cl_abap_unit_assert=>assert_false( cut->can_change( ) ).
+    cl_abap_unit_assert=>assert_false( cut->can_delete( ) ).
     cl_abap_unit_assert=>assert_false( cut->can_release( ) ).
     cl_abap_unit_assert=>assert_false( cut->can_complete( ) ).
     cl_abap_unit_assert=>assert_false( cut->allows_actuals( ) ).
@@ -26,5 +27,6 @@ CLASS ltc_completed IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = cut->complete( ) exp = cut ).
   ENDMETHOD.
 ENDCLASS.
+
 
 

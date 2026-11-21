@@ -121,6 +121,7 @@ CLASS ltc_order DEFINITION FINAL FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
     METHODS complete_only_released FOR TESTING.
     METHODS features_of_new_order FOR TESTING.
     METHODS features_of_completed_order FOR TESTING.
+    METHODS features_of_released_order FOR TESTING.
     METHODS mandatory_fields_are_checked FOR TESTING.
     METHODS corrective_order_rules FOR TESTING.
     METHODS finish_before_start_fails FOR TESTING.
@@ -287,6 +288,7 @@ CLASS ltc_order IMPLEMENTATION.
     DATA(feature) = features[ 1 ].
 
     cl_abap_unit_assert=>assert_equals( act = feature-change      exp = if_abap_behv=>fc-o-enabled ).
+    cl_abap_unit_assert=>assert_equals( act = feature-delete      exp = if_abap_behv=>fc-o-enabled ).
     cl_abap_unit_assert=>assert_equals( act = feature-release     exp = if_abap_behv=>fc-o-enabled ).
     cl_abap_unit_assert=>assert_equals( act = feature-complete    exp = if_abap_behv=>fc-o-disabled ).
     cl_abap_unit_assert=>assert_equals( act = feature-order_type  exp = if_abap_behv=>fc-f-mandatory ).
@@ -305,10 +307,25 @@ CLASS ltc_order IMPLEMENTATION.
     DATA(feature) = features[ 1 ].
 
     cl_abap_unit_assert=>assert_equals( act = feature-change     exp = if_abap_behv=>fc-o-disabled ).
+    cl_abap_unit_assert=>assert_equals( act = feature-delete     exp = if_abap_behv=>fc-o-disabled ).
     cl_abap_unit_assert=>assert_equals( act = feature-release    exp = if_abap_behv=>fc-o-disabled ).
     cl_abap_unit_assert=>assert_equals( act = feature-complete   exp = if_abap_behv=>fc-o-disabled ).
     cl_abap_unit_assert=>assert_equals( act = feature-order_type exp = if_abap_behv=>fc-f-read_only ).
     cl_abap_unit_assert=>assert_equals( act = feature-dates      exp = if_abap_behv=>fc-f-read_only ).
+  ENDMETHOD.
+
+  METHOD features_of_released_order.
+    DATA(released) = order( order_type = 'PM02' uuid = ltd_data_provider=>saved_uuid ).
+    released-%is_draft = if_abap_behv=>mk-off.
+    released-OrderStatus = zif_ts_maint_order_status=>released.
+
+    DATA(features) = cut->get_features( VALUE #( ( released ) ) ).
+    DATA(feature) = features[ 1 ].
+
+    cl_abap_unit_assert=>assert_equals( act = feature-change   exp = if_abap_behv=>fc-o-enabled ).
+    cl_abap_unit_assert=>assert_equals( act = feature-delete   exp = if_abap_behv=>fc-o-disabled ).
+    cl_abap_unit_assert=>assert_equals( act = feature-release  exp = if_abap_behv=>fc-o-disabled ).
+    cl_abap_unit_assert=>assert_equals( act = feature-complete exp = if_abap_behv=>fc-o-enabled ).
   ENDMETHOD.
 
   METHOD mandatory_fields_are_checked.
@@ -581,6 +598,7 @@ CLASS ltc_order IMPLEMENTATION.
     cl_abap_unit_assert=>assert_initial( cut->determine_due_dates( VALUE #( ( unknown ) ( unrated ) ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 

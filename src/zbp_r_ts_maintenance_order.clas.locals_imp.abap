@@ -246,7 +246,7 @@ CLASS lhc_maintenanceorder IMPLEMENTATION.
     result = VALUE #( FOR feature IN zcl_ts_maint_factory=>order( )->get_features( orders )
                       ( %tky                               = feature-order-%tky
                         %update                            = feature-change
-                        %delete                            = feature-change
+                        %delete                            = feature-delete
                         %action-Edit                       = feature-change
                         %action-releaseOrder               = feature-release
                         %action-completeOrder              = feature-complete
@@ -1284,6 +1284,7 @@ CLASS lsc_zr_ts_maintenance_order IMPLEMENTATION.
       deleted_orders = VALUE #( FOR deleted IN delete-maintenanceorder ( deleted-OrderUuid ) ) ).
   ENDMETHOD.
 ENDCLASS.
+
 
 
 
